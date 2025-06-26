@@ -27,9 +27,14 @@ client = TestClient(app)
 
 def test_login_flow():
     with TestingSessionLocal() as db:
+        tenant = models.Tenant(name='t1')
+        role = models.Role(id=1, name='USER')
         user = models.User(email='user@example.com', hashed_password=hash_password('password'), full_name='User')
-        db.add(user)
+        db.add_all([tenant, role, user])
         db.commit()
-    response = client.post('/auth/login', data={'username': 'user@example.com', 'password': 'password'})
+        assoc = models.UserTenant(user_id=user.id, tenant_id=tenant.id, role_id=role.id)
+        db.add(assoc)
+        db.commit()
+    response = client.post('/login', json={'email': 'user@example.com', 'password': 'password', 'tenant_id': str(tenant.id)})
     assert response.status_code == 200
     assert 'access_token' in response.json()
