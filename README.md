@@ -11,10 +11,10 @@ This repository contains a Streamlit based application for logistics companies. 
    pip install streamlit pandas
    ```
 
-2. Initialize the database. The helper function `init_db()` in `db.py` creates all required tables. It is executed automatically when running `main.py`, but you can also call it manually:
+2. Initialize the database. The helper function `init_db()` in `db.py` creates all required tables. It is executed automatically when running `main.py`, but you can also call it manually. The path can be overridden with the `DB_PATH` environment variable:
    ```python
    from db import init_db
-   conn, cursor = init_db()  # uses main.db by default
+   conn, cursor = init_db()  # uses main.db by default or DB_PATH if set
    ```
 
 3. Start the application:
