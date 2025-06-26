@@ -1,12 +1,6 @@
 import streamlit as st
-import hashlib
 
-from . import register
-
-
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
-
+from .auth_utils import hash_password
 
 def verify_user(conn, c, username: str, password: str):
     c.execute(
@@ -43,6 +37,7 @@ def show(conn, c):
             st.experimental_rerun()
     else:
         if st.session_state.get("show_register"):
+            from . import register
             register.show(conn, c)
             if st.sidebar.button("Grįžti"):
                 st.session_state.show_register = False
