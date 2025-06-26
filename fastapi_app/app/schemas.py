@@ -6,6 +6,11 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+    tenant_id: UUID
+
 class TokenData(BaseModel):
     user_id: Optional[UUID]
     tenant_id: Optional[UUID]
@@ -33,6 +38,14 @@ class Tenant(BaseModel):
 class Role(BaseModel):
     id: int
     name: str
+
+    class Config:
+        orm_mode = True
+
+class Document(BaseModel):
+    id: UUID
+    tenant_id: UUID
+    content: str
 
     class Config:
         orm_mode = True

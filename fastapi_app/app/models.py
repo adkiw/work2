@@ -39,3 +39,12 @@ class TenantCollaboration(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_a_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'))
     tenant_b_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'))
+
+class Document(Base):
+    __tablename__ = 'documents'
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'))
+    content = Column(String, nullable=False)
+
+    tenant = relationship('Tenant')
+
