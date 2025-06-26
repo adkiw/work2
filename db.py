@@ -126,5 +126,68 @@ def init_db(db_path: str = "main.db"):
         )
     """)
 
+    # ------------- Naudotojų autentikacija -------------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password_hash TEXT
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS roles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS user_roles (
+            user_id INTEGER,
+            role_id INTEGER,
+            PRIMARY KEY (user_id, role_id),
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (role_id) REFERENCES roles(id)
+        )
+    """)
+
     conn.commit()
+
+    # Sukuriame numatytąjį administratoriaus naudotoją, jei jo nėra
+    c.execute("SELECT id FROM users WHERE username = 'admin'")
+    row = c.fetchone()
+    if not row:
+        import hashlib
+        admin_hash = hashlib.sha256('admin'.encode()).hexdigest()
+        c.execute(
+            "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+            ('admin', admin_hash)
+        )
+        conn.commit()
+        row = (c.lastrowid,)
+
+    admin_user_id = row[0]
+
+    # Užtikriname, kad egzistuotų "admin" rolė ir kad ji būtų priskirta adminui
+    c.execute("SELECT id FROM roles WHERE name = 'admin'")
+    r = c.fetchone()
+    if not r:
+        c.execute("INSERT INTO roles (name) VALUES ('admin')")
+        conn.commit()
+        role_id = c.lastrowid
+    else:
+        role_id = r[0]
+
+    c.execute(
+        "SELECT 1 FROM user_roles WHERE user_id = ? AND role_id = ?",
+        (admin_user_id, role_id)
+    )
+    if not c.fetchone():
+        c.execute(
+            "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)",
+            (admin_user_id, role_id)
+        )
+        conn.commit()
+
     return conn, c
