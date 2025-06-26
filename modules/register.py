@@ -1,6 +1,6 @@
 import streamlit as st
 
-from .login import hash_password
+from .auth_utils import hash_password
 
 
 def show(conn, c):
