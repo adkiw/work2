@@ -38,4 +38,9 @@ To run it locally with Docker:
 docker-compose -f fastapi_app/docker-compose.yml up --build
 ```
 
-The API exposes endpoints for user creation and JWT-based login.
+The API exposes endpoints for tenant and user management using JWT tokens.
+Example workflow:
+1. Create a tenant as superadmin via `POST /superadmin/tenants`.
+2. Assign a tenant admin using `POST /superadmin/tenants/{tenant_id}/admins`.
+3. Tenant admins can create users in their tenant via `POST /{tenant_id}/users`.
+4. Users authenticate using `/auth/login` and may refresh tokens via `/auth/refresh`.
