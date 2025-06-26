@@ -26,6 +26,7 @@ from modules import (
     vairuotojai,
     klientai,
     darbuotojai,
+    user_admin,
     planavimas,
     update,
     login,
@@ -46,12 +47,14 @@ module_functions = {
     "Vairuotojai": vairuotojai.show,
     "Klientai": klientai.show,
     "Darbuotojai": darbuotojai.show,
+    "Registracijos": user_admin.show,
     "Planavimas": planavimas.show,
     "Update": update.show,
 }
 
 MODULE_ROLES = {
     "Darbuotojai": ["admin"],
+    "Registracijos": ["admin"],
     "Update": ["admin"],
 }
 
