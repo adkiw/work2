@@ -1,13 +1,18 @@
 import streamlit as st
 import hashlib
 
+from . import register
+
 
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 
 def verify_user(conn, c, username: str, password: str):
-    c.execute("SELECT id, password_hash FROM users WHERE username = ?", (username,))
+    c.execute(
+        "SELECT id, password_hash FROM users WHERE username = ? AND aktyvus = 1",
+        (username,)
+    )
     row = c.fetchone()
     if row and row[1] == hash_password(password):
         return row[0]
@@ -37,6 +42,13 @@ def show(conn, c):
             st.session_state.clear()
             st.experimental_rerun()
     else:
+        if st.session_state.get("show_register"):
+            register.show(conn, c)
+            if st.sidebar.button("Grįžti"):
+                st.session_state.show_register = False
+                st.experimental_rerun()
+            return
+
         st.sidebar.subheader("Prisijungimas")
         username = st.sidebar.text_input("Vartotojas")
         password = st.sidebar.text_input("Slaptažodis", type="password")
@@ -48,4 +60,7 @@ def show(conn, c):
                 st.experimental_rerun()
             else:
                 st.sidebar.error("Neteisingi prisijungimo duomenys")
+        if st.sidebar.button("Registruotis"):
+            st.session_state.show_register = True
+            st.experimental_rerun()
 

@@ -131,9 +131,17 @@ def init_db(db_path: str = "main.db"):
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
-            password_hash TEXT
+            password_hash TEXT,
+            aktyvus INTEGER DEFAULT 0
         )
     """)
+
+    # If the table existed before, ensure the 'aktyvus' column is present
+    c.execute("PRAGMA table_info(users)")
+    existing_cols = [row[1] for row in c.fetchall()]
+    if "aktyvus" not in existing_cols:
+        c.execute("ALTER TABLE users ADD COLUMN aktyvus INTEGER DEFAULT 0")
+        conn.commit()
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS roles (
@@ -161,7 +169,7 @@ def init_db(db_path: str = "main.db"):
         import hashlib
         admin_hash = hashlib.sha256('admin'.encode()).hexdigest()
         c.execute(
-            "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+            "INSERT INTO users (username, password_hash, aktyvus) VALUES (?, ?, 1)",
             ('admin', admin_hash)
         )
         conn.commit()
