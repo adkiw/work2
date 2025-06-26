@@ -13,7 +13,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'secret')
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
+# OAuth2PasswordBearer tokenUrl should match the login endpoint path
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/login')
 
 
 def get_db():

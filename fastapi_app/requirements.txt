@@ -6,3 +6,4 @@ pyjwt
 bcrypt
 alembic
 python-dotenv
+httpx
