@@ -1,5 +1,12 @@
 import streamlit as st
 
+
+def rerun():
+    if hasattr(st, "rerun"):
+        st.rerun()
+    else:
+        st.experimental_rerun()
+
 from .auth_utils import hash_password
 
 def verify_user(conn, c, username: str, password: str):
@@ -36,14 +43,14 @@ def show(conn, c):
             # Avoid Streamlit bug when using `clear()` directly
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
-            st.experimental_rerun()
+            rerun()
     else:
         if st.session_state.get("show_register"):
             from . import register
             register.show(conn, c)
             if st.sidebar.button("Grįžti"):
                 st.session_state.show_register = False
-                st.experimental_rerun()
+                rerun()
             return
 
         st.sidebar.subheader("Prisijungimas")
@@ -54,10 +61,10 @@ def show(conn, c):
             if user_id:
                 st.session_state.user_id = user_id
                 st.session_state.username = username
-                st.experimental_rerun()
+                rerun()
             else:
                 st.sidebar.error("Neteisingi prisijungimo duomenys")
         if st.sidebar.button("Registruotis"):
             st.session_state.show_register = True
-            st.experimental_rerun()
+            rerun()
 
