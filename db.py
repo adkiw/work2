@@ -1,12 +1,14 @@
 # db.py
 import sqlite3
+import os
 
-def init_db(db_path: str = "main.db"):
+def init_db(db_path: str | None = None):
     """
     Inicializuoja SQLite duomenų bazę:
     • sukuria lenteles, jei jų dar nėra
     • grąžina (conn, cursor)
     """
+    db_path = db_path or os.getenv("DB_PATH", "main.db")
     conn = sqlite3.connect(db_path, check_same_thread=False)
     c    = conn.cursor()
 
