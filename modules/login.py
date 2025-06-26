@@ -33,7 +33,9 @@ def show(conn, c):
     if "user_id" in st.session_state:
         st.sidebar.success(f"Prisijungta kaip {st.session_state.username}")
         if st.sidebar.button("Atsijungti"):
-            st.session_state.clear()
+            # Avoid Streamlit bug when using `clear()` directly
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
             st.experimental_rerun()
     else:
         if st.session_state.get("show_register"):
