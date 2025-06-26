@@ -27,39 +27,43 @@ from modules import (
     klientai,
     darbuotojai,
     planavimas,
-    update
+    update,
+    login,
 )
 
+login.show(conn, c)
+
+if "user_id" not in st.session_state:
+    st.info("Prašome prisijungti")
+    st.stop()
+
 # 5) Horizontalus meniu
-moduliai = [
-    "Kroviniai",
-    "Vilkikai",
-    "Priekabos",
-    "Grupės",
-    "Vairuotojai",
-    "Klientai",
-    "Darbuotojai",
-    "Planavimas",
-    "Update"
-]
-pasirinktas = st.radio("", moduliai, horizontal=True)
+module_functions = {
+    "Kroviniai": kroviniai.show,
+    "Vilkikai": vilkikai.show,
+    "Priekabos": priekabos.show,
+    "Grupės": grupes.show,
+    "Vairuotojai": vairuotojai.show,
+    "Klientai": klientai.show,
+    "Darbuotojai": darbuotojai.show,
+    "Planavimas": planavimas.show,
+    "Update": update.show,
+}
+
+MODULE_ROLES = {
+    "Darbuotojai": ["admin"],
+    "Update": ["admin"],
+}
+
+def allowed(name: str) -> bool:
+    roles = MODULE_ROLES.get(name)
+    if not roles:
+        return True
+    return any(login.has_role(conn, c, r) for r in roles)
+
+available_modules = [n for n in module_functions.keys() if allowed(n)]
+
+pasirinktas = st.radio("", available_modules, horizontal=True)
 
 # 6) Maršrutizacija
-if pasirinktas == "Kroviniai":
-    kroviniai.show(conn, c)
-elif pasirinktas == "Vilkikai":
-    vilkikai.show(conn, c)
-elif pasirinktas == "Priekabos":
-    priekabos.show(conn, c)
-elif pasirinktas == "Grupės":
-    grupes.show(conn, c)
-elif pasirinktas == "Vairuotojai":
-    vairuotojai.show(conn, c)
-elif pasirinktas == "Klientai":
-    klientai.show(conn, c)
-elif pasirinktas == "Darbuotojai":
-    darbuotojai.show(conn, c)
-elif pasirinktas == "Planavimas":
-    planavimas.show(conn, c)
-elif pasirinktas == "Update":
-    update.show(conn, c)
+module_functions[pasirinktas](conn, c)
