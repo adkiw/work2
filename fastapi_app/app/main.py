@@ -9,7 +9,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-@app.post('/login', response_model=schemas.Token)
+# Login endpoint used by OAuth2PasswordBearer
+@app.post('/auth/login', response_model=schemas.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(auth.get_db)):
     user = auth.authenticate_user(db, form_data.username, form_data.password)
     if not user:

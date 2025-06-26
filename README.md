@@ -38,4 +38,10 @@ To run it locally with Docker:
 docker-compose -f fastapi_app/docker-compose.yml up --build
 ```
 
+If running without Docker, install the FastAPI dependencies first:
+
+```bash
+pip install -r fastapi_app/requirements.txt
+```
+
 The API exposes endpoints for user creation and JWT-based login.
