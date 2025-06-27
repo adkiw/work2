@@ -12,7 +12,8 @@ def show(conn, c):
         "tech_apziura": "TEXT",
         "vadybininkas": "TEXT",
         "vairuotojai": "TEXT",
-        "priekaba": "TEXT"
+        "priekaba": "TEXT",
+        "imone": "TEXT"
     }
     for col, col_type in extras.items():
         if col not in existing_cols:
@@ -20,15 +21,18 @@ def show(conn, c):
     conn.commit()
 
     # 2) Surenkame dropdown duomenis
-    priekabu_list = [r[0] for r in c.execute("SELECT numeris FROM priekabos").fetchall()]
+    priekabu_list = [
+        r[0]
+        for r in c.execute("SELECT numeris FROM priekabos WHERE imone = ?", (st.session_state.get('imone'),)).fetchall()
+    ]
     markiu_list = [r[0] for r in c.execute("SELECT reiksme FROM lookup WHERE kategorija = 'Markė'").fetchall()]
     vairuotoju_list = [f"{r[1]} {r[2]}" for r in c.execute("SELECT id, vardas, pavarde FROM vairuotojai").fetchall()]
 
     vadybininku_list = [
         f"{r[0]} {r[1]}"
         for r in c.execute(
-            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe = ?",
-            ("Transporto vadybininkas",)
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe = ? AND imone = ?",
+            ("Transporto vadybininkas", st.session_state.get('imone')),
         ).fetchall()
     ]
     vadybininku_dropdown = [""] + vadybininku_list  # pirmas tuščias
@@ -62,13 +66,14 @@ def show(conn, c):
         st.markdown("### 🔄 Bendras priekabų priskirstymas")
         with st.form("priekabu_priskirt_forma", clear_on_submit=True):
             # Sąrašas vilkikų ir priekabų (su statusu)
-            vilk_list = [""] + [r[0] for r in c.execute("SELECT numeris FROM vilkikai").fetchall()]
+            vilk_list = [""] + [r[0] for r in c.execute("SELECT numeris FROM vilkikai WHERE imone = ?", (st.session_state.get('imone'),)).fetchall()]
             pr_opts = [""]
 
             # Priekabų pasirinkimas: 🟢 laisva, 🔴 priskirta (rodoma kam)
             for num in priekabu_list:
                 assigned_row = c.execute(
-                    "SELECT numeris FROM vilkikai WHERE priekaba = ?", (num,)
+                    "SELECT numeris FROM vilkikai WHERE priekaba = ? AND imone = ?",
+                    (num, st.session_state.get('imone'))
                 ).fetchone()
                 if assigned_row and assigned_row[0] != "":
                     assigned_truck = assigned_row[0]
@@ -91,13 +96,15 @@ def show(conn, c):
 
             # 2) Dabartinė pasirinkto vilkiko priekaba (gali būti tuščia)
             cur = c.execute(
-                "SELECT priekaba FROM vilkikai WHERE numeris = ?", (sel_vilk,)
+                "SELECT priekaba FROM vilkikai WHERE numeris = ? AND imone = ?",
+                (sel_vilk, st.session_state.get('imone'))
             ).fetchone()
             cur_trailer = cur[0] if cur and cur[0] else ""
 
             # 3) Sužinom, kuriam vilkikui dabar priskirta norima priekaba
             other = c.execute(
-                "SELECT numeris FROM vilkikai WHERE priekaba = ?", (prn,)
+                "SELECT numeris FROM vilkikai WHERE priekaba = ? AND imone = ?",
+                (prn, st.session_state.get('imone'))
             ).fetchone()
             other_truck = other[0] if other else None
 
@@ -105,13 +112,13 @@ def show(conn, c):
             if other_truck and other_truck != sel_vilk:
                 # Sukeičiam: kitam vilkikui priskiriam dabartinę pasirinkto vilkiko priekabą (arba tuščią)
                 c.execute(
-                    "UPDATE vilkikai SET priekaba = ? WHERE numeris = ?",
-                    (cur_trailer or "", other_truck)
+                    "UPDATE vilkikai SET priekaba = ? WHERE numeris = ? AND imone = ?",
+                    (cur_trailer or "", other_truck, st.session_state.get('imone'))
                 )
             # 5) Pasirinktam vilkikui priskiriam norimą priekabą
             c.execute(
-                "UPDATE vilkikai SET priekaba = ? WHERE numeris = ?",
-                (prn or "", sel_vilk)
+                "UPDATE vilkikai SET priekaba = ? WHERE numeris = ? AND imone = ?",
+                (prn or "", sel_vilk, st.session_state.get('imone'))
             )
             conn.commit()
             st.success("✅ Priekabos paskirstymas sėkmingai atnaujintas.")
@@ -121,7 +128,11 @@ def show(conn, c):
         st.button("➕ Pridėti naują vilkiką", on_click=new_vilk, use_container_width=True)
 
         # 6.3) Vilkikų sąrašo atvaizdavimas
-        df = pd.read_sql_query("SELECT * FROM vilkikai ORDER BY tech_apziura ASC", conn)
+        df = pd.read_sql_query(
+            "SELECT * FROM vilkikai WHERE imone = ? ORDER BY tech_apziura ASC",
+            conn,
+            params=(st.session_state.get('imone'),)
+        )
         if df.empty:
             st.info("🔍 Kol kas nėra vilkikų.")
             return
@@ -191,7 +202,11 @@ def show(conn, c):
     is_new = (sel == 0)
     vilk = {}
     if not is_new:
-        df_v = pd.read_sql_query("SELECT * FROM vilkikai WHERE numeris = ?", conn, params=(sel,))
+        df_v = pd.read_sql_query(
+            "SELECT * FROM vilkikai WHERE numeris = ? AND imone = ?",
+            conn,
+            params=(sel, st.session_state.get('imone')),
+        )
         if df_v.empty:
             st.error("❌ Vilkikas nerastas.")
             clear_selection()
@@ -200,7 +215,10 @@ def show(conn, c):
 
     # 7.1) Renkam jau priskirtus vairuotojus ir priekabas (kad būtų uždrausti konfliktai)
     assigned_set = set()
-    for row in c.execute("SELECT numeris, vairuotojai FROM vilkikai").fetchall():
+    for row in c.execute(
+        "SELECT numeris, vairuotojai FROM vilkikai WHERE imone = ?",
+        (st.session_state.get('imone'),)
+    ).fetchall():
         numeris_row, drv_str = row
         if drv_str:
             for drv in drv_str.split(', '):
@@ -208,7 +226,10 @@ def show(conn, c):
                     assigned_set.add(drv)
 
     assigned_trailers = set()
-    for row in c.execute("SELECT numeris, priekaba FROM vilkikai").fetchall():
+    for row in c.execute(
+        "SELECT numeris, priekaba FROM vilkikai WHERE imone = ?",
+        (st.session_state.get('imone'),)
+    ).fetchall():
         numeris_row, pr_str = row
         if pr_str:
             if not (not is_new and numeris_row == sel and pr_str):
@@ -279,7 +300,8 @@ def show(conn, c):
         for num in priekabu_list:
             if num in assigned_trailers:
                 assigned_truck = c.execute(
-                    "SELECT numeris FROM vilkikai WHERE priekaba = ?", (num,)
+                    "SELECT numeris FROM vilkikai WHERE priekaba = ? AND imone = ?",
+                    (num, st.session_state.get('imone'))
                 ).fetchone()[0]
                 pr_opts.append(f"🔴 {num} ({assigned_truck})")
             else:
@@ -322,31 +344,33 @@ def show(conn, c):
                 trailer = sel_pr.split(" ", 1)[1].split()[0]
             # Dabartinė šio vilkiko priekaba
             cur = c.execute(
-                "SELECT priekaba FROM vilkikai WHERE numeris = ?", (sel,)
+                "SELECT priekaba FROM vilkikai WHERE numeris = ? AND imone = ?",
+                (sel, st.session_state.get('imone'))
             ).fetchone()
             cur_trailer = cur[0] if cur and cur[0] else ""
             # Ar priekaba jau kitam vilkikui?
             other = c.execute(
-                "SELECT numeris FROM vilkikai WHERE priekaba = ?", (trailer,)
+                "SELECT numeris FROM vilkikai WHERE priekaba = ? AND imone = ?",
+                (trailer, st.session_state.get('imone'))
             ).fetchone()
             if other and other[0] != sel:
                 other_truck = other[0]
                 c.execute(
-                    "UPDATE vilkikai SET priekaba = ? WHERE numeris = ?",
-                    (cur_trailer or "", other_truck)
+                    "UPDATE vilkikai SET priekaba = ? WHERE numeris = ? AND imone = ?",
+                    (cur_trailer or "", other_truck, st.session_state.get('imone'))
                 )
             c.execute(
-                "UPDATE vilkikai SET priekaba = ? WHERE numeris = ?",
-                (trailer or "", sel)
+                "UPDATE vilkikai SET priekaba = ? WHERE numeris = ? AND imone = ?",
+                (trailer or "", sel, st.session_state.get('imone'))
             )
             vairuotoju_text = ", ".join(filter(None, [drv1_name, drv2_name])) or ''
             try:
                 if is_new:
                     c.execute(
-                        """INSERT INTO vilkikai 
-                           (numeris, marke, pagaminimo_metai, tech_apziura, draudimas, 
-                            vadybininkas, vairuotojai, priekaba)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                        """INSERT INTO vilkikai
+                           (numeris, marke, pagaminimo_metai, tech_apziura, draudimas,
+                            vadybininkas, vairuotojai, priekaba, imone)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                         (
                             numeris,
                             modelis or '',
@@ -355,15 +379,16 @@ def show(conn, c):
                             draud_date.isoformat() if draud_date else '',
                             vadyb or '',
                             vairuotoju_text,
-                            trailer
+                            trailer,
+                            st.session_state.get('imone')
                         )
                     )
                 else:
                     c.execute(
-                        """UPDATE vilkikai 
-                           SET marke=?, pagaminimo_metai=?, tech_apziura=?, draudimas=?, 
-                               vadybininkas=?, vairuotojai=?, priekaba=? 
-                           WHERE numeris=?""",
+                        """UPDATE vilkikai
+                           SET marke=?, pagaminimo_metai=?, tech_apziura=?, draudimas=?,
+                               vadybininkas=?, vairuotojai=?, priekaba=?
+                           WHERE numeris=? AND imone=?""",
                         (
                             modelis or '',
                             pr_data.isoformat() if pr_data else '',
@@ -372,7 +397,8 @@ def show(conn, c):
                             vadyb or '',
                             vairuotoju_text,
                             trailer,
-                            sel
+                            sel,
+                            st.session_state.get('imone')
                         )
                     )
                 conn.commit()

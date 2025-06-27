@@ -113,9 +113,17 @@ def init_db(db_path: str | None = None):
             el_pastas TEXT,
             telefonas TEXT,
             grupe     TEXT,
+            imone     TEXT,
             aktyvus   INTEGER DEFAULT 1
         )
     """)
+    c.execute("PRAGMA table_info(darbuotojai)")
+    cols = [row[1] for row in c.fetchall()]
+    if 'imone' not in cols:
+        c.execute("ALTER TABLE darbuotojai ADD COLUMN imone TEXT")
+    if 'aktyvus' not in cols:
+        c.execute("ALTER TABLE darbuotojai ADD COLUMN aktyvus INTEGER DEFAULT 1")
+    conn.commit()
 
     # Vilkikų darbo laiko lentelė (naudojama update.py & planavimas.py)
     c.execute("""
@@ -134,15 +142,19 @@ def init_db(db_path: str | None = None):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
             password_hash TEXT,
+            imone TEXT,
             aktyvus INTEGER DEFAULT 0
         )
     """)
 
-    # If the table existed before, ensure the 'aktyvus' column is present
+    # If the table existed before, ensure the 'aktyvus' and 'imone' columns are present
     c.execute("PRAGMA table_info(users)")
     existing_cols = [row[1] for row in c.fetchall()]
     if "aktyvus" not in existing_cols:
         c.execute("ALTER TABLE users ADD COLUMN aktyvus INTEGER DEFAULT 0")
+        conn.commit()
+    if "imone" not in existing_cols:
+        c.execute("ALTER TABLE users ADD COLUMN imone TEXT")
         conn.commit()
 
     c.execute("""
@@ -171,8 +183,8 @@ def init_db(db_path: str | None = None):
         import hashlib
         admin_hash = hashlib.sha256('admin'.encode()).hexdigest()
         c.execute(
-            "INSERT INTO users (username, password_hash, aktyvus) VALUES (?, ?, 1)",
-            ('admin', admin_hash)
+            "INSERT INTO users (username, password_hash, imone, aktyvus) VALUES (?, ?, ?, 1)",
+            ('admin', admin_hash, 'Admin')
         )
         conn.commit()
         row = (c.lastrowid,)

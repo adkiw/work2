@@ -7,7 +7,9 @@ def show(conn, c):
     cols = {row[1] for row in c.fetchall()}
     if 'aktyvus' not in cols:
         c.execute("ALTER TABLE darbuotojai ADD COLUMN aktyvus INTEGER DEFAULT 1")
-        conn.commit()
+    if 'imone' not in cols:
+        c.execute("ALTER TABLE darbuotojai ADD COLUMN imone TEXT")
+    conn.commit()
 
     # Callback’ai
     def clear_selection():
@@ -31,8 +33,9 @@ def show(conn, c):
     # 1. SĄRAŠO rodinys su filtravimu (be headerių virš ir po filtrų)
     if st.session_state.selected_emp is None:
         df = pd.read_sql(
-            "SELECT id, vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, aktyvus FROM darbuotojai",
-            conn
+            "SELECT id, vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone, aktyvus FROM darbuotojai WHERE imone = ?",
+            conn,
+            params=(st.session_state.get('imone'),)
         )
 
         if df.empty:
@@ -77,8 +80,8 @@ def show(conn, c):
     emp_data = {}
     if not is_new:
         df_emp = pd.read_sql(
-            "SELECT * FROM darbuotojai WHERE id=?", conn,
-            params=(sel,)
+            "SELECT * FROM darbuotojai WHERE id=? AND imone=?", conn,
+            params=(sel, st.session_state.get('imone'))
         )
         if df_emp.empty:
             st.error("Darbuotojas nerastas.")
@@ -159,8 +162,9 @@ def show(conn, c):
 
     # 8) Išsaugojimo ir „Grįžti“ mygtukai
     def do_save():
-        fields = ["vardas", "pavarde", "pareigybe", "el_pastas", "telefonas", "grupe"]
-        vals = [st.session_state[key] for key in fields]
+        fields = ["vardas", "pavarde", "pareigybe", "el_pastas", "telefonas", "grupe", "imone"]
+        vals = [st.session_state.get(key) for key in fields[:-1]]
+        vals.append(st.session_state.get('imone'))
         # Aktyvumo reikšmė: 1 ar 0
         vals.append(1 if st.session_state["aktyvus"] else 0)
         if is_new:
@@ -174,8 +178,8 @@ def show(conn, c):
             vals.append(sel)
             set_clause = ", ".join(f"{k}=?" for k in (fields + ["aktyvus"]))
             c.execute(
-                f"UPDATE darbuotojai SET {set_clause} WHERE id=?",
-                tuple(vals)
+                f"UPDATE darbuotojai SET {set_clause} WHERE id=? AND imone=?",
+                tuple(vals + [st.session_state.get('imone')])
             )
         conn.commit()
         st.success("✅ Duomenys įrašyti.")

@@ -11,13 +11,13 @@ from .auth_utils import hash_password
 
 def verify_user(conn, c, username: str, password: str):
     c.execute(
-        "SELECT id, password_hash FROM users WHERE username = ? AND aktyvus = 1",
+        "SELECT id, password_hash, imone FROM users WHERE username = ? AND aktyvus = 1",
         (username,)
     )
     row = c.fetchone()
     if row and row[1] == hash_password(password):
-        return row[0]
-    return None
+        return row[0], row[2]
+    return (None, None)
 
 
 def has_role(conn, c, role: str) -> bool:
@@ -57,10 +57,11 @@ def show(conn, c):
         username = st.sidebar.text_input("Vartotojas")
         password = st.sidebar.text_input("Slaptažodis", type="password")
         if st.sidebar.button("Prisijungti"):
-            user_id = verify_user(conn, c, username, password)
+            user_id, imone = verify_user(conn, c, username, password)
             if user_id:
                 st.session_state.user_id = user_id
                 st.session_state.username = username
+                st.session_state.imone = imone
                 rerun()
             else:
                 st.sidebar.error("Neteisingi prisijungimo duomenys")

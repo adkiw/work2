@@ -13,7 +13,8 @@ def show(conn, c):
         'marke': 'TEXT',
         'pagaminimo_metai': 'TEXT',
         'tech_apziura': 'TEXT',
-        'draudimas': 'TEXT'
+        'draudimas': 'TEXT',
+        'imone': 'TEXT'
         # Nebereikalingas 'priskirtas_vilkikas' stulpelis, nes jį gausime iš vilkikai modulyje
     }
     for col, typ in extras.items():
@@ -22,7 +23,13 @@ def show(conn, c):
     conn.commit()
 
     # 2) Paruošiame Dropdown duomenis
-    vilkikai_list = [r[0] for r in c.execute("SELECT numeris FROM vilkikai").fetchall()]
+    vilkikai_list = [
+        r[0]
+        for r in c.execute(
+            "SELECT numeris FROM vilkikai WHERE imone = ?",
+            (st.session_state.get('imone'),)
+        ).fetchall()
+    ]
 
     # 3) Sesijos būsena
     if 'selected_priek' not in st.session_state:
@@ -49,7 +56,9 @@ def show(conn, c):
     # 5) Redagavimo rodinys (kai pasirenkama esama priekaba)
     if sel not in (None, 0):
         df_sel = pd.read_sql_query(
-            "SELECT * FROM priekabos WHERE id = ?", conn, params=(sel,)
+            "SELECT * FROM priekabos WHERE id = ? AND imone = ?",
+            conn,
+            params=(sel, st.session_state.get('imone')),
         )
         if df_sel.empty:
             st.error("❌ Priekaba nerasta.")
@@ -98,7 +107,7 @@ def show(conn, c):
         if save:
             try:
                 c.execute(
-                    "UPDATE priekabos SET priekabu_tipas=?, numeris=?, marke=?, pagaminimo_metai=?, tech_apziura=?, draudimas=? WHERE id=?",
+                    "UPDATE priekabos SET priekabu_tipas=?, numeris=?, marke=?, pagaminimo_metai=?, tech_apziura=?, draudimas=? WHERE id=? AND imone=?",
                     (
                         tip or None,
                         num,
@@ -106,7 +115,8 @@ def show(conn, c):
                         (pr_data.isoformat() if pr_data else None),
                         (tech.isoformat() if tech else None),
                         (draud_date.isoformat() if draud_date else None),
-                        sel
+                        sel,
+                        st.session_state.get('imone')
                     )
                 )
                 conn.commit()
@@ -138,14 +148,15 @@ def show(conn, c):
             else:
                 try:
                     c.execute(
-                        "INSERT INTO priekabos(priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas) VALUES(?,?,?,?,?,?)",
+                        "INSERT INTO priekabos(priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas, imone) VALUES(?,?,?,?,?,?,?)",
                         (
                             tip or None,
                             num,
                             model or None,
                             pr_data.isoformat(),
                             tech.isoformat(),
-                            draud_date.isoformat()
+                            draud_date.isoformat(),
+                            st.session_state.get('imone')
                         )
                     )
                     conn.commit()
@@ -156,7 +167,11 @@ def show(conn, c):
         return
 
     # 7) Priekabų sąrašas
-    df = pd.read_sql_query("SELECT * FROM priekabos", conn)
+    df = pd.read_sql_query(
+        "SELECT * FROM priekabos WHERE imone = ?",
+        conn,
+        params=(st.session_state.get('imone'),)
+    )
     if df.empty:
         st.info("ℹ️ Nėra priekabų.")
         return
@@ -168,7 +183,8 @@ def show(conn, c):
         columns={
             'marke': 'Markė',
             'pagaminimo_metai': 'Pirmos registracijos data',
-            'draudimas': 'Draudimo galiojimo pabaiga'
+            'draudimas': 'Draudimo galiojimo pabaiga',
+            'imone': 'Įmonė'
         },
         inplace=True
     )
@@ -178,7 +194,8 @@ def show(conn, c):
     for _, row in df.iterrows():
         prn = row['numeris']
         assigned_vilk = c.execute(
-            "SELECT numeris FROM vilkikai WHERE priekaba = ?", (prn,)
+            "SELECT numeris FROM vilkikai WHERE priekaba = ? AND imone = ?",
+            (prn, st.session_state.get('imone'))
         ).fetchone()
         assigned_list.append(assigned_vilk[0] if assigned_vilk else "")
     df_disp['Priskirtas vilkikas'] = assigned_list

@@ -7,6 +7,7 @@ def show(conn, c):
     st.subheader("Registracija")
     username = st.text_input("Vartotojo vardas")
     password = st.text_input("Slaptažodis", type="password")
+    imone = st.text_input("Įmonė")
 
     if st.button("Pateikti paraišką"):
         if not username or not password:
@@ -16,9 +17,9 @@ def show(conn, c):
             if c.fetchone():
                 st.error("Toks vartotojas jau egzistuoja")
             else:
-                c.execute(
-                    "INSERT INTO users (username, password_hash, aktyvus) VALUES (?, ?, 0)",
-                    (username, hash_password(password)),
-                )
+            c.execute(
+                "INSERT INTO users (username, password_hash, imone, aktyvus) VALUES (?, ?, ?, 0)",
+                (username, hash_password(password), imone or None),
+            )
                 conn.commit()
                 st.success("Registracija pateikta. Palaukite administratoriaus patvirtinimo.")
