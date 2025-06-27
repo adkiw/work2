@@ -8,6 +8,7 @@ def rerun():
         st.experimental_rerun()
 
 from .auth_utils import hash_password
+import bcrypt
 
 def verify_user(conn, c, username: str, password: str):
     c.execute(
@@ -15,7 +16,7 @@ def verify_user(conn, c, username: str, password: str):
         (username,)
     )
     row = c.fetchone()
-    if row and row[1] == hash_password(password):
+    if row and bcrypt.checkpw(password.encode(), row[1].encode()):
         return row[0], row[2]
     return (None, None)
 
