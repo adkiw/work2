@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
+from sqlalchemy import or_, and_
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -150,7 +151,48 @@ def tenant_create_user(tenant_id: str, user: schemas.UserCreate, current_user=De
 
 
 @app.get('/{tenant_id}/shared-data', response_model=list[schemas.Document])
-def read_shared_data(tenant_id: str, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
-    # simplified shared data query without collaborations
-    docs = db.query(models.Document).filter(models.Document.tenant_id == tenant_id).all()
+def read_shared_data(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    """Return documents for a tenant including its collaborators."""
+
+    current_tenant = str(current_user.current_tenant_id)
+    if current_tenant != tenant_id:
+        collab_exists = (
+            db.query(models.TenantCollaboration)
+            .filter(
+                or_(
+                    and_(
+                        models.TenantCollaboration.tenant_a_id == current_tenant,
+                        models.TenantCollaboration.tenant_b_id == tenant_id,
+                    ),
+                    and_(
+                        models.TenantCollaboration.tenant_a_id == tenant_id,
+                        models.TenantCollaboration.tenant_b_id == current_tenant,
+                    ),
+                )
+            )
+            .first()
+        )
+        if not collab_exists:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    collaborator_rows = (
+        db.query(models.TenantCollaboration)
+        .filter(
+            or_(
+                models.TenantCollaboration.tenant_a_id == tenant_id,
+                models.TenantCollaboration.tenant_b_id == tenant_id,
+            )
+        )
+        .all()
+    )
+    allowed_ids = {tenant_id}
+    for row in collaborator_rows:
+        allowed_ids.add(str(row.tenant_a_id))
+        allowed_ids.add(str(row.tenant_b_id))
+
+    docs = db.query(models.Document).filter(models.Document.tenant_id.in_(allowed_ids)).all()
     return docs
