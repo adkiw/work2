@@ -70,3 +70,20 @@ When models change a new migration can be generated with:
 ```bash
 alembic -c fastapi_app/alembic.ini revision --autogenerate -m "message"
 ```
+
+## Demo duomenys
+
+Norėdami greitai išbandyti aplikaciją su pavyzdiniais įrašais, galite
+automatiškai užpildyti duomenų bazę demonstraciniais duomenimis:
+
+```bash
+python seed_demo_data.py
+```
+
+Visi demo įrašai pažymėti prefiksu `DEMO_`. Juos pašalinti galima
+paleidus:
+
+```bash
+python seed_demo_data.py --clear
+```
+
