@@ -4,6 +4,7 @@ import jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 import bcrypt
 
 from .database import SessionLocal
@@ -93,8 +94,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
 
     # set current tenant for RLS
-    from .database import set_current_tenant
-    set_current_tenant(db, tenant_id)
+    db.execute(text("SET app.current_tenant = :tid"), {"tid": str(tenant_id)})
 
     user.current_tenant_id = tenant_id
     user.current_roles = roles
