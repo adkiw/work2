@@ -1,13 +1,24 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from alembic import command
+from alembic.config import Config
+import os
 
 
 from . import models, schemas, crud, auth, dependencies
 from .database import engine, Base
 
+def run_migrations():
+    cfg = Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
+    command.upgrade(cfg, 'head')
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+@app.on_event('startup')
+def apply_migrations() -> None:
+    run_migrations()
 
 @app.post('/login', response_model=schemas.Token)
 def login(data: schemas.LoginRequest, db: Session = Depends(auth.get_db)):
