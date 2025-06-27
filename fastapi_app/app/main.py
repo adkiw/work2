@@ -6,13 +6,12 @@ import os
 
 
 from . import models, schemas, crud, auth, dependencies
-from .database import engine, Base
+from .database import Base
 
 def run_migrations():
-    cfg = Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    cfg = Config(os.path.join(base_dir, 'alembic.ini'))
     command.upgrade(cfg, 'head')
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
