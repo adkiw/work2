@@ -1,6 +1,7 @@
 # db.py
 import sqlite3
 import os
+from modules.auth_utils import hash_password
 
 def init_db(db_path: str | None = None):
     """
@@ -180,8 +181,7 @@ def init_db(db_path: str | None = None):
     c.execute("SELECT id FROM users WHERE username = 'admin'")
     row = c.fetchone()
     if not row:
-        import hashlib
-        admin_hash = hashlib.sha256('admin'.encode()).hexdigest()
+        admin_hash = hash_password('admin')
         c.execute(
             "INSERT INTO users (username, password_hash, imone, aktyvus) VALUES (?, ?, ?, 1)",
             ('admin', admin_hash, 'Admin')

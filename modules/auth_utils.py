@@ -1,6 +1,6 @@
-import hashlib
+import bcrypt
 
 
 def hash_password(password: str) -> str:
-    """Return SHA-256 hash of the given password."""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Return bcrypt hash of the given password."""
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
