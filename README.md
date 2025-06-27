@@ -4,11 +4,12 @@ This repository contains a Streamlit based application for logistics companies. 
 
 ## Setup
 
-1. Create and activate a Python virtual environment.
+1. Create and activate a Python virtual environment and install the
+   required packages from `requirements.txt`.
    ```bash
    python3 -m venv venv
    source venv/bin/activate
-   pip install streamlit pandas
+   pip install -r requirements.txt
    ```
 
 2. Initialize the database. The helper function `init_db()` in `db.py` creates all required tables. It is executed automatically when running `main.py`, but you can also call it manually. The path can be overridden with the `DB_PATH` environment variable:
