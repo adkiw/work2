@@ -1,4 +1,6 @@
+import os
 import uuid
+os.environ.setdefault("SECRET_KEY", "test-secret")
 from fastapi.testclient import TestClient
 from fastapi_app.app.main import app
 from fastapi_app.app.auth import get_db, hash_password
