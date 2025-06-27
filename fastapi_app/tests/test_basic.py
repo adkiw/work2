@@ -35,6 +35,12 @@ def test_login_flow():
         assoc = models.UserTenant(user_id=user.id, tenant_id=tenant.id, role_id=role.id)
         db.add(assoc)
         db.commit()
-    response = client.post('/login', json={'email': 'user@example.com', 'password': 'password', 'tenant_id': str(tenant.id)})
+    response = client.post('/auth/login', json={'email': 'user@example.com', 'password': 'password', 'tenant_id': str(tenant.id)})
     assert response.status_code == 200
-    assert 'access_token' in response.json()
+    tokens = response.json()
+    assert 'access_token' in tokens
+    assert 'refresh_token' in tokens
+
+    refresh_resp = client.post('/auth/refresh', json={'refresh_token': tokens['refresh_token']})
+    assert refresh_resp.status_code == 200
+    assert 'access_token' in refresh_resp.json()

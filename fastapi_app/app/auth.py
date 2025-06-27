@@ -12,9 +12,10 @@ from . import models
 SECRET_KEY = os.getenv('SECRET_KEY', 'secret')
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 # OAuth2PasswordBearer tokenUrl should match the login endpoint path
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/login')
 
 
 def get_db():
@@ -49,6 +50,29 @@ def create_access_token(user_id: str, tenant_id: str, roles: list[str], expires_
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode['exp'] = expire
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_refresh_token(user_id: str, tenant_id: str, roles: list[str], expires_delta: timedelta | None = None):
+    to_encode = {
+        'sub': user_id,
+        'tenant_id': tenant_id,
+        'roles': roles,
+        'type': 'refresh',
+    }
+    expire = datetime.utcnow() + (expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
+    to_encode['exp'] = expire
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verify_refresh_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid token')
+
+    if payload.get('type') != 'refresh':
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid token type')
+    return payload
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
