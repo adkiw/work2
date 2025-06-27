@@ -19,7 +19,7 @@ app = FastAPI()
 def apply_migrations() -> None:
     run_migrations()
 
-@app.post('/login', response_model=schemas.Token)
+@app.post('/login', response_model=schemas.TokenPair)
 def login(data: schemas.LoginRequest, db: Session = Depends(auth.get_db)):
     user = auth.authenticate_user(db, data.email, data.password)
     if not user:
@@ -35,6 +35,25 @@ def login(data: schemas.LoginRequest, db: Session = Depends(auth.get_db)):
 
     roles = [association.role.name]
     access_token = auth.create_access_token(str(user.id), str(data.tenant_id), roles)
+    refresh_token = auth.create_refresh_token(str(user.id), str(data.tenant_id), roles)
+    return {
+        'access_token': access_token,
+        'refresh_token': refresh_token,
+        'token_type': 'bearer',
+    }
+
+
+@app.post('/auth/login', response_model=schemas.TokenPair)
+def auth_login(data: schemas.LoginRequest, db: Session = Depends(auth.get_db)):
+    return login(data, db)
+
+
+@app.post('/auth/refresh', response_model=schemas.Token)
+def refresh_token(data: schemas.RefreshRequest):
+    payload = auth.verify_refresh_token(data.refresh_token)
+    access_token = auth.create_access_token(
+        payload['sub'], payload['tenant_id'], payload.get('roles', [])
+    )
     return {'access_token': access_token, 'token_type': 'bearer'}
 
 @app.post('/users', response_model=schemas.User)

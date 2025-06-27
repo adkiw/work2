@@ -6,6 +6,14 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+
+class TokenPair(Token):
+    refresh_token: str
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
