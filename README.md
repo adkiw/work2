@@ -45,3 +45,17 @@ pip install -r fastapi_app/requirements.txt
 ```
 
 The API exposes endpoints for user creation and JWT-based login.
+
+### Database migrations
+
+Alembic configuration lives in `fastapi_app/alembic`. To apply migrations run:
+
+```bash
+alembic -c fastapi_app/alembic.ini upgrade head
+```
+
+When models change a new migration can be generated with:
+
+```bash
+alembic -c fastapi_app/alembic.ini revision --autogenerate -m "message"
+```
