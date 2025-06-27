@@ -69,7 +69,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
 
     # set current tenant for RLS
-    db.execute(f"SET app.current_tenant = '{tenant_id}'")
+    from .database import set_current_tenant
+    set_current_tenant(db, tenant_id)
 
     user.current_tenant_id = tenant_id
     user.current_roles = roles
