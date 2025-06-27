@@ -44,6 +44,10 @@ If running without Docker, install the FastAPI dependencies first:
 pip install -r fastapi_app/requirements.txt
 ```
 
+The backend requires a `SECRET_KEY` used for JWT signing. Set this environment
+variable or create a `.env` file containing `SECRET_KEY=<your secret>` before
+starting the API. If it is missing the application will fail to start.
+
 The API exposes endpoints for user creation and JWT-based login.
 
 ### Login rate limiting
