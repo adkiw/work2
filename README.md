@@ -46,6 +46,13 @@ pip install -r fastapi_app/requirements.txt
 
 The API exposes endpoints for user creation and JWT-based login.
 
+### Login rate limiting
+
+Login endpoints (`/login` and `/auth/login`) are protected using [slowapi](https://github.com/laurentS/slowapi).
+Each IP address is limited to **5 login attempts per minute**. In addition, failed
+attempts are tracked per user email. After **5 consecutive failures**, the user
+is blocked from logging in for 15 minutes.
+
 ### Database migrations
 
 Alembic configuration lives in `fastapi_app/alembic`. To apply migrations run:

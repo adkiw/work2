@@ -1,28 +1,66 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy.orm import Session
 from alembic import command
 from alembic.config import Config
 import os
+from datetime import datetime, timedelta
 
 
 from . import models, schemas, crud, auth, dependencies
 from .database import Base
+
+limiter = Limiter(key_func=get_remote_address)
+app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+FAILED_ATTEMPTS: dict[str, dict] = {}
+MAX_FAILURES = 5
+LOCK_WINDOW = timedelta(minutes=15)
+
+def _user_locked(email: str) -> bool:
+    entry = FAILED_ATTEMPTS.get(email)
+    if not entry:
+        return False
+    locked_until = entry.get('locked_until')
+    return locked_until is not None and locked_until > datetime.utcnow()
+
+
+def _record_failure(email: str) -> None:
+    now = datetime.utcnow()
+    entry = FAILED_ATTEMPTS.get(email)
+    if not entry or now - entry.get('first_fail', now) > LOCK_WINDOW:
+        entry = {'count': 1, 'first_fail': now}
+    else:
+        entry['count'] = entry.get('count', 0) + 1
+    if entry['count'] >= MAX_FAILURES:
+        entry['locked_until'] = now + LOCK_WINDOW
+    FAILED_ATTEMPTS[email] = entry
+
+
+def _clear_failures(email: str) -> None:
+    FAILED_ATTEMPTS.pop(email, None)
 
 def run_migrations():
     base_dir = os.path.dirname(os.path.dirname(__file__))
     cfg = Config(os.path.join(base_dir, 'alembic.ini'))
     command.upgrade(cfg, 'head')
 
-app = FastAPI()
-
 @app.on_event('startup')
 def apply_migrations() -> None:
     run_migrations()
 
 @app.post('/login', response_model=schemas.TokenPair)
-def login(data: schemas.LoginRequest, db: Session = Depends(auth.get_db)):
+@limiter.limit('5/minute')
+def login(data: schemas.LoginRequest, request: Request, db: Session = Depends(auth.get_db)):
+    if _user_locked(data.email):
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail='Too many failed attempts')
     user = auth.authenticate_user(db, data.email, data.password)
     if not user:
+        _record_failure(data.email)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect credentials')
 
     association = (
@@ -31,8 +69,10 @@ def login(data: schemas.LoginRequest, db: Session = Depends(auth.get_db)):
         .first()
     )
     if not association:
+        _record_failure(data.email)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid tenant')
 
+    _clear_failures(data.email)
     roles = [association.role.name]
     access_token = auth.create_access_token(str(user.id), str(data.tenant_id), roles)
     refresh_token = auth.create_refresh_token(str(user.id), str(data.tenant_id), roles)
@@ -44,8 +84,8 @@ def login(data: schemas.LoginRequest, db: Session = Depends(auth.get_db)):
 
 
 @app.post('/auth/login', response_model=schemas.TokenPair)
-def auth_login(data: schemas.LoginRequest, db: Session = Depends(auth.get_db)):
-    return login(data, db)
+def auth_login(data: schemas.LoginRequest, request: Request, db: Session = Depends(auth.get_db)):
+    return login(data, request, db)
 
 
 @app.post('/auth/refresh', response_model=schemas.Token)
