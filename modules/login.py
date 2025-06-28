@@ -86,7 +86,7 @@ def show(conn, c):
             return
 
         st.sidebar.subheader("Prisijungimas")
-        username = st.sidebar.text_input("Vartotojas")
+        username = st.sidebar.text_input("El. paštas")
         password = st.sidebar.text_input("Slaptažodis", type="password")
         if st.sidebar.button("Prisijungti"):
             user_id, imone = verify_user(conn, c, username, password)
