@@ -3,14 +3,21 @@ import streamlit as st
 from .auth_utils import hash_password
 
 
+def rerun():
+    if hasattr(st, "rerun"):
+        st.rerun()
+    else:
+        st.experimental_rerun()
+
+
 def show(conn, c):
     st.subheader("Registracija")
-    email = st.text_input("El. paštas")
-    password = st.text_input("Slaptažodis", type="password")
-    vardas = st.text_input("Vardas")
-    pavarde = st.text_input("Pavardė")
-    pareigybe = st.text_input("Pareigybė")
-    imone = st.text_input("Įmonė")
+    email = st.text_input("El. paštas", key="reg_email")
+    password = st.text_input("Slaptažodis", type="password", key="reg_password")
+    vardas = st.text_input("Vardas", key="reg_vardas")
+    pavarde = st.text_input("Pavardė", key="reg_pavarde")
+    pareigybe = st.text_input("Pareigybė", key="reg_pareigybe")
+    imone = st.text_input("Įmonė", key="reg_imone")
 
     if st.button("Pateikti paraišką"):
         if not email or not password:
@@ -33,3 +40,15 @@ def show(conn, c):
                 )
                 conn.commit()
                 st.success("Registracija pateikta. Palaukite administratoriaus patvirtinimo.")
+                for key in [
+                    "reg_email",
+                    "reg_password",
+                    "reg_vardas",
+                    "reg_pavarde",
+                    "reg_pareigybe",
+                    "reg_imone",
+                ]:
+                    st.session_state.pop(key, None)
+                st.session_state.show_register = False
+                rerun()
+
