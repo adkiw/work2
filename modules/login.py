@@ -42,6 +42,12 @@ def verify_user(conn, c, username: str, password: str):
     )
     row = c.fetchone()
     if row and bcrypt.checkpw(password.encode(), row[1].encode()):
+        from datetime import datetime
+        c.execute(
+            "UPDATE users SET last_login = ? WHERE id = ?",
+            (datetime.utcnow().isoformat(), row[0]),
+        )
+        conn.commit()
         return row[0], row[2]
     return (None, None)
 
