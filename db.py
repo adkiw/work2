@@ -57,9 +57,15 @@ def init_db(db_path: str | None = None):
             tech_apziura      DATE,
             vadybininkas      TEXT,
             vairuotojai       TEXT,
-            priekaba          TEXT
+            priekaba          TEXT,
+            imone            TEXT
         )
     """)
+    c.execute("PRAGMA table_info(vilkikai)")
+    cols = [row[1] for row in c.fetchall()]
+    if 'imone' not in cols:
+        c.execute("ALTER TABLE vilkikai ADD COLUMN imone TEXT")
+    conn.commit()
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS priekabos (
