@@ -202,24 +202,28 @@ def init_db(db_path: str | None = None):
 
     admin_user_id = row[0]
 
-    # Užtikriname, kad egzistuotų "admin" rolė ir kad ji būtų priskirta adminui
-    c.execute("SELECT id FROM roles WHERE name = 'admin'")
-    r = c.fetchone()
-    if not r:
-        c.execute("INSERT INTO roles (name) VALUES ('admin')")
-        conn.commit()
-        role_id = c.lastrowid
-    else:
-        role_id = r[0]
+    # Užtikriname, kad egzistuotų būtinos rolės
+    required_roles = ["admin", "company_admin", "user"]
+    role_ids = {}
+    for r_name in required_roles:
+        c.execute("SELECT id FROM roles WHERE name = ?", (r_name,))
+        r = c.fetchone()
+        if not r:
+            c.execute("INSERT INTO roles (name) VALUES (?)", (r_name,))
+            conn.commit()
+            role_ids[r_name] = c.lastrowid
+        else:
+            role_ids[r_name] = r[0]
 
+    # Užtikriname, kad admin gautų ADMIN rolę
     c.execute(
         "SELECT 1 FROM user_roles WHERE user_id = ? AND role_id = ?",
-        (admin_user_id, role_id)
+        (admin_user_id, role_ids["admin"])
     )
     if not c.fetchone():
         c.execute(
             "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)",
-            (admin_user_id, role_id)
+            (admin_user_id, role_ids["admin"])
         )
         conn.commit()
 

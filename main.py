@@ -53,7 +53,7 @@ module_functions = {
 }
 
 MODULE_ROLES = {
-    "Registracijos": ["admin"],
+    "Registracijos": ["admin", "company_admin"],
 }
 
 def allowed(name: str) -> bool:

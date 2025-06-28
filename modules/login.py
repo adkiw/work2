@@ -10,6 +10,29 @@ def rerun():
 from .auth_utils import hash_password
 import bcrypt
 
+
+def assign_role(conn, c, user_id: int, role: str) -> None:
+    """Ensure the role exists and assign it to the given user."""
+    c.execute("SELECT id FROM roles WHERE name = ?", (role,))
+    row = c.fetchone()
+    if not row:
+        c.execute("INSERT INTO roles (name) VALUES (?)", (role,))
+        conn.commit()
+        role_id = c.lastrowid
+    else:
+        role_id = row[0]
+
+    c.execute(
+        "SELECT 1 FROM user_roles WHERE user_id = ? AND role_id = ?",
+        (user_id, role_id),
+    )
+    if not c.fetchone():
+        c.execute(
+            "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)",
+            (user_id, role_id),
+        )
+        conn.commit()
+
 def verify_user(conn, c, username: str, password: str):
     c.execute(
         "SELECT id, password_hash, imone FROM users WHERE username = ? AND aktyvus = 1",

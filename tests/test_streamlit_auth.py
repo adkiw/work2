@@ -25,3 +25,28 @@ def test_user_registration_flow(tmp_path):
     assert user_id is not None
     bad, _ = login.verify_user(conn, c, "user", "bad")
     assert bad is None
+
+
+def test_roles_and_assignment(tmp_path):
+    db_file = tmp_path / "roles.db"
+    conn, c = init_db(str(db_file))
+
+    # Roles table should contain predefined roles
+    c.execute("SELECT name FROM roles")
+    roles = {row[0] for row in c.fetchall()}
+    assert {"admin", "company_admin", "user"}.issubset(roles)
+
+    # Create user and assign role
+    pw_hash = auth_utils.hash_password("pass")
+    c.execute(
+        "INSERT INTO users (username, password_hash, imone, aktyvus) VALUES (?,?,?,1)",
+        ("boss", pw_hash, "ACME"),
+    )
+    user_id = c.lastrowid
+    login.assign_role(conn, c, user_id, "company_admin")
+
+    c.execute(
+        "SELECT 1 FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id=? AND r.name='company_admin'",
+        (user_id,),
+    )
+    assert c.fetchone() is not None

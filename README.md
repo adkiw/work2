@@ -33,6 +33,8 @@ Paleidus programą veikia prisijungimo sistema. Pirmą kartą duomenų bazėje a
 
 Prisijungimo formoje galima pasirinkti „Registruotis“ ir pateikti naujo vartotojo paraišką. Nauji naudotojai įrašomi su neaktyviu statusu ir negali prisijungti, kol administratorius jų nepatvirtins. Administratorius meniu skiltyje „Registracijos“ mato laukiančius vartotojus ir gali juos patvirtinti arba pašalinti.
 
+Be superadministratoriaus, sistema leidžia priskirti ir „įmonės administratoriaus“ rolę. Tokie naudotojai gali patvirtinti tik savo įmonės darbuotojų registracijas. Patvirtintiems darbuotojams automatiškai suteikiama „user“ rolė.
+
 ## FastAPI Multi-tenant Backend
 
 A minimal FastAPI backend is provided under `fastapi_app`. It uses PostgreSQL and SQLAlchemy.
