@@ -50,8 +50,24 @@ def show(conn, c):
                 user_display += f" ({row['imone']})"
 
             warn = False
-            if admin_domain and "@" in row['username']:
-                warn = row['username'].split("@")[-1].lower() != admin_domain
+            check_domain = admin_domain
+            if is_admin and row.get('imone'):
+                c.execute(
+                    """
+                    SELECT u.username FROM users u
+                    JOIN user_roles ur ON ur.user_id = u.id
+                    JOIN roles r ON ur.role_id = r.id
+                    WHERE r.name = ? AND u.imone = ? AND u.aktyvus = 1
+                    LIMIT 1
+                    """,
+                    (Role.COMPANY_ADMIN.value, row['imone']),
+                )
+                r_admin = c.fetchone()
+                if r_admin and "@" in r_admin[0]:
+                    check_domain = r_admin[0].split("@")[-1].lower()
+
+            if check_domain and "@" in row['username']:
+                warn = row['username'].split("@")[-1].lower() != check_domain
 
             if warn:
                 cols[0].write(f"⚠️ {user_display}")
