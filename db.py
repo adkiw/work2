@@ -156,7 +156,8 @@ def init_db(db_path: str | None = None):
             username TEXT UNIQUE,
             password_hash TEXT,
             imone TEXT,
-            aktyvus INTEGER DEFAULT 0
+            aktyvus INTEGER DEFAULT 0,
+            last_login TEXT
         )
     """)
 
@@ -168,6 +169,9 @@ def init_db(db_path: str | None = None):
         conn.commit()
     if "imone" not in existing_cols:
         c.execute("ALTER TABLE users ADD COLUMN imone TEXT")
+        conn.commit()
+    if "last_login" not in existing_cols:
+        c.execute("ALTER TABLE users ADD COLUMN last_login TEXT")
         conn.commit()
 
     c.execute("""

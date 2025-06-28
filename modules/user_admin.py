@@ -19,7 +19,8 @@ def show(conn, c):
 
     if is_admin:
         df = pd.read_sql_query(
-            "SELECT id, username, imone FROM users WHERE aktyvus = 0", conn
+            "SELECT id, username, imone FROM users WHERE aktyvus = 0",
+            conn,
         )
     elif is_comp_admin:
         df = pd.read_sql_query(
@@ -33,31 +34,56 @@ def show(conn, c):
 
     if df.empty:
         st.info("Nėra laukiančių vartotojų")
-        return
-
-    for _, row in df.iterrows():
-        if is_admin:
-            cols = st.columns([4, 1, 1, 1])
-        else:
-            cols = st.columns([4, 1, 1])
-        user_display = row['username']
-        if row.get('imone'):
-            user_display += f" ({row['imone']})"
-        cols[0].write(user_display)
-        if cols[1].button("Patvirtinti", key=f"approve_{row['id']}"):
-            c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
-            conn.commit()
-            login.assign_role(conn, c, row['id'], Role.USER)
-            rerun()
-        col_index = 2
-        if is_admin:
-            if cols[2].button("Patvirtinti kaip adminą", key=f"approve_admin_{row['id']}"):
+    else:
+        for _, row in df.iterrows():
+            if is_admin:
+                cols = st.columns([4, 1, 1, 1])
+            else:
+                cols = st.columns([4, 1, 1])
+            user_display = row['username']
+            if row.get('imone'):
+                user_display += f" ({row['imone']})"
+            cols[0].write(user_display)
+            if cols[1].button("Patvirtinti", key=f"approve_{row['id']}"):
                 c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
                 conn.commit()
-                login.assign_role(conn, c, row['id'], Role.COMPANY_ADMIN)
+                login.assign_role(conn, c, row['id'], Role.USER)
                 rerun()
-            col_index = 3
-        if cols[col_index].button("Šalinti", key=f"delete_{row['id']}"):
-            c.execute("DELETE FROM users WHERE id = ?", (row['id'],))
-            conn.commit()
-            rerun()
+            col_index = 2
+            if is_admin:
+                if cols[2].button("Patvirtinti kaip adminą", key=f"approve_admin_{row['id']}"):
+                    c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
+                    conn.commit()
+                    login.assign_role(conn, c, row['id'], Role.COMPANY_ADMIN)
+                    rerun()
+                col_index = 3
+            if cols[col_index].button("Šalinti", key=f"delete_{row['id']}"):
+                c.execute("DELETE FROM users WHERE id = ?", (row['id'],))
+                conn.commit()
+                rerun()
+
+    st.markdown("---")
+    st.subheader("Aktyvūs naudotojai")
+    if is_admin:
+        df_act = pd.read_sql_query(
+            "SELECT username, imone, last_login FROM users WHERE aktyvus = 1 ORDER BY imone, username",
+            conn,
+        )
+    else:
+        df_act = pd.read_sql_query(
+            "SELECT username, imone, last_login FROM users WHERE aktyvus = 1 AND imone = ? ORDER BY username",
+            conn,
+            params=(st.session_state.get("imone"),),
+        )
+
+    if df_act.empty:
+        st.info("Nėra aktyvių naudotojų")
+    else:
+        for comp, grp in df_act.groupby("imone"):
+            st.write(f"**{comp or 'Be įmonės'}**")
+            display_df = grp[["username", "last_login"]].rename(columns={
+                "username": "Vartotojas",
+                "last_login": "Paskutinis prisijungimas",
+            })
+            st.table(display_df.fillna(""))
+

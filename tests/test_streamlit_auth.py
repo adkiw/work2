@@ -52,3 +52,13 @@ def test_roles_and_assignment(tmp_path):
         (user_id, Role.COMPANY_ADMIN.value),
     )
     assert c.fetchone() is not None
+
+
+def test_last_login_recorded(tmp_path):
+    db_file = tmp_path / "login.db"
+    conn, c = init_db(str(db_file))
+    user_id, _ = login.verify_user(conn, c, "admin", "admin")
+    assert user_id is not None
+    c.execute("SELECT last_login FROM users WHERE id = ?", (user_id,))
+    row = c.fetchone()
+    assert row is not None and row[0] is not None
