@@ -19,12 +19,12 @@ def show(conn, c):
 
     if is_admin:
         df = pd.read_sql_query(
-            "SELECT id, username, imone FROM users WHERE aktyvus = 0",
+            "SELECT id, username, imone, vardas, pavarde, pareigybe FROM users WHERE aktyvus = 0",
             conn,
         )
     elif is_comp_admin:
         df = pd.read_sql_query(
-            "SELECT id, username, imone FROM users WHERE aktyvus = 0 AND imone = ?",
+            "SELECT id, username, imone, vardas, pavarde, pareigybe FROM users WHERE aktyvus = 0 AND imone = ?",
             conn,
             params=(st.session_state.get("imone"),),
         )
@@ -35,19 +35,44 @@ def show(conn, c):
     if df.empty:
         st.info("Nėra laukiančių vartotojų")
     else:
+        admin_domain = ""
+        if is_comp_admin and "@" in st.session_state.get("username", ""):
+            admin_domain = st.session_state["username"].split("@")[-1].lower()
+
         for _, row in df.iterrows():
             if is_admin:
                 cols = st.columns([4, 1, 1, 1])
             else:
                 cols = st.columns([4, 1, 1])
-            user_display = row['username']
+
+            user_display = f"{row.get('vardas','')} {row.get('pavarde','')} ({row['username']})"
             if row.get('imone'):
                 user_display += f" ({row['imone']})"
-            cols[0].write(user_display)
+
+            warn = False
+            if admin_domain and "@" in row['username']:
+                warn = row['username'].split("@")[-1].lower() != admin_domain
+
+            if warn:
+                cols[0].write(f"⚠️ {user_display}")
+            else:
+                cols[0].write(user_display)
+
             if cols[1].button("Patvirtinti", key=f"approve_{row['id']}"):
                 c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
                 conn.commit()
                 login.assign_role(conn, c, row['id'], Role.USER)
+                c.execute(
+                    "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
+                    (
+                        row.get('vardas'),
+                        row.get('pavarde'),
+                        row.get('pareigybe'),
+                        row['username'],
+                        row.get('imone'),
+                    ),
+                )
+                conn.commit()
                 rerun()
             col_index = 2
             if is_admin:
@@ -55,6 +80,17 @@ def show(conn, c):
                     c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
                     conn.commit()
                     login.assign_role(conn, c, row['id'], Role.COMPANY_ADMIN)
+                    c.execute(
+                        "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
+                        (
+                            row.get('vardas'),
+                            row.get('pavarde'),
+                            row.get('pareigybe'),
+                            row['username'],
+                            row.get('imone'),
+                        ),
+                    )
+                    conn.commit()
                     rerun()
                 col_index = 3
             if cols[col_index].button("Šalinti", key=f"delete_{row['id']}"):
