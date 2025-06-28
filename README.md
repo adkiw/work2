@@ -44,15 +44,20 @@ To run it locally with Docker:
 docker-compose -f fastapi_app/docker-compose.yml up --build
 ```
 
+Before starting, copy `fastapi_app/.env.example` to `fastapi_app/.env` and set a
+strong value for `SECRET_KEY`. Docker Compose will read this file and supply the
+variable to the container. Alternatively you can export `SECRET_KEY` in your
+environment.
+
 If running without Docker, install the FastAPI dependencies first:
 
 ```bash
 pip install -r fastapi_app/requirements.txt
 ```
 
-The backend requires a `SECRET_KEY` used for JWT signing. Set this environment
-variable or create a `.env` file containing `SECRET_KEY=<your secret>` before
-starting the API. If it is missing the application will fail to start.
+The backend requires a `SECRET_KEY` used for JWT signing. Ensure the `.env` file
+defines this variable before starting the API; otherwise the application will
+fail to start.
 
 The API exposes endpoints for user creation and JWT-based login.
 
