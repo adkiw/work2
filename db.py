@@ -2,6 +2,7 @@
 import sqlite3
 import os
 from modules.auth_utils import hash_password
+from modules.roles import Role
 
 def init_db(db_path: str | None = None):
     """
@@ -203,27 +204,28 @@ def init_db(db_path: str | None = None):
     admin_user_id = row[0]
 
     # Užtikriname, kad egzistuotų būtinos rolės
-    required_roles = ["admin", "company_admin", "user"]
+    required_roles = [Role.ADMIN, Role.COMPANY_ADMIN, Role.USER]
     role_ids = {}
-    for r_name in required_roles:
+    for role in required_roles:
+        r_name = role.value
         c.execute("SELECT id FROM roles WHERE name = ?", (r_name,))
-        r = c.fetchone()
-        if not r:
+        row_role = c.fetchone()
+        if not row_role:
             c.execute("INSERT INTO roles (name) VALUES (?)", (r_name,))
             conn.commit()
             role_ids[r_name] = c.lastrowid
         else:
-            role_ids[r_name] = r[0]
+            role_ids[r_name] = row_role[0]
 
     # Užtikriname, kad admin gautų ADMIN rolę
     c.execute(
         "SELECT 1 FROM user_roles WHERE user_id = ? AND role_id = ?",
-        (admin_user_id, role_ids["admin"])
+        (admin_user_id, role_ids[Role.ADMIN.value])
     )
     if not c.fetchone():
         c.execute(
             "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)",
-            (admin_user_id, role_ids["admin"])
+            (admin_user_id, role_ids[Role.ADMIN.value])
         )
         conn.commit()
 

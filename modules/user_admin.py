@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from . import login
+from .roles import Role
 
 
 def rerun():
@@ -13,8 +14,8 @@ def rerun():
 def show(conn, c):
     st.title("Naudotojų patvirtinimas")
 
-    is_admin = login.has_role(conn, c, "admin")
-    is_comp_admin = login.has_role(conn, c, "company_admin")
+    is_admin = login.has_role(conn, c, Role.ADMIN)
+    is_comp_admin = login.has_role(conn, c, Role.COMPANY_ADMIN)
 
     if is_admin:
         df = pd.read_sql_query(
@@ -46,14 +47,14 @@ def show(conn, c):
         if cols[1].button("Patvirtinti", key=f"approve_{row['id']}"):
             c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
             conn.commit()
-            login.assign_role(conn, c, row['id'], "user")
+            login.assign_role(conn, c, row['id'], Role.USER)
             rerun()
         col_index = 2
         if is_admin:
             if cols[2].button("Patvirtinti kaip adminą", key=f"approve_admin_{row['id']}"):
                 c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
                 conn.commit()
-                login.assign_role(conn, c, row['id'], "company_admin")
+                login.assign_role(conn, c, row['id'], Role.COMPANY_ADMIN)
                 rerun()
             col_index = 3
         if cols[col_index].button("Šalinti", key=f"delete_{row['id']}"):

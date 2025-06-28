@@ -1,5 +1,6 @@
 # main.py
 import streamlit as st
+from modules.roles import Role
 
 # 1) Puslapio nustatymai
 st.set_page_config(layout="wide")
@@ -53,7 +54,7 @@ module_functions = {
 }
 
 MODULE_ROLES = {
-    "Registracijos": ["admin", "company_admin"],
+    "Registracijos": [Role.ADMIN, Role.COMPANY_ADMIN],
 }
 
 def allowed(name: str) -> bool:
