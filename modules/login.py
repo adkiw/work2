@@ -8,15 +8,17 @@ def rerun():
         st.experimental_rerun()
 
 from .auth_utils import hash_password
+from .roles import Role
 import bcrypt
 
 
-def assign_role(conn, c, user_id: int, role: str) -> None:
+def assign_role(conn, c, user_id: int, role: Role) -> None:
     """Ensure the role exists and assign it to the given user."""
-    c.execute("SELECT id FROM roles WHERE name = ?", (role,))
+    role_name = role.value
+    c.execute("SELECT id FROM roles WHERE name = ?", (role_name,))
     row = c.fetchone()
     if not row:
-        c.execute("INSERT INTO roles (name) VALUES (?)", (role,))
+        c.execute("INSERT INTO roles (name) VALUES (?)", (role_name,))
         conn.commit()
         role_id = c.lastrowid
     else:
@@ -44,7 +46,7 @@ def verify_user(conn, c, username: str, password: str):
     return (None, None)
 
 
-def has_role(conn, c, role: str) -> bool:
+def has_role(conn, c, role: Role) -> bool:
     if "user_id" not in st.session_state:
         return False
     user_id = st.session_state.user_id
@@ -54,7 +56,7 @@ def has_role(conn, c, role: str) -> bool:
         JOIN roles r ON ur.role_id = r.id
         WHERE ur.user_id = ? AND r.name = ?
         """,
-        (user_id, role),
+        (user_id, role.value),
     )
     return c.fetchone() is not None
 

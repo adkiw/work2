@@ -1,5 +1,6 @@
 from db import init_db
 from modules import login, auth_utils
+from modules.roles import Role
 
 
 def test_admin_login(tmp_path):
@@ -34,7 +35,8 @@ def test_roles_and_assignment(tmp_path):
     # Roles table should contain predefined roles
     c.execute("SELECT name FROM roles")
     roles = {row[0] for row in c.fetchall()}
-    assert {"admin", "company_admin", "user"}.issubset(roles)
+    expected = {r.value for r in [Role.ADMIN, Role.COMPANY_ADMIN, Role.USER]}
+    assert expected.issubset(roles)
 
     # Create user and assign role
     pw_hash = auth_utils.hash_password("pass")
@@ -43,10 +45,10 @@ def test_roles_and_assignment(tmp_path):
         ("boss", pw_hash, "ACME"),
     )
     user_id = c.lastrowid
-    login.assign_role(conn, c, user_id, "company_admin")
+    login.assign_role(conn, c, user_id, Role.COMPANY_ADMIN)
 
     c.execute(
-        "SELECT 1 FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id=? AND r.name='company_admin'",
-        (user_id,),
+        "SELECT 1 FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id=? AND r.name=?",
+        (user_id, Role.COMPANY_ADMIN.value),
     )
     assert c.fetchone() is not None
