@@ -50,8 +50,24 @@ def show(conn, c):
                 user_display += f" ({row['imone']})"
 
             warn = False
-            if admin_domain and "@" in row['username']:
-                warn = row['username'].split("@")[-1].lower() != admin_domain
+            check_domain = admin_domain
+            if is_admin and row.get('imone'):
+                c.execute(
+                    """
+                    SELECT u.username FROM users u
+                    JOIN user_roles ur ON ur.user_id = u.id
+                    JOIN roles r ON ur.role_id = r.id
+                    WHERE r.name = ? AND u.imone = ? AND u.aktyvus = 1
+                    LIMIT 1
+                    """,
+                    (Role.COMPANY_ADMIN.value, row['imone']),
+                )
+                r_admin = c.fetchone()
+                if r_admin and "@" in r_admin[0]:
+                    check_domain = r_admin[0].split("@")[-1].lower()
+
+            if check_domain and "@" in row['username']:
+                warn = row['username'].split("@")[-1].lower() != check_domain
 
             if warn:
                 cols[0].write(f"⚠️ {user_display}")
@@ -82,21 +98,26 @@ def show(conn, c):
             col_index = 2
             if is_admin:
                 if cols[2].button("Patvirtinti kaip adminą", key=f"approve_admin_{row['id']}"):
-                    c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
-                    conn.commit()
-                    login.assign_role(conn, c, row['id'], Role.COMPANY_ADMIN)
-                    c.execute(
-                        "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
-                        (
-                            row.get('vardas'),
-                            row.get('pavarde'),
-                            row.get('pareigybe'),
-                            row['username'],
-                            row.get('imone'),
-                        ),
-                    )
-                    conn.commit()
-                    rerun()
+                    if warn:
+                        st.error(
+                            "Vartotojo el. pašto domenas nesutampa su įmonės domenu."
+                        )
+                    else:
+                        c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
+                        conn.commit()
+                        login.assign_role(conn, c, row['id'], Role.COMPANY_ADMIN)
+                        c.execute(
+                            "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
+                            (
+                                row.get('vardas'),
+                                row.get('pavarde'),
+                                row.get('pareigybe'),
+                                row['username'],
+                                row.get('imone'),
+                            ),
+                        )
+                        conn.commit()
+                        rerun()
                 col_index = 3
             if cols[col_index].button("Šalinti", key=f"delete_{row['id']}"):
                 c.execute("DELETE FROM users WHERE id = ?", (row['id'],))

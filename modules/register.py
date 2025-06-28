@@ -39,7 +39,9 @@ def show(conn, c):
                     ),
                 )
                 conn.commit()
-                st.success("Registracija pateikta. Palaukite administratoriaus patvirtinimo.")
+                st.session_state.registration_message = (
+                    "Paraiška pateikta. Palaukite administratoriaus patvirtinimo."
+                )
                 for key in [
                     "reg_email",
                     "reg_password",
