@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+from . import login
 
 def show(conn, c):
     # 1) Užtikriname, kad lentelėje „vilkikai“ būtų visi reikalingi stulpeliai
@@ -128,11 +129,14 @@ def show(conn, c):
         st.button("➕ Pridėti naują vilkiką", on_click=new_vilk, use_container_width=True)
 
         # 6.3) Vilkikų sąrašo atvaizdavimas
-        df = pd.read_sql_query(
-            "SELECT * FROM vilkikai WHERE imone = ? ORDER BY tech_apziura ASC",
-            conn,
-            params=(st.session_state.get('imone'),)
-        )
+        is_admin = login.has_role(conn, c, "admin")
+        if is_admin:
+            query = "SELECT * FROM vilkikai ORDER BY tech_apziura ASC"
+            params = ()
+        else:
+            query = "SELECT * FROM vilkikai WHERE imone = ? ORDER BY tech_apziura ASC"
+            params = (st.session_state.get('imone'),)
+        df = pd.read_sql_query(query, conn, params=params)
         if df.empty:
             st.info("🔍 Kol kas nėra vilkikų.")
             return
@@ -144,6 +148,8 @@ def show(conn, c):
             'pagaminimo_metai': 'Pirmos registracijos data',
             'vadybininkas': 'Transporto vadybininkas'
         }, inplace=True)
+        if is_admin and 'imone' in df_disp.columns:
+            df_disp.rename(columns={'imone': 'Įmonė'}, inplace=True)
         # Vairuotojai atskiriami į du stulpelius
         drivers = df_disp.get('vairuotojai', pd.Series(dtype=str)).fillna('')
         drivers_df = drivers.str.split(', ', n=1, expand=True)
