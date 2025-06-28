@@ -59,21 +59,26 @@ def show(conn, c):
                 cols[0].write(user_display)
 
             if cols[1].button("Patvirtinti", key=f"approve_{row['id']}"):
-                c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
-                conn.commit()
-                login.assign_role(conn, c, row['id'], Role.USER)
-                c.execute(
-                    "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
-                    (
-                        row.get('vardas'),
-                        row.get('pavarde'),
-                        row.get('pareigybe'),
-                        row['username'],
-                        row.get('imone'),
-                    ),
-                )
-                conn.commit()
-                rerun()
+                if warn:
+                    st.error(
+                        "Vartotojo el. pašto domenas nesutampa su įmonės domenu."
+                    )
+                else:
+                    c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
+                    conn.commit()
+                    login.assign_role(conn, c, row['id'], Role.USER)
+                    c.execute(
+                        "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
+                        (
+                            row.get('vardas'),
+                            row.get('pavarde'),
+                            row.get('pareigybe'),
+                            row['username'],
+                            row.get('imone'),
+                        ),
+                    )
+                    conn.commit()
+                    rerun()
             col_index = 2
             if is_admin:
                 if cols[2].button("Patvirtinti kaip adminą", key=f"approve_admin_{row['id']}"):
