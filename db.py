@@ -79,6 +79,11 @@ def init_db(db_path: str | None = None):
             draudimas         DATE
         )
     """)
+    c.execute("PRAGMA table_info(priekabos)")
+    cols = [row[1] for row in c.fetchall()]
+    if 'imone' not in cols:
+        c.execute("ALTER TABLE priekabos ADD COLUMN imone TEXT")
+    conn.commit()
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS grupes (

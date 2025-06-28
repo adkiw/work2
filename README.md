@@ -17,9 +17,9 @@ This repository contains a Streamlit based application for logistics companies. 
    from db import init_db
    conn, cursor = init_db()  # uses main.db by default or DB_PATH if set
    ```
-   The `init_db()` function now creates an `imone` column in the `vilkikai`
-   table by default. When run on an older database it will automatically add
-   this column if it is missing.
+   The `init_db()` function now creates an `imone` column in both the
+   `vilkikai` and `priekabos` tables by default. When run on an older database
+   it will automatically add this column if it is missing.
 
 3. Start the application:
    ```bash
