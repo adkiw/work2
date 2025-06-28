@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from . import login
 
 def show(conn, c):
     # Užtikrinti, kad egzistuotų stulpelis „aktyvus“ darbuotojų lentelėje
@@ -32,11 +33,15 @@ def show(conn, c):
 
     # 1. SĄRAŠO rodinys su filtravimu (be headerių virš ir po filtrų)
     if st.session_state.selected_emp is None:
-        df = pd.read_sql(
-            "SELECT id, vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone, aktyvus FROM darbuotojai WHERE imone = ?",
-            conn,
-            params=(st.session_state.get('imone'),)
-        )
+        is_admin = login.has_role(conn, c, "admin")
+        if is_admin:
+            query = "SELECT id, vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone, aktyvus FROM darbuotojai"
+            params = ()
+        else:
+            query = "SELECT id, vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone, aktyvus FROM darbuotojai WHERE imone = ?"
+            params = (st.session_state.get("imone"),)
+        df = pd.read_sql(query, conn, params=params)
+
 
         if df.empty:
             st.info("ℹ️ Nėra darbuotojų.")
@@ -79,10 +84,12 @@ def show(conn, c):
     is_new = (sel == 0)
     emp_data = {}
     if not is_new:
-        df_emp = pd.read_sql(
-            "SELECT * FROM darbuotojai WHERE id=? AND imone=?", conn,
-            params=(sel, st.session_state.get('imone'))
-        )
+        is_admin = login.has_role(conn, c, "admin")
+        if is_admin:
+            df_emp = pd.read_sql("SELECT * FROM darbuotojai WHERE id=?", conn, params=(sel,))
+        else:
+            df_emp = pd.read_sql("SELECT * FROM darbuotojai WHERE id=? AND imone=?", conn, params=(sel, st.session_state.get("imone")))
+
         if df_emp.empty:
             st.error("Darbuotojas nerastas.")
             clear_selection()

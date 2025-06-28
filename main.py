@@ -53,7 +53,6 @@ module_functions = {
 }
 
 MODULE_ROLES = {
-    "Darbuotojai": ["admin"],
     "Registracijos": ["admin"],
 }
 
