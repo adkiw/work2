@@ -85,6 +85,10 @@ def show(conn, c):
                 rerun()
             return
 
+        msg = st.session_state.pop("registration_message", None)
+        if msg:
+            st.sidebar.success(msg)
+
         st.sidebar.subheader("Prisijungimas")
         username = st.sidebar.text_input("El. paštas")
         password = st.sidebar.text_input("Slaptažodis", type="password")
