@@ -3,6 +3,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
+from . import login
+from .roles import Role
 
 # ==============================
 # 0) CSS tam, kad visi headeriai ir reikšmės nebūtų lūžinami,
@@ -80,6 +82,7 @@ def relative_time(created_str):
 
 def show(conn, c):
     st.title("Padėties atnaujinimai")
+    is_admin = login.has_role(conn, c, Role.ADMIN)
 
     # ==============================
     # 1) Užtikriname, kad lentelėje "vilkiku_darbo_laikai" būtų visi stulpeliai
@@ -109,14 +112,27 @@ def show(conn, c):
     # 2) Filtras: Transporto vadybininkas ir Transporto grupė (vienoje eilutėje)
     # ==============================
     # Gauname visus unikalius vadybininkus (pilną vardą, kuris įrašytas vilkikai.vadybininkas)
-    vadybininkai = [
-        r[0] for r in c.execute(
-            "SELECT DISTINCT vadybininkas FROM vilkikai WHERE vadybininkas IS NOT NULL AND vadybininkas != ''"
-        ).fetchall()
-    ]
+    vad_query = (
+        "SELECT DISTINCT vadybininkas FROM vilkikai "
+        "WHERE vadybininkas IS NOT NULL AND vadybininkas != ''"
+    )
+    vad_params = ()
+    if not is_admin:
+        vad_query += " AND imone = ?"
+        vad_params = (st.session_state.get('imone'),)
+    vadybininkai = [r[0] for r in c.execute(vad_query, vad_params).fetchall()]
 
     # Gauname grupių sąrašą pagal 'numeris' (ne pavadinimą!), nes darbuotojų lentelėje grupe = numeris
-    grupe_list = [r[0] for r in c.execute("SELECT numeris FROM grupes").fetchall()]
+    if is_admin:
+        grupe_list = [r[0] for r in c.execute("SELECT numeris FROM grupes").fetchall()]
+    else:
+        grupe_list = [
+            r[0]
+            for r in c.execute(
+                "SELECT numeris FROM grupes WHERE imone = ?",
+                (st.session_state.get('imone'),),
+            ).fetchall()
+        ]
 
     col1, col2 = st.columns(2)
     vadyb         = col1.selectbox("Transporto vadybininkas", [""] + vadybininkai, index=0)
@@ -126,18 +142,25 @@ def show(conn, c):
     # 3) Pasirenkame vilkikus pagal filtrus
     # ==============================
     # Pataisyta JOIN užklausa, kad surastų darbuotoją pagal pilną vardą ("vardas pavardė")
-    vilkikai_info = c.execute("""
+    vilk_query = """
         SELECT v.numeris, d.grupe
         FROM vilkikai v
         LEFT JOIN darbuotojai d
           ON v.vadybininkas = (d.vardas || ' ' || d.pavarde)
-    """).fetchall()
+    """
+    params = ()
+    if not is_admin:
+        vilk_query += " WHERE v.imone = ?"
+        params = (st.session_state.get('imone'),)
+    vilkikai_info = c.execute(vilk_query, params).fetchall()
 
     vilkikai = []
     for numeris, gr in vilkikai_info:
         # Filtruojame pagal vadybininką, jei pasirinktas
         if vadyb and c.execute(
-            "SELECT vadybininkas FROM vilkikai WHERE numeris = ?", (numeris,)
+            "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"{}
+            .format("" if is_admin else " AND imone = ?"),
+            (numeris,) if is_admin else (numeris, st.session_state.get('imone')),
         ).fetchone()[0] != vadyb:
             continue
         # Filtruojame pagal grupę (darbuotojų lentelėje saugomas 'grupe' = grupės numeris)
@@ -166,27 +189,41 @@ def show(conn, c):
             kilometrai, ekspedicijos_vadybininkas
         FROM kroviniai
         WHERE vilkikas IN ({placeholders}) AND pakrovimo_data >= ?
-        ORDER BY vilkikas ASC, pakrovimo_data ASC
     """
     params = list(vilkikai) + [str(today)]
+    if not is_admin:
+        query += " AND imone = ?"
+        params.append(st.session_state.get('imone'))
+    query += " ORDER BY vilkikas ASC, pakrovimo_data ASC"
     kroviniai = c.execute(query, params).fetchall()
 
     # ==============================
     # 5) Žemėlapiai transporto ir ekspedicijos grupėms
     # ==============================
     # Pataisyta JOIN sąlyga: darbuotojų vardas+vardas su vilkikai.vadybininkas
-    vilk_grupes = dict(c.execute("""
+    vilk_gr_query = """
         SELECT v.numeris, d.grupe
         FROM vilkikai v
         LEFT JOIN darbuotojai d
           ON v.vadybininkas = (d.vardas || ' ' || d.pavarde)
-    """).fetchall())
-    eksp_grupes = dict(c.execute("""
+    """
+    params = ()
+    if not is_admin:
+        vilk_gr_query += " WHERE v.imone = ?"
+        params = (st.session_state.get('imone'),)
+    vilk_grupes = dict(c.execute(vilk_gr_query, params).fetchall())
+
+    eksp_gr_query = """
         SELECT k.id, d.grupe
         FROM kroviniai k
         LEFT JOIN darbuotojai d
           ON k.ekspedicijos_vadybininkas = (d.vardas || ' ' || d.pavarde)
-    """).fetchall())
+    """
+    params2 = ()
+    if not is_admin:
+        eksp_gr_query += " WHERE k.imone = ?"
+        params2 = (st.session_state.get('imone'),)
+    eksp_grupes = dict(c.execute(eksp_gr_query, params2).fetchall())
 
     # ==============================
     # 6) Stulpelių proporcijos (vienetai proporcingi)
@@ -408,7 +445,11 @@ def show(conn, c):
                     pk_status_in, pk_laikas_in, formatted_pk_date,
                     ikr_status_in, ikr_laikas_in, formatted_ikr_date,
                     komentaras_in,
-                    c.execute("SELECT vadybininkas FROM vilkikai WHERE numeris = ?", (k[5],)).fetchone()[0],
+                    c.execute(
+                        "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"{}
+                        .format("" if is_admin else " AND imone = ?"),
+                        (k[5],) if is_admin else (k[5], st.session_state.get('imone')),
+                    ).fetchone()[0],
                     eksp_vad,
                     "", "",
                     jau_irasas[0]
@@ -427,7 +468,11 @@ def show(conn, c):
                     pk_status_in, pk_laikas_in, formatted_pk_date,
                     ikr_status_in, ikr_laikas_in, formatted_ikr_date,
                     komentaras_in,
-                    c.execute("SELECT vadybininkas FROM vilkikai WHERE numeris = ?", (k[5],)).fetchone()[0],
+                    c.execute(
+                        "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"{}
+                        .format("" if is_admin else " AND imone = ?"),
+                        (k[5],) if is_admin else (k[5], st.session_state.get('imone')),
+                    ).fetchone()[0],
                     eksp_vad,
                     "", ""
                 ))
