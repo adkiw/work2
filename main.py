@@ -11,7 +11,13 @@ st.markdown(
 <style>
   .css-18e3th9 { padding-top: 0 !important; margin-top: 0 !important; }
   .stApp { padding-top: 3mm !important; }
-  .top-stripes { position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
+  .top-stripes {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100000; /* keep stripes above sidebar */
+  }
   .stRadio > div          { height: 1cm !important; margin-top: 0 !important; }
   .stRadio > div > label > div { padding-top: 0 !important; padding-bottom: 0 !important; }
 </style>
