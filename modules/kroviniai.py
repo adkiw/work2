@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import date, time, timedelta
+from . import login
+from .roles import Role
 
 EU_COUNTRIES = [
     ("", ""), ("Lietuva", "LT"), ("Baltarusija", "BY"), ("Latvija", "LV"), ("Lenkija", "PL"), ("Vokietija", "DE"),
@@ -75,6 +77,7 @@ def get_vieta(salis, regionas):
 
 def show(conn, c):
     st.title("Užsakymų valdymas")
+    is_admin = login.has_role(conn, c, Role.ADMIN)
     add_clicked = st.button("➕ Pridėti naują krovinį", use_container_width=True)
 
     # Įsitikinti, kad visi stulpeliai egzistuoja lentelėje 'kroviniai'
