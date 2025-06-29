@@ -5,7 +5,7 @@ from modules.roles import Role
 # 1) Puslapio nustatymai
 st.set_page_config(layout="wide")
 
-# 2) Minimalus CSS (radio bar lieka viršuje)
+# 2) Minimalus CSS (radio bar lieka viršuje, dekoratyvinės juostos visada matomos)
 st.markdown(
     """
 <style>
@@ -16,7 +16,7 @@ st.markdown(
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 100000; /* keep stripes above sidebar */
+    z-index: 100000; /* keep stripes above sidebar and login menu */
   }
   .stRadio > div          { height: 1cm !important; margin-top: 0 !important; }
   .stRadio > div > label > div { padding-top: 0 !important; padding-bottom: 0 !important; }
