@@ -125,6 +125,7 @@ def show(conn, c):
             conn.commit()
             st.success("✅ Priekabos paskirstymas sėkmingai atnaujintas.")
             clear_selection()
+            st.experimental_rerun()
 
         # 6.2) Mygtukas „Pridėti naują vilkiką“
         st.button("➕ Pridėti naują vilkiką", on_click=new_vilk, use_container_width=True)
@@ -415,6 +416,7 @@ def show(conn, c):
                 if draud_date:
                     st.info(f"🛡️ Dienų iki draudimo pabaigos liko: {(draud_date - date.today()).days}")
                 clear_selection()
+                st.experimental_rerun()
             except Exception as e:
                 st.error(f"❌ Klaida saugant: {e}")
 
