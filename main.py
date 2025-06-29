@@ -5,35 +5,14 @@ from modules.roles import Role
 # 1) Puslapio nustatymai
 st.set_page_config(layout="wide")
 
-# 2) Minimalus CSS (radio bar lieka viršuje, dekoratyvinės juostos visada matomos)
+# 2) Minimalus CSS – meniu prigludęs prie viršaus
 st.markdown(
     """
 <style>
   .css-18e3th9 { padding-top: 0 !important; margin-top: 0 !important; }
-  .stApp { padding-top: 3mm !important; }
-  .top-stripes {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 100000; /* keep stripes above sidebar and login menu */
-  }
-  .stRadio > div          { height: 1cm !important; margin-top: 0 !important; }
-  .stRadio > div > label > div { padding-top: 0 !important; padding-bottom: 0 !important; }
+  .stApp { padding-top: 0 !important; }
 </style>
 """,
-    unsafe_allow_html=True,
-)
-
-# 3) Dekoratyvinės juostos puslapio viršuje
-st.markdown(
-    """
-    <div class='top-stripes'>
-      <div style='height:1mm; width:100%; background-color: orange;'></div>
-      <div style='height:1mm; width:100%; background-color: black;'></div>
-      <div style='height:1mm; width:100%; background-color: violet;'></div>
-    </div>
-    """,
     unsafe_allow_html=True,
 )
 # 4) Inicializuojame DB – lentelės sukuriamos funkcijoje init_db()
@@ -90,7 +69,8 @@ def allowed(name: str) -> bool:
 
 available_modules = [n for n in module_functions.keys() if allowed(n)]
 
-pasirinktas = st.radio("", available_modules, horizontal=True)
-
-# 6) Maršrutizacija
-module_functions[pasirinktas](conn, c)
+# 6) Meniu juosta naudojant Streamlit tabs
+tabs = st.tabs(available_modules)
+for tab, name in zip(tabs, available_modules):
+    with tab:
+        module_functions[name](conn, c)
