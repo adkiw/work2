@@ -83,6 +83,7 @@ def relative_time(created_str):
 def show(conn, c):
     st.title("Padėties atnaujinimai")
     is_admin = login.has_role(conn, c, Role.ADMIN)
+    company = st.session_state.get("imone")
 
     # ==============================
     # 1) Užtikriname, kad lentelėje "vilkiku_darbo_laikai" būtų visi stulpeliai
@@ -119,7 +120,7 @@ def show(conn, c):
     vad_params = ()
     if not is_admin:
         vad_query += " AND imone = ?"
-        vad_params = (st.session_state.get('imone'),)
+        vad_params = (company,)
     vadybininkai = [r[0] for r in c.execute(vad_query, vad_params).fetchall()]
 
     # Gauname grupių sąrašą pagal 'numeris' (ne pavadinimą!), nes darbuotojų lentelėje grupe = numeris
@@ -130,7 +131,7 @@ def show(conn, c):
             r[0]
             for r in c.execute(
                 "SELECT numeris FROM grupes WHERE imone = ?",
-                (st.session_state.get('imone'),),
+                (company,),
             ).fetchall()
         ]
 
@@ -151,7 +152,7 @@ def show(conn, c):
     params = ()
     if not is_admin:
         vilk_query += " WHERE v.imone = ?"
-        params = (st.session_state.get('imone'),)
+        params = (company,)
     vilkikai_info = c.execute(vilk_query, params).fetchall()
 
     vilkikai = []
@@ -160,7 +161,7 @@ def show(conn, c):
         if vadyb and c.execute(
             "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"{}
             .format("" if is_admin else " AND imone = ?"),
-            (numeris,) if is_admin else (numeris, st.session_state.get('imone')),
+            (numeris,) if is_admin else (numeris, company),
         ).fetchone()[0] != vadyb:
             continue
         # Filtruojame pagal grupę (darbuotojų lentelėje saugomas 'grupe' = grupės numeris)
@@ -193,7 +194,7 @@ def show(conn, c):
     params = list(vilkikai) + [str(today)]
     if not is_admin:
         query += " AND imone = ?"
-        params.append(st.session_state.get('imone'))
+        params.append(company)
     query += " ORDER BY vilkikas ASC, pakrovimo_data ASC"
     kroviniai = c.execute(query, params).fetchall()
 
@@ -210,7 +211,7 @@ def show(conn, c):
     params = ()
     if not is_admin:
         vilk_gr_query += " WHERE v.imone = ?"
-        params = (st.session_state.get('imone'),)
+        params = (company,)
     vilk_grupes = dict(c.execute(vilk_gr_query, params).fetchall())
 
     eksp_gr_query = """
@@ -222,7 +223,7 @@ def show(conn, c):
     params2 = ()
     if not is_admin:
         eksp_gr_query += " WHERE k.imone = ?"
-        params2 = (st.session_state.get('imone'),)
+        params2 = (company,)
     eksp_grupes = dict(c.execute(eksp_gr_query, params2).fetchall())
 
     # ==============================
@@ -448,7 +449,7 @@ def show(conn, c):
                     c.execute(
                         "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"{}
                         .format("" if is_admin else " AND imone = ?"),
-                        (k[5],) if is_admin else (k[5], st.session_state.get('imone')),
+                        (k[5],) if is_admin else (k[5], company),
                     ).fetchone()[0],
                     eksp_vad,
                     "", "",
@@ -471,7 +472,7 @@ def show(conn, c):
                     c.execute(
                         "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"{}
                         .format("" if is_admin else " AND imone = ?"),
-                        (k[5],) if is_admin else (k[5], st.session_state.get('imone')),
+                        (k[5],) if is_admin else (k[5], company),
                     ).fetchone()[0],
                     eksp_vad,
                     "", ""

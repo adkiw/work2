@@ -9,6 +9,7 @@ from .roles import Role
 def show(conn, c):
     st.title("Planavimas")
     is_admin = login.has_role(conn, c, Role.ADMIN)
+    company = st.session_state.get("imone")
 
     # ==============================
     # 0) Patikriname, ar lentelėje "kroviniai" yra reikiami stulpeliai.
@@ -57,7 +58,7 @@ def show(conn, c):
     else:
         c.execute(
             "SELECT id, numeris, pavadinimas FROM grupes WHERE imone = ? ORDER BY numeris",
-            (st.session_state.get('imone'),)
+            (company,)
         )
         grupes = c.fetchall()  # [(id, numeris, pavadinimas), ...]
 
@@ -86,7 +87,7 @@ def show(conn, c):
     else:
         c.execute(
             "SELECT numeris, priekaba, vadybininkas FROM vilkikai WHERE imone = ? ORDER BY numeris",
-            (st.session_state.get('imone'),)
+            (company,)
         )
         vilkikai_rows = c.fetchall()
     priekaba_map = {row[0]: (row[1] or "") for row in vilkikai_rows}
@@ -111,7 +112,7 @@ def show(conn, c):
     params = [start_str, end_str]
     if not is_admin:
         query += " AND imone = ?"
-        params.append(st.session_state.get('imone'))
+        params.append(company)
     query += " ORDER BY vilkikas, date(iskrovimo_data)"
     df = pd.read_sql_query(query, conn, params=params)
 
