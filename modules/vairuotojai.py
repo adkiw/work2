@@ -123,7 +123,7 @@ def show(conn, c):
                     ),
                 )
                 conn.commit()
-                st.success("✅ Įrašyta.")
+                st.session_state.vairuotojai_msg = "✅ Įrašyta."
                 _clear_sel()
                 rerun()
         return
@@ -213,7 +213,7 @@ def show(conn, c):
                 ),
             )
             conn.commit()
-            st.success("✅ Pakeitimai išsaugoti.")
+            st.session_state.vairuotojai_msg = "✅ Pakeitimai išsaugoti."
             _clear_sel()
             rerun()
         return
@@ -229,6 +229,10 @@ def show(conn, c):
             conn,
             params=(st.session_state.get('imone'),),
         )
+
+    msg = st.session_state.pop('vairuotojai_msg', None)
+    if msg:
+        st.success(msg)
     df = df.fillna("")
 
     # ---------- Filtrų eilutė ----------

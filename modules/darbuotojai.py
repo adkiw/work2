@@ -45,6 +45,9 @@ def show(conn, c):
             params = (st.session_state.get("imone"),)
         df = pd.read_sql(query, conn, params=params)
 
+        msg = st.session_state.pop("darbuotojai_msg", None)
+        if msg:
+            st.success(msg)
 
         if df.empty:
             st.info("ℹ️ Nėra darbuotojų.")
@@ -210,9 +213,8 @@ def show(conn, c):
             rec_id = sel
         conn.commit()
         log_action(conn, c, st.session_state.get('user_id'), action, 'darbuotojai', rec_id)
-        st.success("✅ Duomenys įrašyti.")
+        st.session_state.darbuotojai_msg = "✅ Duomenys įrašyti."
         clear_selection()
-        rerun()
 
     btn_save, btn_back = st.columns(2)
     btn_save.button("💾 Išsaugoti darbuotoją", on_click=do_save)

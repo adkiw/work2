@@ -194,6 +194,10 @@ def show(conn, c):
                 conn,
                 params=(st.session_state.get('imone'),),
             )
+
+        msg = st.session_state.pop("kroviniai_msg", None)
+        if msg:
+            st.success(msg)
         if df.empty:
             st.info("Kol kas nėra krovinių.")
         else:
@@ -586,7 +590,7 @@ def show(conn, c):
                 )
                 conn.commit()
 
-                st.success("✅ Krovinys išsaugotas ir limitai atnaujinti.")
+                st.session_state.kroviniai_msg = "✅ Krovinys išsaugotas ir limitai atnaujinti."
                 clear_sel()
                 rerun()
             except Exception as e:

@@ -123,7 +123,7 @@ def show(conn, c):
                 )
                 conn.commit()
                 log_action(conn, c, st.session_state.get('user_id'), 'update', 'priekabos', sel)
-                st.success("✅ Pakeitimai išsaugoti.")
+                st.session_state.priekabos_msg = "✅ Pakeitimai išsaugoti."
                 clear_sel()
                 rerun()
             except Exception as e:
@@ -172,7 +172,7 @@ def show(conn, c):
                         'priekabos',
                         c.lastrowid,
                     )
-                    st.success("✅ Priekaba įrašyta.")
+                    st.session_state.priekabos_msg = "✅ Priekaba įrašyta."
                     clear_sel()
                     rerun()
                 except Exception as e:
@@ -185,6 +185,9 @@ def show(conn, c):
         conn,
         params=(st.session_state.get('imone'),)
     )
+    msg = st.session_state.pop("priekabos_msg", None)
+    if msg:
+        st.success(msg)
     if df.empty:
         st.info("ℹ️ Nėra priekabų.")
         return
