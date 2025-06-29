@@ -6,20 +6,27 @@ from modules.roles import Role
 st.set_page_config(layout="wide")
 
 # 2) Minimalus CSS (radio bar lieka viršuje)
-st.markdown("""
+st.markdown(
+    """
 <style>
-  .css-18e3th9 { padding-top: 0 !important; }
+  .css-18e3th9 { padding-top: 0 !important; margin-top: 0 !important; }
+  .stApp { padding-top: 3mm !important; }
+  .top-stripes { position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
   .stRadio > div          { height: 1cm !important; margin-top: 0 !important; }
   .stRadio > div > label > div { padding-top: 0 !important; padding-bottom: 0 !important; }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # 3) Dekoratyvinės juostos puslapio viršuje
 st.markdown(
     """
-    <div style='height:1mm; width:100%; background-color: orange;'></div>
-    <div style='height:1mm; width:100%; background-color: black;'></div>
-    <div style='height:1mm; width:100%; background-color: violet;'></div>
+    <div class='top-stripes'>
+      <div style='height:1mm; width:100%; background-color: orange;'></div>
+      <div style='height:1mm; width:100%; background-color: black;'></div>
+      <div style='height:1mm; width:100%; background-color: violet;'></div>
+    </div>
     """,
     unsafe_allow_html=True,
 )
