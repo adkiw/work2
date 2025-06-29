@@ -3,13 +3,7 @@ import pandas as pd
 from . import login
 from .roles import Role
 from .audit import log_action
-
-
-def rerun():
-    if hasattr(st, "rerun"):
-        st.rerun()
-    else:
-        st.experimental_rerun()
+from .utils import rerun
 
 
 def show(conn, c):
