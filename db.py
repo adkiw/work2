@@ -101,17 +101,43 @@ def init_db(db_path: str | None = None):
     c.execute("""
         CREATE TABLE IF NOT EXISTS grupes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            numeris     TEXT UNIQUE,
+            numeris     TEXT,
             pavadinimas TEXT,
             aprasymas   TEXT,
-            imone       TEXT
+            imone       TEXT,
+            UNIQUE (numeris, imone)
         )
     """)
     c.execute("PRAGMA table_info(grupes)")
     cols = [row[1] for row in c.fetchall()]
     if 'imone' not in cols:
         c.execute("ALTER TABLE grupes ADD COLUMN imone TEXT")
-    conn.commit()
+        conn.commit()
+
+    # Jei lentelė sukurta su unikalia 'numeris' reikšme (be 'imone'), atliekame migraciją
+    idx_list = c.execute("PRAGMA index_list(grupes)").fetchall()
+    for _, idx_name, unique, *_ in idx_list:
+        if unique:
+            cols_info = [row[2] for row in c.execute(f"PRAGMA index_info({idx_name})")]
+            if cols_info == ["numeris"]:
+                c.execute("ALTER TABLE grupes RENAME TO grupes_old")
+                c.execute("""
+                    CREATE TABLE grupes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        numeris     TEXT,
+                        pavadinimas TEXT,
+                        aprasymas   TEXT,
+                        imone       TEXT,
+                        UNIQUE (numeris, imone)
+                    )
+                """)
+                c.execute(
+                    "INSERT INTO grupes (id, numeris, pavadinimas, aprasymas, imone) "
+                    "SELECT id, numeris, pavadinimas, aprasymas, imone FROM grupes_old"
+                )
+                c.execute("DROP TABLE grupes_old")
+                conn.commit()
+                break
 
     # Regionų priskyrimas grupėms (naudoja grupes.py)
     c.execute("""

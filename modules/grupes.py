@@ -39,14 +39,9 @@ def show(conn, c):
     default_tr   = [f"TR{i}"   for i in range(1, 6)]
     for kod in default_eksp + default_tr:
         c.execute(
-            "SELECT 1 FROM grupes WHERE numeris = ? AND imone = ?",
-            (kod, st.session_state.get('imone')),
+            "INSERT OR IGNORE INTO grupes (numeris, pavadinimas, aprasymas, imone) VALUES (?, ?, ?, ?)",
+            (kod, kod, "", st.session_state.get('imone'))
         )
-        if not c.fetchone():
-            c.execute(
-                "INSERT INTO grupes (numeris, pavadinimas, aprasymas, imone) VALUES (?, ?, ?, ?)",
-                (kod, kod, "", st.session_state.get('imone'))
-            )
     conn.commit()
 
     # 4) Mygtukas formos rodymui/uždarymui
