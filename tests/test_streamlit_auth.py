@@ -62,3 +62,12 @@ def test_last_login_recorded(tmp_path):
     c.execute("SELECT last_login FROM users WHERE id = ?", (user_id,))
     row = c.fetchone()
     assert row is not None and row[0] is not None
+
+
+def test_imone_columns_exist(tmp_path):
+    db_file = tmp_path / "cols.db"
+    conn, c = init_db(str(db_file))
+    for table in ["kroviniai", "klientai", "grupes", "vairuotojai"]:
+        c.execute(f"PRAGMA table_info({table})")
+        cols = {r[1] for r in c.fetchall()}
+        assert "imone" in cols

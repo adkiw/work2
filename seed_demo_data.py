@@ -8,24 +8,24 @@ PREFIX = "DEMO_"
 def seed_data(conn, c):
     # Klientai
     clients = [
-        {"pavadinimas": f"{PREFIX}Klientas1", "vat_numeris": "DEMO123", "salis": "Lietuva", "miestas": "Vilnius", "regionas": ""},
-        {"pavadinimas": f"{PREFIX}Klientas2", "vat_numeris": "DEMO456", "salis": "Latvija", "miestas": "Ryga", "regionas": ""},
+        {"pavadinimas": f"{PREFIX}Klientas1", "vat_numeris": "DEMO123", "salis": "Lietuva", "miestas": "Vilnius", "regionas": "", "imone": "DemoCo"},
+        {"pavadinimas": f"{PREFIX}Klientas2", "vat_numeris": "DEMO456", "salis": "Latvija", "miestas": "Ryga", "regionas": "", "imone": "DemoCo"},
     ]
     for cl in clients:
         c.execute(
-            "INSERT INTO klientai (pavadinimas, vat_numeris, salis, miestas, regionas) VALUES (?,?,?,?,?)",
-            (cl["pavadinimas"], cl["vat_numeris"], cl["salis"], cl["miestas"], cl["regionas"]),
+            "INSERT INTO klientai (pavadinimas, vat_numeris, salis, miestas, regionas, imone) VALUES (?,?,?,?,?,?)",
+            (cl["pavadinimas"], cl["vat_numeris"], cl["salis"], cl["miestas"], cl["regionas"], cl["imone"]),
         )
 
     # Grupes
     groups = [
-        ("DEMO_TR", "Demo Transporto", ""),
-        ("DEMO_EKSP", "Demo Ekspedicija", ""),
+        ("DEMO_TR", "Demo Transporto", "", "DemoCo"),
+        ("DEMO_EKSP", "Demo Ekspedicija", "", "DemoCo"),
     ]
-    for num, pav, apr in groups:
+    for num, pav, apr, im in groups:
         c.execute(
-            "INSERT INTO grupes (numeris, pavadinimas, aprasymas) VALUES (?,?,?)",
-            (num, pav, apr),
+            "INSERT INTO grupes (numeris, pavadinimas, aprasymas, imone) VALUES (?,?,?,?)",
+            (num, pav, apr, im),
         )
     conn.commit()
 
@@ -50,12 +50,12 @@ def seed_data(conn, c):
 
     # Vairuotojai
     drivers = [
-        ("Tomas", "Tomaitis", "1985", "LT", "", ""),
-        ("Andrius", "Andrejevas", "1990", "LV", "", ""),
+        ("Tomas", "Tomaitis", "1985", "LT", "", "", "DemoCo"),
+        ("Andrius", "Andrejevas", "1990", "LV", "", "", "DemoCo"),
     ]
     for d in drivers:
         c.execute(
-            "INSERT INTO vairuotojai (vardas, pavarde, gimimo_metai, tautybe, kadencijos_pabaiga, atostogu_pabaiga) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO vairuotojai (vardas, pavarde, gimimo_metai, tautybe, kadencijos_pabaiga, atostogu_pabaiga, imone) VALUES (?,?,?,?,?,?,?)",
             d,
         )
 
@@ -95,6 +95,7 @@ def seed_data(conn, c):
             "pakrovimo_regionas": "LT01",
             "iskrovimo_salis": "Lenkija",
             "iskrovimo_regionas": "PL03",
+            "imone": "DemoCo",
         }
     ]
     for s in shipments:

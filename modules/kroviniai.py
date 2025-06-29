@@ -114,21 +114,63 @@ def show(conn, c):
             c.execute(f"ALTER TABLE kroviniai ADD COLUMN {col} {typ}")
     conn.commit()
 
-    klientai = [r[0] for r in c.execute("SELECT pavadinimas FROM klientai").fetchall()]
+    if is_admin:
+        klientai = [r[0] for r in c.execute("SELECT pavadinimas FROM klientai").fetchall()]
+    else:
+        klientai = [
+            r[0]
+            for r in c.execute(
+                "SELECT pavadinimas FROM klientai WHERE imone = ?",
+                (st.session_state.get('imone'),),
+            ).fetchall()
+        ]
     if len(klientai) == 0:
         st.warning("Nėra nė vieno kliento! Pridėkite klientą modulyje **Klientai** ir grįžkite čia.")
         return
 
-    vilkikai = [r[0] for r in c.execute("SELECT numeris FROM vilkikai").fetchall()]
-    eksped_vadybininkai = [
-        f"{r[0]} {r[1]}"
-        for r in c.execute("SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe = ?", ("Ekspedicijos vadybininkas",)).fetchall()
-    ]
+    if is_admin:
+        vilkikai = [r[0] for r in c.execute("SELECT numeris FROM vilkikai").fetchall()]
+    else:
+        vilkikai = [
+            r[0]
+            for r in c.execute(
+                "SELECT numeris FROM vilkikai WHERE imone = ?",
+                (st.session_state.get('imone'),),
+            ).fetchall()
+        ]
+    if is_admin:
+        eksped_rows = c.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe = ?",
+            ("Ekspedicijos vadybininkas",),
+        ).fetchall()
+    else:
+        eksped_rows = c.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe = ? AND imone = ?",
+            ("Ekspedicijos vadybininkas", st.session_state.get('imone')),
+        ).fetchall()
+    eksped_vadybininkai = [f"{r[0]} {r[1]}" for r in eksped_rows]
     eksped_dropdown = [""] + eksped_vadybininkai
-    vilkikai_df = pd.read_sql_query("SELECT numeris, vadybininkas FROM vilkikai", conn)
+    if is_admin:
+        vilkikai_df = pd.read_sql_query("SELECT numeris, vadybininkas FROM vilkikai", conn)
+    else:
+        vilkikai_df = pd.read_sql_query(
+            "SELECT numeris, vadybininkas FROM vilkikai WHERE imone = ?",
+            conn,
+            params=(st.session_state.get('imone'),),
+        )
     vilk_vad_map = {r['numeris']: r['vadybininkas'] for _, r in vilkikai_df.iterrows()}
 
-    df_klientai = pd.read_sql_query("SELECT pavadinimas, likes_limitas FROM klientai", conn)
+    if is_admin:
+        df_klientai = pd.read_sql_query(
+            "SELECT pavadinimas, likes_limitas FROM klientai",
+            conn,
+        )
+    else:
+        df_klientai = pd.read_sql_query(
+            "SELECT pavadinimas, likes_limitas FROM klientai WHERE imone = ?",
+            conn,
+            params=(st.session_state.get('imone'),),
+        )
     klientu_limitai = {row['pavadinimas']: row['likes_limitas'] for _, row in df_klientai.iterrows()}
 
     if 'selected_cargo' not in st.session_state:
@@ -148,7 +190,14 @@ def show(conn, c):
     sel = st.session_state['selected_cargo']
 
     if sel is None:
-        df = pd.read_sql_query("SELECT * FROM kroviniai", conn)
+        if is_admin:
+            df = pd.read_sql_query("SELECT * FROM kroviniai", conn)
+        else:
+            df = pd.read_sql_query(
+                "SELECT * FROM kroviniai WHERE imone = ?",
+                conn,
+                params=(st.session_state.get('imone'),),
+            )
         if df.empty:
             st.info("Kol kas nėra krovinių.")
         else:
@@ -204,11 +253,21 @@ def show(conn, c):
         return
 
     is_new = (sel == 0)
-    data = {} if is_new else pd.read_sql_query("SELECT * FROM kroviniai WHERE id=?", conn, params=(sel,)).iloc[0]
-    if not is_new and data.empty:
-        st.error("Įrašas nerastas.")
-        clear_sel()
-        return
+    if is_new:
+        data = {}
+    else:
+        if is_admin:
+            query = "SELECT * FROM kroviniai WHERE id=?"
+            params = (sel,)
+        else:
+            query = "SELECT * FROM kroviniai WHERE id=? AND imone = ?"
+            params = (sel, st.session_state.get('imone'))
+        df_sel = pd.read_sql_query(query, conn, params=params)
+        if df_sel.empty:
+            st.error("Įrašas nerastas.")
+            clear_sel()
+            return
+        data = df_sel.iloc[0]
 
     st.markdown("### Krovinių įvedimas")
     colA, colB, colC, colD = st.columns(4)
@@ -367,21 +426,41 @@ def show(conn, c):
             if vilk:
                 new_pk = pk_data.isoformat()
                 new_isk = isk_data.isoformat()
-                existing_overlap = c.execute("""
+                query_overlap = """
                     SELECT COUNT(*) FROM kroviniai
                     WHERE vilkikas = ?
                       AND id != ?
                       AND (? < iskrovimo_data)
                       AND (pakrovimo_data < ?)
-                """, (vilk, sel, new_pk, new_isk)).fetchone()
+                      {cond}
+                """.format(cond="" if is_admin else "AND imone = ?")
+                params_overlap = (
+                    vilk,
+                    sel,
+                    new_pk,
+                    new_isk,
+                ) if is_admin else (
+                    vilk,
+                    sel,
+                    new_pk,
+                    new_isk,
+                    st.session_state.get('imone'),
+                )
+                existing_overlap = c.execute(query_overlap, params_overlap).fetchone()
                 if existing_overlap and existing_overlap[0] > 0:
                     st.error("❌ Šis vilkikas jau turi krovinį su persidengiančiomis datomis. Patikrinkite įrašų datas.")
                     return
 
-            vat_row = c.execute(
-                "SELECT vat_numeris, coface_limitas FROM klientai WHERE pavadinimas = ?",
-                (klientas,)
-            ).fetchone()
+            if is_admin:
+                vat_row = c.execute(
+                    "SELECT vat_numeris, coface_limitas FROM klientai WHERE pavadinimas = ?",
+                    (klientas,),
+                ).fetchone()
+            else:
+                vat_row = c.execute(
+                    "SELECT vat_numeris, coface_limitas FROM klientai WHERE pavadinimas = ? AND imone = ?",
+                    (klientas, st.session_state.get('imone')),
+                ).fetchone()
             if not vat_row or not vat_row[0]:
                 st.error("❌ Kliento VAT numeris nerastas arba tuščias.")
                 return
@@ -390,13 +469,19 @@ def show(conn, c):
             musu_limitas = coface_of_client / 3.0
             unpaid_sum = 0.0
             try:
-                r = c.execute("""
+                q_sum = """
                     SELECT SUM(k.frachtas)
                     FROM kroviniai AS k
                     JOIN klientai AS cl ON k.klientas = cl.pavadinimas
                     WHERE cl.vat_numeris = ?
-                      AND k.saskaitos_busena != 'Apmokėta'
-                """, (vat_of_client,)).fetchone()
+                      AND k.saskaitos_busena != 'Apmokėta' {cond}
+                """.format(cond="" if is_admin else "AND k.imone = ? AND cl.imone = ?")
+                params_sum = (vat_of_client,) if is_admin else (
+                    vat_of_client,
+                    st.session_state.get('imone'),
+                    st.session_state.get('imone'),
+                )
+                r = c.execute(q_sum, params_sum).fetchone()
                 if r and r[0] is not None:
                     unpaid_sum = r[0]
             except:
@@ -439,7 +524,8 @@ def show(conn, c):
                 'frachtas': frachtas_float,
                 'svoris': sv_int,
                 'paleciu_skaicius': pal_int,
-                'saskaitos_busena': sask_busena
+                'saskaitos_busena': sask_busena,
+                'imone': st.session_state.get('imone')
             }
 
             try:
@@ -450,19 +536,25 @@ def show(conn, c):
                     c.execute(q, tuple(vals.values()))
                 else:
                     set_str = ",".join(f"{k}=?" for k in vals)
-                    q = f"UPDATE kroviniai SET {set_str} WHERE id=?"
-                    c.execute(q, tuple(vals.values()) + (sel,))
+                    q = f"UPDATE kroviniai SET {set_str} WHERE id=? AND imone = ?"
+                    c.execute(q, tuple(vals.values()) + (sel, st.session_state.get('imone')))
                 conn.commit()
 
                 unpaid_total = 0.0
                 try:
-                    r2 = c.execute("""
+                    q2 = """
                         SELECT SUM(k.frachtas)
                         FROM kroviniai AS k
                         JOIN klientai AS cl ON k.klientas = cl.pavadinimas
                         WHERE cl.vat_numeris = ?
-                          AND k.saskaitos_busena != 'Apmokėta'
-                    """, (vat_of_client,)).fetchone()
+                          AND k.saskaitos_busena != 'Apmokėta' {cond}
+                    """.format(cond="" if is_admin else "AND k.imone = ? AND cl.imone = ?")
+                    params2 = (vat_of_client,) if is_admin else (
+                        vat_of_client,
+                        st.session_state.get('imone'),
+                        st.session_state.get('imone'),
+                    )
+                    r2 = c.execute(q2, params2).fetchone()
                     if r2 and r2[0] is not None:
                         unpaid_total = r2[0]
                 except:
@@ -473,11 +565,25 @@ def show(conn, c):
                 if new_liks < 0:
                     new_liks = 0.0
 
-                c.execute("""
+                c.execute(
+                    """
                     UPDATE klientai
                     SET musu_limitas = ?, likes_limitas = ?
-                    WHERE vat_numeris = ?
-                """, (new_musu, new_liks, vat_of_client))
+                    WHERE vat_numeris = ? {cond}
+                    """.format(cond="" if is_admin else "AND imone = ?"),
+                    (
+                        new_musu,
+                        new_liks,
+                        vat_of_client,
+                    )
+                    if is_admin
+                    else (
+                        new_musu,
+                        new_liks,
+                        vat_of_client,
+                        st.session_state.get('imone'),
+                    ),
+                )
                 conn.commit()
 
                 st.success("✅ Krovinys išsaugotas ir limitai atnaujinti.")

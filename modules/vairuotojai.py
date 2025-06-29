@@ -2,6 +2,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+from . import login
+from .roles import Role
 
 # ---------- Konstantos ----------
 TAUTYBES = [
@@ -26,6 +28,7 @@ def _ensure_columns(c, conn):
         "tautybe": "TEXT",
         "kadencijos_pabaiga": "TEXT",
         "atostogu_pabaiga": "TEXT",
+        "imone": "TEXT",
     }
     for col, typ in needed.items():
         if col not in existing:
@@ -33,10 +36,17 @@ def _ensure_columns(c, conn):
     conn.commit()
 
 
-def _driver_to_vilkik_map(c):
+def _driver_to_vilkik_map(c, is_admin):
     """Grąžina vardas pavardė → vilkiko numeris žemėlapį (str:str)."""
     result = {}
-    for numeris, drv_str in c.execute("SELECT numeris, vairuotojai FROM vilkikai").fetchall():
+    if is_admin:
+        rows = c.execute("SELECT numeris, vairuotojai FROM vilkikai").fetchall()
+    else:
+        rows = c.execute(
+            "SELECT numeris, vairuotojai FROM vilkikai WHERE imone = ?",
+            (st.session_state.get('imone'),),
+        ).fetchall()
+    for numeris, drv_str in rows:
         if drv_str:
             for fn in drv_str.split(", "):
                 result[fn] = numeris
@@ -52,6 +62,7 @@ def _text_filter(field, placeholder):
 def show(conn, c):
     st.title("Vairuotojų valdymas")
     _ensure_columns(c, conn)
+    is_admin = login.has_role(conn, c, Role.ADMIN)
 
     # --- sesijos kintamieji ---
     if "selected_vair" not in st.session_state:
@@ -67,7 +78,7 @@ def show(conn, c):
         st.session_state.selected_vair = v_id
 
     sel = st.session_state.selected_vair
-    drv2vilk = _driver_to_vilkik_map(c)
+    drv2vilk = _driver_to_vilkik_map(c, is_admin)
 
     # --------------------------------------------------- Naujas vairuotojas
     if sel == 0:
@@ -97,8 +108,8 @@ def show(conn, c):
                     """
                     INSERT INTO vairuotojai (
                         vardas, pavarde, gimimo_metai, tautybe,
-                        kadencijos_pabaiga, atostogu_pabaiga
-                    ) VALUES (?, ?, ?, ?, ?, ?)
+                        kadencijos_pabaiga, atostogu_pabaiga, imone
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         vardas,
@@ -107,6 +118,7 @@ def show(conn, c):
                         tautybe.split("(")[-1][:-1] if "(" in tautybe else tautybe,
                         "",  # kadencijos_pabaiga
                         atost_pab.isoformat(),
+                        st.session_state.get('imone'),
                     ),
                 )
                 conn.commit()
@@ -116,7 +128,18 @@ def show(conn, c):
 
     # --------------------------------------------------- Redagavimas
     if sel not in (None, 0):
-        df_sel = pd.read_sql_query("SELECT * FROM vairuotojai WHERE id = ?", conn, params=(sel,))
+        if is_admin:
+            df_sel = pd.read_sql_query(
+                "SELECT * FROM vairuotojai WHERE id = ?",
+                conn,
+                params=(sel,),
+            )
+        else:
+            df_sel = pd.read_sql_query(
+                "SELECT * FROM vairuotojai WHERE id = ? AND imone = ?",
+                conn,
+                params=(sel, st.session_state.get('imone')),
+            )
         if df_sel.empty:
             st.error("❌ Nerasta.")
             _clear_sel()
@@ -164,8 +187,8 @@ def show(conn, c):
                 UPDATE vairuotojai
                 SET vardas=?, pavarde=?, gimimo_metai=?, tautybe=?,
                     kadencijos_pabaiga=?, atostogu_pabaiga=?
-                WHERE id=?
-                """,
+                WHERE id=? {cond}
+                """.format(cond="" if is_admin else "AND imone = ?"),
                 (
                     vardas,
                     pavarde,
@@ -174,6 +197,17 @@ def show(conn, c):
                     kad_pab.isoformat() if kad_pab else "",
                     atost_str,
                     sel,
+                )
+                if is_admin
+                else (
+                    vardas,
+                    pavarde,
+                    gim_data.isoformat(),
+                    tautybe.split("(")[-1][:-1] if "(" in tautybe else tautybe,
+                    kad_pab.isoformat() if kad_pab else "",
+                    atost_str,
+                    sel,
+                    st.session_state.get('imone'),
                 ),
             )
             conn.commit()
@@ -184,7 +218,14 @@ def show(conn, c):
     # --------------------------------------------------- Sąrašas + FILTRAI
     st.button("➕ Pridėti vairuotoją", on_click=_new_vair, use_container_width=True)
 
-    df = pd.read_sql_query("SELECT * FROM vairuotojai", conn)
+    if is_admin:
+        df = pd.read_sql_query("SELECT * FROM vairuotojai", conn)
+    else:
+        df = pd.read_sql_query(
+            "SELECT * FROM vairuotojai WHERE imone = ?",
+            conn,
+            params=(st.session_state.get('imone'),),
+        )
     df = df.fillna("")
 
     # ---------- Filtrų eilutė ----------
