@@ -41,7 +41,7 @@ if "user_id" not in st.session_state:
 
 # 5) Horizontalus meniu
 module_functions = {
-    "Kroviniai": kroviniai.show,
+    "Užsakymai": kroviniai.show,
     "Vilkikai": vilkikai.show,
     "Priekabos": priekabos.show,
     "Grupės": grupes.show,

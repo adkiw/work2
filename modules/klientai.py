@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from . import login
 from .roles import Role
+from .constants import EU_COUNTRIES, country_flag
 
 def show(conn, c):
     # 1. Užtikrinti, kad egzistuotų reikiami stulpeliai
@@ -161,10 +162,19 @@ def show(conn, c):
             value=("" if is_new else cli.get("kontaktinis_tel", "")),
             key="kontaktinis_tel"
         )
-        salis = col1.text_input(
+        country_map = {name: code for name, code in EU_COUNTRIES}
+        country_names = list(country_map.keys())
+        salis_default = "" if is_new else cli.get("salis", "")
+        try:
+            salis_index = country_names.index(salis_default)
+        except ValueError:
+            salis_index = 0
+        salis = col1.selectbox(
             "Šalis",
-            value=("" if is_new else cli.get("salis", "")),
-            key="salis"
+            country_names,
+            index=salis_index,
+            key="salis",
+            format_func=lambda n: f"{country_flag(country_map.get(n, ''))} {n}" if n else "",
         )
         regionas = col1.text_input(
             "Regionas",
