@@ -14,7 +14,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3) Inicializuojame DB – lentelės sukuriamos funkcijoje init_db()
+# 3) Dekoratyvinės juostos puslapio viršuje
+st.markdown(
+    """
+    <div style='height:1mm; width:100%; background-color: orange;'></div>
+    <div style='height:1mm; width:100%; background-color: black;'></div>
+    <div style='height:1mm; width:100%; background-color: violet;'></div>
+    """,
+    unsafe_allow_html=True,
+)
+# 4) Inicializuojame DB – lentelės sukuriamos funkcijoje init_db()
 from db import init_db
 conn, c = init_db()    # naudos failą „main.db“
 
