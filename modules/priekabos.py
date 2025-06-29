@@ -124,6 +124,7 @@ def show(conn, c):
                 log_action(conn, c, st.session_state.get('user_id'), 'update', 'priekabos', sel)
                 st.success("✅ Pakeitimai išsaugoti.")
                 clear_sel()
+                st.experimental_rerun()
             except Exception as e:
                 st.error(f"❌ Klaida: {e}")
         return
@@ -172,6 +173,7 @@ def show(conn, c):
                     )
                     st.success("✅ Priekaba įrašyta.")
                     clear_sel()
+                    st.experimental_rerun()
                 except Exception as e:
                     st.error(f"❌ Klaida: {e}")
         return

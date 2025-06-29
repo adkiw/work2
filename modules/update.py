@@ -428,7 +428,7 @@ def show(conn, c):
             jau_irasas = c.execute("""
                 SELECT id FROM vilkiku_darbo_laikai WHERE vilkiko_numeris = ? AND data = ?
             """, (k[5], k[3])).fetchone()
-            now_str = datetime.now().isoformat()
+            now_str = datetime.now().replace(second=0, microsecond=0).isoformat(timespec="minutes")
             formatted_pk_date = pk_data_in.isoformat()
             formatted_ikr_date = ikr_data_in.isoformat()
 
