@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from . import login
 from .roles import Role
+from .audit import log_action
 
 def show(conn, c):
     # Užtikrinti, kad egzistuotų stulpelis „aktyvus“ darbuotojų lentelėje
@@ -182,6 +183,8 @@ def show(conn, c):
                 f"INSERT INTO darbuotojai ({cols_sql}) VALUES ({placeholders})",
                 tuple(vals)
             )
+            action = 'insert'
+            rec_id = c.lastrowid
         else:
             vals.append(sel)
             set_clause = ", ".join(f"{k}=?" for k in (fields + ["aktyvus"]))
@@ -189,7 +192,10 @@ def show(conn, c):
                 f"UPDATE darbuotojai SET {set_clause} WHERE id=? AND imone=?",
                 tuple(vals + [st.session_state.get('imone')])
             )
+            action = 'update'
+            rec_id = sel
         conn.commit()
+        log_action(conn, c, st.session_state.get('user_id'), action, 'darbuotojai', rec_id)
         st.success("✅ Duomenys įrašyti.")
         clear_selection()
 
