@@ -159,8 +159,8 @@ def show(conn, c):
     for numeris, gr in vilkikai_info:
         # Filtruojame pagal vadybininką, jei pasirinktas
         if vadyb and c.execute(
-            "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"{}
-            .format("" if is_admin else " AND imone = ?"),
+            "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"
+            + ("" if is_admin else " AND imone = ?"),
             (numeris,) if is_admin else (numeris, company),
         ).fetchone()[0] != vadyb:
             continue
@@ -447,8 +447,8 @@ def show(conn, c):
                     ikr_status_in, ikr_laikas_in, formatted_ikr_date,
                     komentaras_in,
                     c.execute(
-                        "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"{}
-                        .format("" if is_admin else " AND imone = ?"),
+                        "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"
+                        + ("" if is_admin else " AND imone = ?"),
                         (k[5],) if is_admin else (k[5], company),
                     ).fetchone()[0],
                     eksp_vad,
@@ -470,8 +470,8 @@ def show(conn, c):
                     ikr_status_in, ikr_laikas_in, formatted_ikr_date,
                     komentaras_in,
                     c.execute(
-                        "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"{}
-                        .format("" if is_admin else " AND imone = ?"),
+                        "SELECT vadybininkas FROM vilkikai WHERE numeris = ?"
+                        + ("" if is_admin else " AND imone = ?"),
                         (k[5],) if is_admin else (k[5], company),
                     ).fetchone()[0],
                     eksp_vad,
