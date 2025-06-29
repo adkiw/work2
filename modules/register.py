@@ -1,6 +1,7 @@
 import streamlit as st
 
 from .auth_utils import hash_password
+from .audit import log_action
 
 
 def rerun():
@@ -39,6 +40,7 @@ def show(conn, c):
                     ),
                 )
                 conn.commit()
+                log_action(conn, c, None, "register", "users", c.lastrowid)
                 st.session_state.registration_message = "Paraiška pateikta"
                 for key in [
                     "reg_email",

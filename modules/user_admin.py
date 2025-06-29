@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from . import login
 from .roles import Role
+from .audit import log_action
 
 
 def rerun():
@@ -82,6 +83,7 @@ def show(conn, c):
                 else:
                     c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
                     conn.commit()
+                    log_action(conn, c, st.session_state.get('user_id'), 'approve', 'users', row['id'])
                     login.assign_role(conn, c, row['id'], Role.USER)
                     c.execute(
                         "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
@@ -94,6 +96,7 @@ def show(conn, c):
                         ),
                     )
                     conn.commit()
+                    log_action(conn, c, st.session_state.get('user_id'), 'create', 'darbuotojai', c.lastrowid)
                     rerun()
             col_index = 2
             if is_admin:
@@ -105,6 +108,7 @@ def show(conn, c):
                     else:
                         c.execute("UPDATE users SET aktyvus = 1 WHERE id = ?", (row['id'],))
                         conn.commit()
+                        log_action(conn, c, st.session_state.get('user_id'), 'approve_admin', 'users', row['id'])
                         login.assign_role(conn, c, row['id'], Role.COMPANY_ADMIN)
                         c.execute(
                             "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
@@ -117,11 +121,13 @@ def show(conn, c):
                             ),
                         )
                         conn.commit()
+                        log_action(conn, c, st.session_state.get('user_id'), 'create_admin', 'darbuotojai', c.lastrowid)
                         rerun()
                 col_index = 3
             if cols[col_index].button("Šalinti", key=f"delete_{row['id']}"):
                 c.execute("DELETE FROM users WHERE id = ?", (row['id'],))
                 conn.commit()
+                log_action(conn, c, st.session_state.get('user_id'), 'delete', 'users', row['id'])
                 rerun()
 
     st.markdown("---")

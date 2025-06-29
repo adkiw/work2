@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+from .audit import log_action
 
 def show(conn, c):
     st.title("Priekabų valdymas")
@@ -120,6 +121,7 @@ def show(conn, c):
                     )
                 )
                 conn.commit()
+                log_action(conn, c, st.session_state.get('user_id'), 'update', 'priekabos', sel)
                 st.success("✅ Pakeitimai išsaugoti.")
                 clear_sel()
             except Exception as e:
@@ -157,10 +159,11 @@ def show(conn, c):
                             tech.isoformat(),
                             draud_date.isoformat(),
                             st.session_state.get('imone')
-                        )
                     )
-                    conn.commit()
-                    st.success("✅ Priekaba įrašyta.")
+                )
+                conn.commit()
+                log_action(conn, c, st.session_state.get('user_id'), 'insert', 'priekabos', c.lastrowid)
+                st.success("✅ Priekaba įrašyta.")
                     clear_sel()
                 except Exception as e:
                     st.error(f"❌ Klaida: {e}")

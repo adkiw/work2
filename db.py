@@ -253,6 +253,19 @@ def init_db(db_path: str | None = None):
         )
     """)
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            action TEXT,
+            table_name TEXT,
+            record_id INTEGER,
+            timestamp TEXT,
+            details TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
     conn.commit()
 
     # Sukuriame numatytąjį administratoriaus naudotoją, jei jo nėra
