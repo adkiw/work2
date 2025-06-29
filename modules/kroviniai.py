@@ -3,15 +3,7 @@ import pandas as pd
 from datetime import date, time, timedelta
 from . import login
 from .roles import Role
-
-EU_COUNTRIES = [
-    ("", ""), ("Lietuva", "LT"), ("Baltarusija", "BY"), ("Latvija", "LV"), ("Lenkija", "PL"), ("Vokietija", "DE"),
-    ("Prancūzija", "FR"), ("Ispanija", "ES"), ("Italija", "IT"), ("Olandija", "NL"), ("Belgija", "BE"),
-    ("Austrija", "AT"), ("Švedija", "SE"), ("Suomija", "FI"), ("Čekija", "CZ"), ("Slovakija", "SK"),
-    ("Vengrija", "HU"), ("Rumunija", "RO"), ("Bulgarija", "BG"), ("Danija", "DK"), ("Norvegija", "NO"),
-    ("Šveicarija", "CH"), ("Kroatija", "HR"), ("Slovėnija", "SI"), ("Portugalija", "PT"), ("Graikija", "GR"),
-    ("Airija", "IE"), ("Didžioji Britanija", "GB"),
-]
+from .constants import EU_COUNTRIES, country_flag
 
 HEADER_LABELS = {
     "id": "ID",
@@ -299,7 +291,11 @@ def show(conn, c):
             value=(date.today() if is_new else pd.to_datetime(data['pakrovimo_data']).date()),
             key="pk_data"
         )
-        pk_salis_opts = [f"{n} ({c})" for n, c in EU_COUNTRIES]
+        pk_salis_opts = [
+            f"{country_flag(c)} {n} ({c})".strip()
+            if c else ""
+            for n, c in EU_COUNTRIES
+        ]
         pk_salis_index = 0
         if not is_new:
             try:
