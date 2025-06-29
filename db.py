@@ -101,10 +101,11 @@ def init_db(db_path: str | None = None):
     c.execute("""
         CREATE TABLE IF NOT EXISTS grupes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            numeris     TEXT UNIQUE,
+            numeris     TEXT,
             pavadinimas TEXT,
             aprasymas   TEXT,
-            imone       TEXT
+            imone       TEXT,
+            UNIQUE(numeris, imone)
         )
     """)
     c.execute("PRAGMA table_info(grupes)")
@@ -112,6 +113,30 @@ def init_db(db_path: str | None = None):
     if 'imone' not in cols:
         c.execute("ALTER TABLE grupes ADD COLUMN imone TEXT")
     conn.commit()
+
+    # Upgrade from old schema where only `numeris` was unique
+    c.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='grupes'")
+    table_sql = c.fetchone()[0]
+    if 'UNIQUE("numeris")' in table_sql or 'numeris TEXT UNIQUE' in table_sql:
+        c.execute('ALTER TABLE grupes RENAME TO grupes_old')
+        c.execute(
+            """
+            CREATE TABLE grupes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                numeris TEXT,
+                pavadinimas TEXT,
+                aprasymas TEXT,
+                imone TEXT,
+                UNIQUE(numeris, imone)
+            )
+            """
+        )
+        c.execute(
+            "INSERT INTO grupes (id, numeris, pavadinimas, aprasymas, imone) "
+            "SELECT id, numeris, pavadinimas, aprasymas, imone FROM grupes_old"
+        )
+        c.execute('DROP TABLE grupes_old')
+        conn.commit()
 
     # Regionų priskyrimas grupėms (naudoja grupes.py)
     c.execute("""
