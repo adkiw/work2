@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 from .audit import log_action
+from .utils import rerun
 
 def show(conn, c):
     st.title("Priekabų valdymas")
@@ -124,7 +125,7 @@ def show(conn, c):
                 log_action(conn, c, st.session_state.get('user_id'), 'update', 'priekabos', sel)
                 st.success("✅ Pakeitimai išsaugoti.")
                 clear_sel()
-                st.experimental_rerun()
+                rerun()
             except Exception as e:
                 st.error(f"❌ Klaida: {e}")
         return
@@ -173,7 +174,7 @@ def show(conn, c):
                     )
                     st.success("✅ Priekaba įrašyta.")
                     clear_sel()
-                    st.experimental_rerun()
+                    rerun()
                 except Exception as e:
                     st.error(f"❌ Klaida: {e}")
         return

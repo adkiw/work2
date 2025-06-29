@@ -1,11 +1,6 @@
 import streamlit as st
 
-
-def rerun():
-    if hasattr(st, "rerun"):
-        st.rerun()
-    else:
-        st.experimental_rerun()
+from .utils import rerun
 
 from .auth_utils import hash_password
 from .roles import Role
