@@ -124,7 +124,7 @@ def show(conn, c):
                 (prn or "", sel_vilk, st.session_state.get('imone'))
             )
             conn.commit()
-            st.success("✅ Priekabos paskirstymas sėkmingai atnaujintas.")
+            st.session_state.vilkikai_msg = "✅ Priekabos paskirstymas sėkmingai atnaujintas."
             clear_selection()
             rerun()
 
@@ -140,6 +140,12 @@ def show(conn, c):
             query = "SELECT * FROM vilkikai WHERE imone = ? ORDER BY tech_apziura ASC"
             params = (st.session_state.get('imone'),)
         df = pd.read_sql_query(query, conn, params=params)
+
+        msg = st.session_state.pop("vilkikai_msg", None)
+        if msg:
+            for line in msg.split("\n"):
+                st.success(line)
+
         if df.empty:
             st.info("🔍 Kol kas nėra vilkikų.")
             return
@@ -411,11 +417,11 @@ def show(conn, c):
                         )
                     )
                 conn.commit()
-                st.success("✅ Vilkikas išsaugotas sėkmingai.")
+                st.session_state.vilkikai_msg = "✅ Vilkikas išsaugotas sėkmingai."
                 if tech_date:
-                    st.info(f"🔧 Dienų iki tech. apžiūros liko: {(tech_date - date.today()).days}")
+                    st.session_state.vilkikai_msg += f"\n🔧 Dienų iki tech. apžiūros liko: {(tech_date - date.today()).days}"
                 if draud_date:
-                    st.info(f"🛡️ Dienų iki draudimo pabaigos liko: {(draud_date - date.today()).days}")
+                    st.session_state.vilkikai_msg += f"\n🛡️ Dienų iki draudimo pabaigos liko: {(draud_date - date.today()).days}"
                 clear_selection()
                 rerun()
             except Exception as e:

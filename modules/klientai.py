@@ -65,6 +65,10 @@ def show(conn, c):
                 conn,
                 params=(st.session_state.get('imone'),),
             )
+
+        msg = st.session_state.pop('klientai_msg', None)
+        if msg:
+            st.success(msg)
         if df.empty:
             st.info("ℹ️ Nėra klientų.")
             return
@@ -378,7 +382,7 @@ def show(conn, c):
             )
             conn.commit()
 
-            st.success("✅ Duomenys įrašyti ir limitai atnaujinti visiems su tuo pačiu VAT numeriu.")
+            st.session_state.klientai_msg = "✅ Duomenys įrašyti ir limitai atnaujinti visiems su tuo pačiu VAT numeriu."
             clear_selection()
             rerun()
         except Exception as e:
