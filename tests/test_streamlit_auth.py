@@ -71,3 +71,20 @@ def test_imone_columns_exist(tmp_path):
         c.execute(f"PRAGMA table_info({table})")
         cols = {r[1] for r in c.fetchall()}
         assert "imone" in cols
+
+
+def test_group_unique_per_company(tmp_path):
+    db_file = tmp_path / "grupes.db"
+    conn, c = init_db(str(db_file))
+    c.execute(
+        "INSERT INTO grupes (numeris, pavadinimas, imone) VALUES (?,?,?)",
+        ("TR1", "T1", "A"),
+    )
+    c.execute(
+        "INSERT INTO grupes (numeris, pavadinimas, imone) VALUES (?,?,?)",
+        ("TR1", "T1", "B"),
+    )
+    conn.commit()
+    c.execute("SELECT COUNT(*) FROM grupes WHERE numeris=?", ("TR1",))
+    count = c.fetchone()[0]
+    assert count == 2
