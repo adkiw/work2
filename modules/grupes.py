@@ -2,6 +2,8 @@
 
 import streamlit as st
 import pandas as pd
+from . import login
+from .roles import Role
 
 def show(conn, c):
     st.title("Grupės")
@@ -12,9 +14,14 @@ def show(conn, c):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             numeris TEXT UNIQUE,
             pavadinimas TEXT,
-            aprasymas TEXT
+            aprasymas TEXT,
+            imone TEXT
         )
     """)
+    c.execute("PRAGMA table_info(grupes)")
+    cols = [r[1] for r in c.fetchall()]
+    if 'imone' not in cols:
+        c.execute("ALTER TABLE grupes ADD COLUMN imone TEXT")
     # 2) Užtikrinti, kad egzistuotų lentelė „grupiu_regionai“
     c.execute("""
         CREATE TABLE IF NOT EXISTS grupiu_regionai (
@@ -25,16 +32,20 @@ def show(conn, c):
         )
     """)
     conn.commit()
+    is_admin = login.has_role(conn, c, Role.ADMIN)
 
     # 3) Automatiškai sukurti numatytąsias grupes (EKSP1–EKSP5, TR1–TR5), jei jų dar nėra
     default_eksp = [f"EKSP{i}" for i in range(1, 6)]
     default_tr   = [f"TR{i}"   for i in range(1, 6)]
     for kod in default_eksp + default_tr:
-        c.execute("SELECT 1 FROM grupes WHERE numeris = ?", (kod,))
+        c.execute(
+            "SELECT 1 FROM grupes WHERE numeris = ? AND imone = ?",
+            (kod, st.session_state.get('imone')),
+        )
         if not c.fetchone():
             c.execute(
-                "INSERT INTO grupes (numeris, pavadinimas, aprasymas) VALUES (?, ?, ?)",
-                (kod, kod, "")
+                "INSERT INTO grupes (numeris, pavadinimas, aprasymas, imone) VALUES (?, ?, ?, ?)",
+                (kod, kod, "", st.session_state.get('imone'))
             )
     conn.commit()
 
@@ -65,8 +76,13 @@ def show(conn, c):
                     kodas = numeris.strip().upper()
                     try:
                         c.execute(
-                            "INSERT INTO grupes (numeris, pavadinimas, aprasymas) VALUES (?, ?, ?)",
-                            (kodas, pavadinimas.strip(), aprasymas.strip())
+                            "INSERT INTO grupes (numeris, pavadinimas, aprasymas, imone) VALUES (?, ?, ?, ?)",
+                            (
+                                kodas,
+                                pavadinimas.strip(),
+                                aprasymas.strip(),
+                                st.session_state.get('imone'),
+                            )
                         )
                         conn.commit()
                         st.success(f"✅ Grupė „{kodas}“ įrašyta.")
@@ -78,7 +94,17 @@ def show(conn, c):
     st.subheader("📋 Grupių sąrašas")
 
     # 6) Visų grupių sąrašas (atidaryti visada)
-    grupes_df = pd.read_sql_query("SELECT id, numeris, pavadinimas FROM grupes ORDER BY numeris", conn)
+    if is_admin:
+        grupes_df = pd.read_sql_query(
+            "SELECT id, numeris, pavadinimas FROM grupes ORDER BY numeris",
+            conn,
+        )
+    else:
+        grupes_df = pd.read_sql_query(
+            "SELECT id, numeris, pavadinimas FROM grupes WHERE imone = ? ORDER BY numeris",
+            conn,
+            params=(st.session_state.get('imone'),),
+        )
     if grupes_df.empty:
         st.info("Kol kas nėra jokių grupių.")
         return
@@ -114,10 +140,17 @@ def show(conn, c):
             FROM vilkikai v
             JOIN darbuotojai d
               ON v.vadybininkas = (d.vardas || ' ' || d.pavarde)
-            WHERE d.grupe = ?
+            WHERE d.grupe = ? {cond}
             ORDER BY v.numeris
-        """
-        vilkikai = pd.read_sql_query(query, conn, params=(pasirinkta_grupe,))
+        """.format(
+            cond="" if is_admin else "AND v.imone = ? AND d.imone = ?"
+        )
+        params = (pasirinkta_grupe,) if is_admin else (
+            pasirinkta_grupe,
+            st.session_state.get('imone'),
+            st.session_state.get('imone'),
+        )
+        vilkikai = pd.read_sql_query(query, conn, params=params)
         if vilkikai.empty:
             st.info("Šiai transporto grupei dar nepriskirtas nei vienas vilkikas.")
         else:
@@ -132,10 +165,14 @@ def show(conn, c):
         darb_query = """
             SELECT vardas, pavarde, pareigybe
             FROM darbuotojai
-            WHERE grupe = ?
+            WHERE grupe = ? {cond}
             ORDER BY pavarde, vardas
-        """
-        darbuotojai = pd.read_sql_query(darb_query, conn, params=(pasirinkta_grupe,))
+        """.format(cond="" if is_admin else "AND imone = ?")
+        params = (pasirinkta_grupe,) if is_admin else (
+            pasirinkta_grupe,
+            st.session_state.get('imone'),
+        )
+        darbuotojai = pd.read_sql_query(darb_query, conn, params=params)
         if darbuotojai.empty:
             st.info("Šiai ekspedicijos grupei dar nepriskirtas nei vienas darbuotojas.")
         else:

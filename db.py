@@ -32,9 +32,15 @@ def init_db(db_path: str | None = None):
             salis       TEXT,
             miestas     TEXT,
             regionas    TEXT,
-            vat_numeris TEXT
+            vat_numeris TEXT,
+            imone       TEXT
         )
     """)
+    c.execute("PRAGMA table_info(klientai)")
+    cols = [row[1] for row in c.fetchall()]
+    if 'imone' not in cols:
+        c.execute("ALTER TABLE klientai ADD COLUMN imone TEXT")
+    conn.commit()
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS kroviniai (
@@ -45,9 +51,15 @@ def init_db(db_path: str | None = None):
             iskrovimo_data    TEXT,
             kilometrai        INTEGER,
             frachtas          REAL,
-            busena            TEXT
+            busena            TEXT,
+            imone            TEXT
         )
     """)
+    c.execute("PRAGMA table_info(kroviniai)")
+    cols = [row[1] for row in c.fetchall()]
+    if 'imone' not in cols:
+        c.execute("ALTER TABLE kroviniai ADD COLUMN imone TEXT")
+    conn.commit()
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS vilkikai (
@@ -91,9 +103,15 @@ def init_db(db_path: str | None = None):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             numeris     TEXT UNIQUE,
             pavadinimas TEXT,
-            aprasymas   TEXT
+            aprasymas   TEXT,
+            imone       TEXT
         )
     """)
+    c.execute("PRAGMA table_info(grupes)")
+    cols = [row[1] for row in c.fetchall()]
+    if 'imone' not in cols:
+        c.execute("ALTER TABLE grupes ADD COLUMN imone TEXT")
+    conn.commit()
 
     # Regionų priskyrimas grupėms (naudoja grupes.py)
     c.execute("""
@@ -113,9 +131,15 @@ def init_db(db_path: str | None = None):
             gimimo_metai      TEXT,
             tautybe           TEXT,
             kadencijos_pabaiga TEXT,
-            atostogu_pabaiga   TEXT
+            atostogu_pabaiga   TEXT,
+            imone             TEXT
         )
     """)
+    c.execute("PRAGMA table_info(vairuotojai)")
+    cols = [row[1] for row in c.fetchall()]
+    if 'imone' not in cols:
+        c.execute("ALTER TABLE vairuotojai ADD COLUMN imone TEXT")
+    conn.commit()
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS darbuotojai (
