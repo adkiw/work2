@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import date
 from . import login
 from .roles import Role
+from .utils import rerun
 
 # ---------- Konstantos ----------
 TAUTYBES = [
@@ -124,6 +125,7 @@ def show(conn, c):
                 conn.commit()
                 st.success("✅ Įrašyta.")
                 _clear_sel()
+                rerun()
         return
 
     # --------------------------------------------------- Redagavimas
@@ -213,6 +215,7 @@ def show(conn, c):
             conn.commit()
             st.success("✅ Pakeitimai išsaugoti.")
             _clear_sel()
+            rerun()
         return
 
     # --------------------------------------------------- Sąrašas + FILTRAI

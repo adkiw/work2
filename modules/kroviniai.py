@@ -4,6 +4,7 @@ from datetime import date, time, timedelta
 from . import login
 from .roles import Role
 from .constants import EU_COUNTRIES, country_flag
+from .utils import rerun
 
 HEADER_LABELS = {
     "id": "ID",
@@ -587,5 +588,6 @@ def show(conn, c):
 
                 st.success("✅ Krovinys išsaugotas ir limitai atnaujinti.")
                 clear_sel()
+                rerun()
             except Exception as e:
                 st.error(f"❌ Klaida: {e}")

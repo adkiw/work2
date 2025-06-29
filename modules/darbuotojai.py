@@ -3,6 +3,7 @@ import pandas as pd
 from . import login
 from .roles import Role
 from .audit import log_action
+from .utils import rerun
 
 def show(conn, c):
     # Užtikrinti, kad egzistuotų stulpelis „aktyvus“ darbuotojų lentelėje
@@ -128,9 +129,15 @@ def show(conn, c):
         default_pareigybe = pareigybes[0]
     else:
         default_pareigybe = emp_data.get("pareigybe", pareigybes[0])
+
+    try:
+        idx = pareigybes.index(default_pareigybe)
+    except ValueError:
+        idx = 0
+
     selected_pareigybe = cols1[2].selectbox(
         "Pareigybė", pareigybes, key="pareigybe",
-        index=pareigybes.index(default_pareigybe)
+        index=idx
     )
 
     # 4) El. paštas
@@ -155,10 +162,17 @@ def show(conn, c):
     else:
         default_grupe = emp_data.get("grupe", galimos_grupes[0] if galimos_grupes else "")
 
-    cols2[2].selectbox(
-        "Grupė", galimos_grupes, key="grupe",
-        index=galimos_grupes.index(default_grupe) if default_grupe in galimos_grupes else 0
-    )
+    try:
+        gr_idx = galimos_grupes.index(default_grupe)
+    except ValueError:
+        gr_idx = 0
+
+    if not galimos_grupes:
+        cols2[2].selectbox("Grupė", [""], index=0, key="grupe")
+    else:
+        cols2[2].selectbox(
+            "Grupė", galimos_grupes, key="grupe", index=gr_idx
+        )
 
     # 7) Aktyvumo statusas – checkbox
     if is_new:
@@ -198,6 +212,7 @@ def show(conn, c):
         log_action(conn, c, st.session_state.get('user_id'), action, 'darbuotojai', rec_id)
         st.success("✅ Duomenys įrašyti.")
         clear_selection()
+        rerun()
 
     btn_save, btn_back = st.columns(2)
     btn_save.button("💾 Išsaugoti darbuotoją", on_click=do_save)
