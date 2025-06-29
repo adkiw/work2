@@ -3,6 +3,7 @@ import pandas as pd
 from . import login
 from .roles import Role
 from .constants import EU_COUNTRIES, country_flag
+from .utils import rerun
 
 def show(conn, c):
     # 1. Užtikrinti, kad egzistuotų reikiami stulpeliai
@@ -379,5 +380,6 @@ def show(conn, c):
 
             st.success("✅ Duomenys įrašyti ir limitai atnaujinti visiems su tuo pačiu VAT numeriu.")
             clear_selection()
+            rerun()
         except Exception as e:
             st.error(f"❌ Klaida: {e}")
