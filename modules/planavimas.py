@@ -3,9 +3,12 @@
 import streamlit as st
 import pandas as pd
 import datetime
+from . import login
+from .roles import Role
 
 def show(conn, c):
     st.title("Planavimas")
+    is_admin = login.has_role(conn, c, Role.ADMIN)
 
     # ==============================
     # 0) Patikriname, ar lentelėje "kroviniai" yra reikiami stulpeliai.
@@ -48,8 +51,15 @@ def show(conn, c):
     # ==============================
     # 2) Užkrauname visas ekspedicijos grupes (id, numeris, pavadinimas)
     # ==============================
-    c.execute("SELECT id, numeris, pavadinimas FROM grupes ORDER BY numeris")
-    grupes = c.fetchall()  # [(id, numeris, pavadinimas), ...]
+    if is_admin:
+        c.execute("SELECT id, numeris, pavadinimas FROM grupes ORDER BY numeris")
+        grupes = c.fetchall()
+    else:
+        c.execute(
+            "SELECT id, numeris, pavadinimas FROM grupes WHERE imone = ? ORDER BY numeris",
+            (st.session_state.get('imone'),)
+        )
+        grupes = c.fetchall()  # [(id, numeris, pavadinimas), ...]
 
     group_options = ["Visi"] + [f"{numeris} – {pavadinimas}" for _, numeris, pavadinimas in grupes]
     selected = st.selectbox("Pasirinkti ekspedicijos grupę", group_options)
@@ -70,8 +80,15 @@ def show(conn, c):
     # ==============================
     # 4) Paimame visų vilkikų informaciją: numeris, priekaba, vadybininkas
     # ==============================
-    c.execute("SELECT numeris, priekaba, vadybininkas FROM vilkikai ORDER BY numeris")
-    vilkikai_rows = c.fetchall()
+    if is_admin:
+        c.execute("SELECT numeris, priekaba, vadybininkas FROM vilkikai ORDER BY numeris")
+        vilkikai_rows = c.fetchall()
+    else:
+        c.execute(
+            "SELECT numeris, priekaba, vadybininkas FROM vilkikai WHERE imone = ? ORDER BY numeris",
+            (st.session_state.get('imone'),)
+        )
+        vilkikai_rows = c.fetchall()
     priekaba_map = {row[0]: (row[1] or "") for row in vilkikai_rows}
     vadybininkas_map = {row[0]: (row[2] or "") for row in vilkikai_rows}
 
@@ -80,7 +97,7 @@ def show(conn, c):
     # ==============================
     start_str = start_date.isoformat()
     end_str = end_date.isoformat()
-    query = f"""
+    query = """
         SELECT
             vilkikas AS vilkikas,
             iskrovimo_salis AS salis,
@@ -88,11 +105,15 @@ def show(conn, c):
             date(iskrovimo_data) AS data,
             date(pakrovimo_data)   AS pak_data
         FROM kroviniai
-        WHERE date(iskrovimo_data) BETWEEN '{start_str}' AND '{end_str}'
+        WHERE date(iskrovimo_data) BETWEEN ? AND ?
           AND iskrovimo_data IS NOT NULL
-        ORDER BY vilkikas, date(iskrovimo_data)
     """
-    df = pd.read_sql_query(query, conn)
+    params = [start_str, end_str]
+    if not is_admin:
+        query += " AND imone = ?"
+        params.append(st.session_state.get('imone'))
+    query += " ORDER BY vilkikas, date(iskrovimo_data)"
+    df = pd.read_sql_query(query, conn, params=params)
 
     if df.empty:
         st.info("Šiame laikotarpyje nėra planuojamų iškrovimų.")
