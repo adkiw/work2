@@ -5,21 +5,38 @@ from modules.roles import Role
 # 1) Puslapio nustatymai
 st.set_page_config(layout="wide")
 
-# 2) Minimalus CSS (radio bar lieka viršuje)
-st.markdown("""
-<style>
-  .css-18e3th9 { padding-top: 0 !important; }
-  .stRadio > div          { height: 1cm !important; margin-top: 0 !important; }
-  .stRadio > div > label > div { padding-top: 0 !important; padding-bottom: 0 !important; }
-</style>
-""", unsafe_allow_html=True)
+# 2) Minimalus CSS (radio bar lieka viršuje ir spalvotos juostos prisitvirtina 
+#    prie naršyklės viršaus)
+st.markdown(
+    """
+    <style>
+      body { margin: 0; }
+      .css-18e3th9 { padding-top: 3mm !important; }
+      .stRadio > div { height: 1cm !important; margin-top: 0 !important; }
+      .stRadio > div > label > div {
+          padding-top: 0 !important;
+          padding-bottom: 0 !important;
+      }
+      .decorative-lines {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          z-index: 1000;
+      }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # 3) Dekoratyvinės juostos puslapio viršuje
 st.markdown(
     """
-    <div style='height:1mm; width:100%; background-color: orange;'></div>
-    <div style='height:1mm; width:100%; background-color: black;'></div>
-    <div style='height:1mm; width:100%; background-color: violet;'></div>
+    <div class='decorative-lines'>
+      <div style='height:1mm; width:100%; background-color: orange;'></div>
+      <div style='height:1mm; width:100%; background-color: black;'></div>
+      <div style='height:1mm; width:100%; background-color: violet;'></div>
+    </div>
     """,
     unsafe_allow_html=True,
 )
