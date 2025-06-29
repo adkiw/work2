@@ -159,11 +159,18 @@ def show(conn, c):
                             tech.isoformat(),
                             draud_date.isoformat(),
                             st.session_state.get('imone')
+                        ),
                     )
-                )
-                conn.commit()
-                log_action(conn, c, st.session_state.get('user_id'), 'insert', 'priekabos', c.lastrowid)
-                st.success("✅ Priekaba įrašyta.")
+                    conn.commit()
+                    log_action(
+                        conn,
+                        c,
+                        st.session_state.get('user_id'),
+                        'insert',
+                        'priekabos',
+                        c.lastrowid,
+                    )
+                    st.success("✅ Priekaba įrašyta.")
                     clear_sel()
                 except Exception as e:
                     st.error(f"❌ Klaida: {e}")
