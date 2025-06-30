@@ -56,6 +56,41 @@ def init_db(db_path: str | None = None):
 
         conn.commit()
 
+    # Default trailer types
+    trailer_types = [
+        "Van",
+        "Tautliner",
+        "Box",
+        "Open",
+        "Trax Walking Floor",
+        "Coil",
+        "Jumbo Trailer",
+        "Mega Trailer",
+        "Isothermic",
+        "Refrigerated",
+        "Freezer",
+        "Multi Temperature",
+        "Flat",
+        "Lowloader",
+        "Public Works Tiper",
+        "Cereal Tippers",
+        "Steel Through",
+        "Armoured Through",
+        "Palletable Bulk Carrier",
+        "Walking Floor",
+        "Liquid Tank",
+        "Pulverulent Tank",
+        "Container 20 feet",
+        "Container 40 feet",
+        "Container 45 feet",
+    ]
+    for t in trailer_types:
+        c.execute(
+            "INSERT OR IGNORE INTO lookup (kategorija, reiksme) VALUES (?, ?)",
+            ("Priekabos tipas", t),
+        )
+    conn.commit()
+
     # Per-įmonės nustatymų lentelė
     c.execute(
         """
@@ -142,6 +177,21 @@ def init_db(db_path: str | None = None):
     cols = [row[1] for row in c.fetchall()]
     if 'imone' not in cols:
         c.execute("ALTER TABLE priekabos ADD COLUMN imone TEXT")
+    conn.commit()
+
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS trailer_specs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipas TEXT UNIQUE,
+            ilgis REAL,
+            plotis REAL,
+            aukstis REAL,
+            keliamoji_galia REAL,
+            talpa REAL
+        )
+        """
+    )
     conn.commit()
 
     c.execute("""
