@@ -1,7 +1,7 @@
 import streamlit as st
 from . import login
 from .roles import Role
-from .utils import title_with_add
+from .utils import title_with_add, rerun
 
 CATEGORY = "Priekabos tipas"
 
@@ -63,7 +63,7 @@ def show(conn, c):
                     conn.commit()
                     st.session_state.edit_type = None
                     st.success("✅ Išsaugota")
-                    st.experimental_rerun()
+                    rerun()
                 except Exception as e:
                     st.error(f"❌ Klaida: {e}")
             else:
@@ -94,7 +94,7 @@ def show(conn, c):
                     conn.commit()
                     st.session_state.show_add_type = False
                     st.success("✅ Įrašyta")
-                    st.experimental_rerun()
+                    rerun()
                 except Exception as e:
                     st.error(f"❌ Klaida: {e}")
             else:
@@ -122,10 +122,10 @@ def show(conn, c):
         cols[0].write(val)
         if cols[1].button("✏️", key=f"edit_{rec_id}"):
             st.session_state.edit_type = (rec_id, val)
-            st.experimental_rerun()
+            rerun()
         if cols[2].button("🗑️", key=f"del_{rec_id}"):
             table = "lookup" if is_admin else "company_settings"
             c.execute(f"DELETE FROM {table} WHERE id=?", (rec_id,))
             conn.commit()
             st.success("❎ Ištrinta")
-            st.experimental_rerun()
+            rerun()
