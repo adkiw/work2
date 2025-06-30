@@ -4,7 +4,7 @@ from datetime import date, time, timedelta
 from . import login
 from .roles import Role
 from .constants import EU_COUNTRIES, country_flag
-from .utils import rerun
+from .utils import rerun, title_with_add
 
 HEADER_LABELS = {
     "id": "ID",
@@ -69,9 +69,11 @@ def get_vieta(salis, regionas):
     return f"{salis}{regionas or ''}"
 
 def show(conn, c):
-    st.title("Užsakymų valdymas")
     is_admin = login.has_role(conn, c, Role.ADMIN)
-    add_clicked = st.button("➕ Pridėti naują krovinį", use_container_width=True)
+    add_clicked = title_with_add(
+        "Užsakymų valdymas",
+        "➕ Pridėti naują krovinį",
+    )
 
     # Įsitikinti, kad visi stulpeliai egzistuoja lentelėje 'kroviniai'
     expected = {
