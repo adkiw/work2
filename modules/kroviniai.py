@@ -4,7 +4,7 @@ from datetime import date, time, timedelta
 from . import login
 from .roles import Role
 from .constants import EU_COUNTRIES, country_flag
-from .utils import rerun, title_with_add
+from .utils import rerun, title_with_add, display_table_with_edit
 
 HEADER_LABELS = {
     "id": "ID",
@@ -251,22 +251,9 @@ def show(conn, c):
                 if v:
                     df_f = df_f[df_f[col].astype(str).str.contains(v, case=False, na=False)]
 
-            hdr = st.columns(len(df_disp.columns) + 1)
-            for i, col in enumerate(df_disp.columns):
-                label = HEADER_LABELS.get(col, col.replace("_", "<br>")[:14])
-                hdr[i].markdown(f"<b>{label}</b>", unsafe_allow_html=True)
-            hdr[-1].markdown("<b>Veiksmai</b>", unsafe_allow_html=True)
-
-            for _, row in df_f.iterrows():
-                row_cols = st.columns(len(df_disp.columns) + 1)
-                for i, col in enumerate(df_disp.columns):
-                    row_cols[i].write(row[col])
-                row_cols[-1].button(
-                    "✏️",
-                    key=f"edit_{row['id']}",
-                    on_click=edit_cargo,
-                    args=(row['id'],)
-                )
+            header_map = {col: HEADER_LABELS.get(col, col.replace("_", " ")) for col in df_disp.columns}
+            df_show = df_f.rename(columns=header_map)
+            display_table_with_edit(df_show, edit_cargo, id_col="id")
 
             st.download_button(
                 "💾 Eksportuoti kaip CSV",
