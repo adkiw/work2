@@ -53,7 +53,21 @@ def init_db(db_path: str | None = None):
             "INSERT OR IGNORE INTO lookup (id, kategorija, reiksme) SELECT id, kategorija, reiksme FROM lookup_old"
         )
         c.execute("DROP TABLE lookup_old")
+
         conn.commit()
+
+    # Per-įmonės nustatymų lentelė
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS company_settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            imone TEXT,
+            kategorija TEXT,
+            reiksme TEXT,
+            UNIQUE (imone, kategorija, reiksme)
+        )
+        """
+    )
 
     # ------------- Pagrindinės lentelės -------------
     c.execute("""
