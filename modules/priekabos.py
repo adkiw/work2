@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date
 from .audit import log_action
 from .utils import rerun, title_with_add
+from .settings import get_default_trailer_type
 
 def show(conn, c):
 
@@ -109,8 +110,10 @@ def show(conn, c):
             # 5.1) Priekabos tipas – reikšmės iš DB
             priekabu_tipas_opts = [""] + priekabu_tipai_list
             tip_idx = 0
-            if row['priekabu_tipas'] in priekabu_tipas_opts:
-                tip_idx = priekabu_tipas_opts.index(row['priekabu_tipas'])
+            default_tip = get_default_trailer_type(c, st.session_state.get('imone'))
+            current_tip = row['priekabu_tipas'] or default_tip
+            if current_tip in priekabu_tipas_opts:
+                tip_idx = priekabu_tipas_opts.index(current_tip)
             tip = st.selectbox("Priekabos tipas", priekabu_tipas_opts, index=tip_idx)
 
             # 5.2) Kiti laukai
@@ -171,7 +174,9 @@ def show(conn, c):
     if sel == 0:
         with st.form("new_form", clear_on_submit=True):
             priekabu_tipas_opts = [""] + priekabu_tipai_list
-            tip = st.selectbox("Priekabos tipas", priekabu_tipas_opts)
+            default_tip = get_default_trailer_type(c, st.session_state.get('imone'))
+            idx = priekabu_tipas_opts.index(default_tip) if default_tip in priekabu_tipas_opts else 0
+            tip = st.selectbox("Priekabos tipas", priekabu_tipas_opts, index=idx)
 
             num = st.text_input("Numeris")
             model = st.text_input("Markė")
