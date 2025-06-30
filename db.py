@@ -104,6 +104,42 @@ def init_db(db_path: str | None = None):
         """
     )
 
+    # Defaults for trailer types per company with explicit ordering
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS company_default_trailers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            imone TEXT,
+            reiksme TEXT,
+            priority INTEGER,
+            UNIQUE(imone, priority)
+        )
+        """
+    )
+    # Add priority column if running on an older DB version
+    c.execute("PRAGMA table_info(company_default_trailers)")
+    cols = [row[1] for row in c.fetchall()]
+    if "priority" not in cols:
+        c.execute("ALTER TABLE company_default_trailers ADD COLUMN priority INTEGER")
+    conn.commit()
+
+    # Migrate single default stored in company_settings if present
+    rows = c.execute(
+        "SELECT imone, reiksme FROM company_settings WHERE kategorija=?",
+        ("Numatytas priekabos tipas",),
+    ).fetchall()
+    for imone, reiksme in rows:
+        c.execute(
+            "INSERT OR IGNORE INTO company_default_trailers (imone, reiksme, priority) VALUES (?,?,0)",
+            (imone, reiksme),
+        )
+    if rows:
+        c.execute(
+            "DELETE FROM company_settings WHERE kategorija=?",
+            ("Numatytas priekabos tipas",),
+        )
+    conn.commit()
+
     # ------------- Pagrindinės lentelės -------------
     c.execute("""
         CREATE TABLE IF NOT EXISTS klientai (

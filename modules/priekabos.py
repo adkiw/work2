@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import date
 from .audit import log_action
 from .utils import rerun, title_with_add
-from .settings import get_default_trailer_type
+from .settings import get_default_trailer_types
 
 def show(conn, c):
 
@@ -108,9 +108,11 @@ def show(conn, c):
         row = df_sel.iloc[0]
         with st.form("edit_form", clear_on_submit=False):
             # 5.1) Priekabos tipas – reikšmės iš DB
-            priekabu_tipas_opts = [""] + priekabu_tipai_list
+            defaults = get_default_trailer_types(c, st.session_state.get('imone'))
+            ordered = defaults + [t for t in priekabu_tipai_list if t not in defaults]
+            priekabu_tipas_opts = [""] + ordered
             tip_idx = 0
-            default_tip = get_default_trailer_type(c, st.session_state.get('imone'))
+            default_tip = defaults[0] if defaults else None
             current_tip = row['priekabu_tipas'] or default_tip
             if current_tip in priekabu_tipas_opts:
                 tip_idx = priekabu_tipas_opts.index(current_tip)
@@ -173,8 +175,10 @@ def show(conn, c):
     # 6) Naujos priekabos įvedimo forma
     if sel == 0:
         with st.form("new_form", clear_on_submit=True):
-            priekabu_tipas_opts = [""] + priekabu_tipai_list
-            default_tip = get_default_trailer_type(c, st.session_state.get('imone'))
+            defaults = get_default_trailer_types(c, st.session_state.get('imone'))
+            ordered = defaults + [t for t in priekabu_tipai_list if t not in defaults]
+            priekabu_tipas_opts = [""] + ordered
+            default_tip = defaults[0] if defaults else None
             idx = priekabu_tipas_opts.index(default_tip) if default_tip in priekabu_tipas_opts else 0
             tip = st.selectbox("Priekabos tipas", priekabu_tipas_opts, index=idx)
 
