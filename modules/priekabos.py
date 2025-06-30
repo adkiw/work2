@@ -63,7 +63,10 @@ def show(conn, c):
         # Išvalome filtrus
         for key in list(st.session_state):
             if key.startswith("f_"):
-                st.session_state[key] = ""
+                try:
+                    st.session_state[key] = ""
+                except Exception:
+                    pass
 
     def new():
         st.session_state.selected_priek = 0
