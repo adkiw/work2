@@ -1,6 +1,7 @@
 # main.py
 import streamlit as st
 from modules.roles import Role
+from modules.utils import rerun
 
 # 1) Puslapio nustatymai
 st.set_page_config(layout="wide")
@@ -20,7 +21,7 @@ selected = st.sidebar.selectbox(
 if selected != st.session_state.theme:
     st.session_state.theme = selected
     st.config.set_option("theme.base", selected.lower())
-    st.experimental_rerun()
+    rerun()
 
 # 2) Minimalus CSS – meniu prigludęs prie viršaus
 st.markdown(
