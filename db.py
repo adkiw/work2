@@ -15,13 +15,45 @@ def init_db(db_path: str | None = None):
     c    = conn.cursor()
 
     # ------------- Pagalbinė lentelė -------------
-    c.execute("""
+    c.execute(
+        """
         CREATE TABLE IF NOT EXISTS lookup (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             kategorija TEXT,
-            reiksme    TEXT UNIQUE
+            reiksme    TEXT,
+            UNIQUE (kategorija, reiksme)
         )
-    """)
+        """
+    )
+    # Migrate from old schema with UNIQUE(reiksme) if needed
+    idx_list = c.execute("PRAGMA index_list(lookup)").fetchall()
+    has_composite = False
+    needs_migration = False
+    for _, idx_name, unique, *_ in idx_list:
+        if unique:
+            cols_info = [row[2] for row in c.execute(f"PRAGMA index_info({idx_name})")]
+            if cols_info == ["kategorija", "reiksme"]:
+                has_composite = True
+            if cols_info == ["reiksme"]:
+                needs_migration = True
+
+    if needs_migration and not has_composite:
+        c.execute("ALTER TABLE lookup RENAME TO lookup_old")
+        c.execute(
+            """
+            CREATE TABLE lookup (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                kategorija TEXT,
+                reiksme    TEXT,
+                UNIQUE (kategorija, reiksme)
+            )
+            """
+        )
+        c.execute(
+            "INSERT OR IGNORE INTO lookup (id, kategorija, reiksme) SELECT id, kategorija, reiksme FROM lookup_old"
+        )
+        c.execute("DROP TABLE lookup_old")
+        conn.commit()
 
     # ------------- Pagrindinės lentelės -------------
     c.execute("""

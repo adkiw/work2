@@ -10,9 +10,17 @@ def test_lookup_table_and_insert(tmp_path):
         "INSERT INTO lookup (kategorija, reiksme) VALUES (?, ?)",
         ("Priekabos tipas", "TestTipas"),
     )
-    conn.commit()
     c.execute(
-        "SELECT reiksme FROM lookup WHERE kategorija=? AND reiksme=?",
-        ("Priekabos tipas", "TestTipas"),
+        "INSERT INTO lookup (kategorija, reiksme) VALUES (?, ?)",
+        ("Markė", "TestTipas"),
     )
-    assert c.fetchone() is not None
+    conn.commit()
+    c.execute("SELECT COUNT(*) FROM lookup WHERE reiksme=?", ("TestTipas",))
+    assert c.fetchone()[0] == 2
+
+    import pytest, sqlite3
+    with pytest.raises(sqlite3.IntegrityError):
+        c.execute(
+            "INSERT INTO lookup (kategorija, reiksme) VALUES (?, ?)",
+            ("Priekabos tipas", "TestTipas"),
+        )
