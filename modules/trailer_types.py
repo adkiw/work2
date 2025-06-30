@@ -18,7 +18,8 @@ def show(conn, c):
         CREATE TABLE IF NOT EXISTS lookup (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             kategorija TEXT,
-            reiksme TEXT UNIQUE
+            reiksme TEXT,
+            UNIQUE (kategorija, reiksme)
         )
         """
     )
