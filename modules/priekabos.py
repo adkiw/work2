@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 from .audit import log_action
-from .utils import rerun, title_with_add, display_table_with_edit
+from .utils import rerun, title_with_add
 
 def show(conn, c):
 
@@ -266,8 +266,17 @@ def show(conn, c):
                 df_filt[col].astype(str).str.lower().str.startswith(val.lower())
             ]
 
-        df_show = df_filt.copy()
-        display_table_with_edit(df_show, edit, id_col="id")
+    # 7.5) Lentelės eilutės su redagavimo mygtuku (be headerių po filtrų)
+    for _, row in df_filt.iterrows():
+        row_cols = st.columns(len(df_filt.columns) + 1)
+        for i, col in enumerate(df_filt.columns):
+            row_cols[i].write(row[col])
+        row_cols[-1].button(
+            "✏️",
+            key=f"edit_{row['id']}",
+            on_click=edit,
+            args=(row['id'],)
+        )
 
     # 7.6) Eksportas į CSV
     csv = df.to_csv(index=False, sep=';').encode('utf-8')

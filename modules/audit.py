@@ -2,7 +2,6 @@ import json
 import pandas as pd
 import streamlit as st
 from datetime import datetime
-from .utils import display_table_with_edit
 
 
 def log_action(conn, c, user_id, action, table_name, record_id=None, details=None):
@@ -47,4 +46,4 @@ def show(conn, c):
             return str(val)
 
     df["details"] = df["details"].apply(parse_details)
-    display_table_with_edit(df, None)
+    st.dataframe(df)
