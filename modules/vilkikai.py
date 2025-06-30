@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import date
 from . import login
 from .roles import Role
-from .utils import rerun, title_with_add, display_table_with_edit
+from .utils import rerun, title_with_add
 
 def show(conn, c):
     # 1) Užtikriname, kad lentelėje „vilkikai“ būtų visi reikalingi stulpeliai
@@ -209,8 +209,17 @@ def show(conn, c):
                     df_filt[col].astype(str).str.lower().str.startswith(val.lower())
                 ]
 
-        df_show = df_filt.copy()
-        display_table_with_edit(df_show, edit_vilk, id_col="numeris")
+        # 6.5) Sąrašas su redagavimo mygtukais
+        for _, row in df_filt.iterrows():
+            row_cols = st.columns(len(df_filt.columns) + 1)
+            for i, col in enumerate(df_filt.columns):
+                row_cols[i].write(row[col])
+            row_cols[-1].button(
+                "✏️",
+                key=f"edit_{row['numeris']}",
+                on_click=edit_vilk,
+                args=(row['numeris'],)
+            )
 
         # 6.6) Eksportas į CSV
         csv = df.to_csv(index=False, sep=';').encode('utf-8')

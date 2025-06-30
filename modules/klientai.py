@@ -3,7 +3,7 @@ import pandas as pd
 from . import login
 from .roles import Role
 from .constants import EU_COUNTRIES, country_flag
-from .utils import rerun, title_with_add, display_table_with_edit
+from .utils import rerun, title_with_add
 
 def show(conn, c):
     # 1. Užtikrinti, kad egzistuotų reikiami stulpeliai
@@ -110,8 +110,17 @@ def show(conn, c):
             if val:
                 df_filt = df_filt[df_filt[col].astype(str).str.contains(val, case=False, na=False)]
 
-        df_show = df_filt.copy()
-        display_table_with_edit(df_show, start_edit, id_col="id")
+        # Duomenų eilutės su redagavimo mygtuku (be antraštės)
+        for _, row in df_filt.iterrows():
+            row_cols = st.columns(len(df_filt.columns) + 1)
+            for i, col in enumerate(df_filt.columns):
+                row_cols[i].write(row[col])
+            row_cols[-1].button(
+                "✏️",
+                key=f"edit_{row['id']}",
+                on_click=start_edit,
+                args=(row['id'],)
+            )
         return
 
     # 5. Detali forma / naujas įrašas

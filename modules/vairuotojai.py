@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import date
 from . import login
 from .roles import Role
-from .utils import rerun, title_with_add, display_table_with_edit
+from .utils import rerun, title_with_add
 
 # ---------- Konstantos ----------
 TAUTYBES = [
@@ -293,6 +293,9 @@ def show(conn, c):
         }
     )
 
-    df_disp = df_disp
-    display_table_with_edit(df_disp, _edit_vair, id_col="id")
-
+    # ---------- Lentelės atvaizdavimas ----------
+    for _, row in df_disp.iterrows():
+        cols = st.columns(len(df_disp.columns) + 1)
+        for i, col in enumerate(df_disp.columns):
+            cols[i].write(row[col])
+        cols[-1].button("✏️", key=f"edit_{row['id']}", on_click=_edit_vair, args=(row["id"],))
