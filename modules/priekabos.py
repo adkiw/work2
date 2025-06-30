@@ -53,6 +53,12 @@ def show(conn, c):
             (st.session_state.get('imone'),)
         ).fetchall()
     ]
+    priekabu_tipai_list = [
+        r[0]
+        for r in c.execute(
+            "SELECT reiksme FROM lookup WHERE kategorija = 'Priekabos tipas' ORDER BY reiksme"
+        ).fetchall()
+    ]
 
     # 3) Sesijos būsena
     if 'selected_priek' not in st.session_state:
@@ -93,8 +99,8 @@ def show(conn, c):
 
         row = df_sel.iloc[0]
         with st.form("edit_form", clear_on_submit=False):
-            # 5.1) Priekabos tipas – DROPlistas su fiksuotomis reikšmėmis
-            priekabu_tipas_opts = ["", "Standartinis Tentas", "Kietašonė puspriekabė", "Šaldytuvas"]
+            # 5.1) Priekabos tipas – reikšmės iš DB
+            priekabu_tipas_opts = [""] + priekabu_tipai_list
             tip_idx = 0
             if row['priekabu_tipas'] in priekabu_tipas_opts:
                 tip_idx = priekabu_tipas_opts.index(row['priekabu_tipas'])
@@ -157,7 +163,7 @@ def show(conn, c):
     # 6) Naujos priekabos įvedimo forma
     if sel == 0:
         with st.form("new_form", clear_on_submit=True):
-            priekabu_tipas_opts = ["", "Standartinis Tentas", "Kietašonė puspriekabė", "Šaldytuvas"]
+            priekabu_tipas_opts = [""] + priekabu_tipai_list
             tip = st.selectbox("Priekabos tipas", priekabu_tipas_opts)
 
             num = st.text_input("Numeris")
