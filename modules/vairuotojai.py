@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import date
 from . import login
 from .roles import Role
-from .utils import rerun
+from .utils import rerun, title_with_add
 
 # ---------- Konstantos ----------
 TAUTYBES = [
@@ -61,7 +61,6 @@ def _text_filter(field, placeholder):
 
 # ---------- Main ----------
 def show(conn, c):
-    st.title("Vairuotojų valdymas")
     _ensure_columns(c, conn)
     is_admin = login.has_role(conn, c, Role.ADMIN)
 
@@ -77,6 +76,8 @@ def show(conn, c):
 
     def _edit_vair(v_id):
         st.session_state.selected_vair = v_id
+
+    title_with_add("Vairuotojų valdymas", "➕ Pridėti vairuotoją", on_click=_new_vair)
 
     sel = st.session_state.selected_vair
     drv2vilk = _driver_to_vilkik_map(c, is_admin)
@@ -219,7 +220,6 @@ def show(conn, c):
         return
 
     # --------------------------------------------------- Sąrašas + FILTRAI
-    st.button("➕ Pridėti vairuotoją", on_click=_new_vair, use_container_width=True)
 
     if is_admin:
         df = pd.read_sql_query("SELECT * FROM vairuotojai", conn)

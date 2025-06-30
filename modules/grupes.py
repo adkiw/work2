@@ -4,9 +4,9 @@ import streamlit as st
 import pandas as pd
 from . import login
 from .roles import Role
+from .utils import title_with_add
 
 def show(conn, c):
-    st.title("Grupės")
 
     # 1) Užtikrinti, kad egzistuotų lentelė „grupes“
     c.execute("""
@@ -48,7 +48,7 @@ def show(conn, c):
     if "show_add_form" not in st.session_state:
         st.session_state["show_add_form"] = False
 
-    if st.button("➕ Pridėti grupę"):
+    if title_with_add("Grupės", "➕ Pridėti grupę"):
         st.session_state["show_add_form"] = True
 
     # 5) Jei paspausta „Pridėti grupę“, atvaizduoti formą

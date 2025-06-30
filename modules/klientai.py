@@ -3,7 +3,7 @@ import pandas as pd
 from . import login
 from .roles import Role
 from .constants import EU_COUNTRIES, country_flag
-from .utils import rerun
+from .utils import rerun, title_with_add
 
 def show(conn, c):
     # 1. Užtikrinti, kad egzistuotų reikiami stulpeliai
@@ -43,9 +43,7 @@ def show(conn, c):
         st.session_state.selected_client = cid
 
     # 2. Antraštė + „Pridėti naują klientą“ mygtukas
-    title_col, add_col = st.columns([9, 1])
-    title_col.title("Klientai")
-    add_col.button("➕ Pridėti naują klientą", on_click=start_new)
+    title_with_add("Klientai", "➕ Pridėti naują klientą", on_click=start_new)
 
     # 3. Būsenos inicializavimas
     if 'selected_client' not in st.session_state:

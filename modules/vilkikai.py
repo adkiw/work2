@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import date
 from . import login
 from .roles import Role
-from .utils import rerun
+from .utils import rerun, title_with_add
 
 def show(conn, c):
     # 1) Užtikriname, kad lentelėje „vilkikai“ būtų visi reikalingi stulpeliai
@@ -56,8 +56,8 @@ def show(conn, c):
     def edit_vilk(numeris):
         st.session_state.selected_vilk = numeris
 
-    # 4) Antraštė
-    st.title("Vilkikų valdymas")
+    # 4) Antraštė ir mygtukas naujam įrašui
+    title_with_add("Vilkikų valdymas", "➕ Pridėti naują vilkiką", on_click=new_vilk)
 
     # 5) Inicializuojame sesijos būseną jei neapibrėžta
     if 'selected_vilk' not in st.session_state:
@@ -128,10 +128,7 @@ def show(conn, c):
             clear_selection()
             rerun()
 
-        # 6.2) Mygtukas „Pridėti naują vilkiką“
-        st.button("➕ Pridėti naują vilkiką", on_click=new_vilk, use_container_width=True)
-
-        # 6.3) Vilkikų sąrašo atvaizdavimas
+        # 6.2) Vilkikų sąrašo atvaizdavimas
         is_admin = login.has_role(conn, c, Role.ADMIN)
         if is_admin:
             query = "SELECT * FROM vilkikai ORDER BY tech_apziura ASC"

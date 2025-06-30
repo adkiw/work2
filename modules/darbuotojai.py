@@ -3,7 +3,7 @@ import pandas as pd
 from . import login
 from .roles import Role
 from .audit import log_action
-from .utils import rerun
+from .utils import rerun, title_with_add
 
 def show(conn, c):
     # Užtikrinti, kad egzistuotų stulpelis „aktyvus“ darbuotojų lentelėje
@@ -25,10 +25,8 @@ def show(conn, c):
     def start_edit(emp_id):
         st.session_state.selected_emp = emp_id
 
-    # Antraštė + „Pridėti naują darbuotoją“ mygtukas
-    title_col, add_col = st.columns([9, 1])
-    title_col.title("Darbuotojai")
-    add_col.button("➕ Pridėti naują darbuotoją", on_click=start_new, use_container_width=True)
+    # Antraštė ir mygtukas naujam įrašui
+    title_with_add("Darbuotojai", "➕ Pridėti naują darbuotoją", on_click=start_new)
 
     # Inicializuojame būseną
     if 'selected_emp' not in st.session_state:

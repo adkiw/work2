@@ -2,10 +2,9 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 from .audit import log_action
-from .utils import rerun
+from .utils import rerun, title_with_add
 
 def show(conn, c):
-    st.title("Priekabų valdymas")
 
     # 1) Užtikriname, kad lentelėje 'priekabos' egzistuotų visi reikalingi stulpeliai
     existing = [r[1] for r in c.execute("PRAGMA table_info(priekabos)").fetchall()]
@@ -50,8 +49,8 @@ def show(conn, c):
     def edit(id):
         st.session_state.selected_priek = id
 
-    # 4) "Pridėti priekabą" mygtukas viršuje
-    st.button("➕ Pridėti priekabą", on_click=new, use_container_width=True)
+    # 4) Antraštė ir mygtukas naujai priekabai
+    title_with_add("Priekabų valdymas", "➕ Pridėti priekabą", on_click=new)
 
     sel = st.session_state.selected_priek
 
