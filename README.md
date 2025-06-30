@@ -27,6 +27,8 @@ This repository contains a Streamlit based application for logistics companies. 
    ```
    The main page displays a horizontal menu for modules such as shipments, trucks, trailers, groups, drivers, clients, employees, planning and updates.
 
+4. To enable dark mode, open the sidebar in the running app and choose **Dark** in the Theme selector.
+
 ## Naudojimas
 
 Paleidus programą veikia prisijungimo sistema. Pirmą kartą duomenų bazėje automatiškai sukuriamas naudotojas **admin** su slaptažodžiu **admin**. Prisijungus šiuo vartotoju galima patvirtinti kitų naudotojų registracijas.

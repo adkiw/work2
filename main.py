@@ -5,6 +5,23 @@ from modules.roles import Role
 # 1) Puslapio nustatymai
 st.set_page_config(layout="wide")
 
+# Theme selection stored in session_state
+if "theme" not in st.session_state:
+    st.session_state.theme = "Light"
+
+st.config.set_option("theme.base", st.session_state.theme.lower())
+
+selected = st.sidebar.selectbox(
+    "Theme",
+    ["Light", "Dark"],
+    index=0 if st.session_state.theme == "Light" else 1,
+)
+
+if selected != st.session_state.theme:
+    st.session_state.theme = selected
+    st.config.set_option("theme.base", selected.lower())
+    st.experimental_rerun()
+
 # 2) Minimalus CSS – meniu prigludęs prie viršaus
 st.markdown(
     """
