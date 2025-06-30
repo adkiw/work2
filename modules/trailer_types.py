@@ -6,7 +6,7 @@ from .utils import title_with_add, rerun
 CATEGORY = "Priekabos tipas"
 
 
-def show(conn, c):
+def show(conn, c, *, key_prefix: str = ""):
     """Interface to manage trailer types."""
     is_admin = login.has_role(conn, c, Role.ADMIN)
     is_comp_admin = login.has_role(conn, c, Role.COMPANY_ADMIN)
@@ -43,13 +43,13 @@ def show(conn, c):
     if "edit_type" not in st.session_state:
         st.session_state.edit_type = None
 
-    if title_with_add("Priekabų tipai", "➕ Pridėti tipą"):
+    if title_with_add("Priekabų tipai", "➕ Pridėti tipą", key=f"{key_prefix}add_btn"):
         st.session_state.show_add_type = True
 
     # ----- Edit existing type -----
     if st.session_state.edit_type:
         rec_id, initial = st.session_state.edit_type
-        with st.form("edit_type_form"):
+        with st.form(f"{key_prefix}edit_type_form"):
             val = st.text_input("Priekabos tipas", value=initial)
             save = st.form_submit_button("💾 Išsaugoti")
             cancel = st.form_submit_button("🔙 Atšaukti")
@@ -72,7 +72,7 @@ def show(conn, c):
 
     # ----- Add new type form -----
     if st.session_state.show_add_type:
-        with st.form("add_type_form", clear_on_submit=True):
+        with st.form(f"{key_prefix}add_type_form", clear_on_submit=True):
             val = st.text_input("Priekabos tipas")
             save = st.form_submit_button("💾 Išsaugoti")
             cancel = st.form_submit_button("🔙 Atšaukti")
@@ -120,10 +120,10 @@ def show(conn, c):
     for rec_id, val in rows:
         cols = st.columns([8, 1, 1])
         cols[0].write(val)
-        if cols[1].button("✏️", key=f"edit_{rec_id}"):
+        if cols[1].button("✏️", key=f"{key_prefix}edit_{rec_id}"):
             st.session_state.edit_type = (rec_id, val)
             rerun()
-        if cols[2].button("🗑️", key=f"del_{rec_id}"):
+        if cols[2].button("🗑️", key=f"{key_prefix}del_{rec_id}"):
             table = "lookup" if is_admin else "company_settings"
             c.execute(f"DELETE FROM {table} WHERE id=?", (rec_id,))
             conn.commit()

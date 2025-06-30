@@ -37,7 +37,8 @@ def show(conn, c):
 
     st.header("Nustatymai")
 
-    trailer_types.show(conn, c)
+    # Embed trailer type management with unique widget keys
+    trailer_types.show(conn, c, key_prefix="settings_")
 
     imone = st.session_state.get("imone")
     if not imone:
