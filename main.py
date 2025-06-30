@@ -42,6 +42,7 @@ from modules import (
     kroviniai,
     vilkikai,
     priekabos,
+    trailer_specs,
     grupes,
     vairuotojai,
     klientai,
@@ -65,6 +66,7 @@ module_functions = {
     "Užsakymai": kroviniai.show,
     "Vilkikai": vilkikai.show,
     "Priekabos": priekabos.show,
+    "Priekabų specifikacijos": trailer_specs.show,
     "Grupės": grupes.show,
     "Vairuotojai": vairuotojai.show,
     "Klientai": klientai.show,
@@ -79,6 +81,7 @@ module_functions = {
 MODULE_ROLES = {
     "Registracijos": [Role.ADMIN, Role.COMPANY_ADMIN],
     "Audit": [Role.ADMIN],
+    "Priekabų specifikacijos": [Role.ADMIN],
     "Nustatymai": [Role.ADMIN],
 }
 
