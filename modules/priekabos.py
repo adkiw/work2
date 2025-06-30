@@ -248,12 +248,16 @@ def show(conn, c):
     # 7.4) Filtravimo laukai (tik placeholder, be jokių headerių virš jų)
     filter_cols = st.columns(len(df_disp.columns) + 1)
     for i, col in enumerate(df_disp.columns):
-        filter_cols[i].text_input(label="", placeholder=col, key=f"f_{col}")
+        filter_cols[i].text_input(
+            label="",
+            placeholder=col,
+            key=f"f_{col}_{i}"
+        )
     filter_cols[-1].write("")
 
     df_filt = df_disp.copy()
-    for col in df_disp.columns:
-        val = st.session_state.get(f"f_{col}", "")
+    for i, col in enumerate(df_disp.columns):
+        val = st.session_state.get(f"f_{col}_{i}", "")
         if val:
             df_filt = df_filt[
                 df_filt[col].astype(str).str.lower().str.startswith(val.lower())
