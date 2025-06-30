@@ -53,12 +53,19 @@ def show(conn, c):
             (st.session_state.get('imone'),)
         ).fetchall()
     ]
-    priekabu_tipai_list = [
-        r[0]
-        for r in c.execute(
-            "SELECT reiksme FROM lookup WHERE kategorija = 'Priekabos tipas' ORDER BY reiksme"
-        ).fetchall()
-    ]
+    rows = c.execute(
+        "SELECT reiksme FROM company_settings WHERE imone = ? AND kategorija = 'Priekabos tipas' ORDER BY reiksme",
+        (st.session_state.get('imone'),),
+    ).fetchall()
+    if rows:
+        priekabu_tipai_list = [r[0] for r in rows]
+    else:
+        priekabu_tipai_list = [
+            r[0]
+            for r in c.execute(
+                "SELECT reiksme FROM lookup WHERE kategorija = 'Priekabos tipas' ORDER BY reiksme"
+            ).fetchall()
+        ]
 
     # 3) Sesijos būsena
     if 'selected_priek' not in st.session_state:

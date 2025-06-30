@@ -7,12 +7,14 @@ CATEGORY = "Priekabos tipas"
 
 
 def show(conn, c):
-    """Admin interface to manage trailer types."""
-    if not login.has_role(conn, c, Role.ADMIN):
+    """Interface to manage trailer types."""
+    is_admin = login.has_role(conn, c, Role.ADMIN)
+    is_comp_admin = login.has_role(conn, c, Role.COMPANY_ADMIN)
+    if not (is_admin or is_comp_admin):
         st.error("Neturite teisių")
         return
 
-    # Ensure lookup table exists
+    # Ensure necessary tables exist
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS lookup (
@@ -20,6 +22,17 @@ def show(conn, c):
             kategorija TEXT,
             reiksme TEXT,
             UNIQUE (kategorija, reiksme)
+        )
+        """
+    )
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS company_settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            imone TEXT,
+            kategorija TEXT,
+            reiksme TEXT,
+            UNIQUE (imone, kategorija, reiksme)
         )
         """
     )
@@ -45,7 +58,8 @@ def show(conn, c):
         if save:
             if val.strip():
                 try:
-                    c.execute("UPDATE lookup SET reiksme=? WHERE id=?", (val.strip(), rec_id))
+                    table = "lookup" if is_admin else "company_settings"
+                    c.execute(f"UPDATE {table} SET reiksme=? WHERE id=?", (val.strip(), rec_id))
                     conn.commit()
                     st.session_state.edit_type = None
                     st.success("✅ Išsaugota")
@@ -67,10 +81,16 @@ def show(conn, c):
         elif save:
             if val.strip():
                 try:
-                    c.execute(
-                        "INSERT INTO lookup (kategorija, reiksme) VALUES (?, ?)",
-                        (CATEGORY, val.strip()),
-                    )
+                    if is_admin:
+                        c.execute(
+                            "INSERT INTO lookup (kategorija, reiksme) VALUES (?, ?)",
+                            (CATEGORY, val.strip()),
+                        )
+                    else:
+                        c.execute(
+                            "INSERT INTO company_settings (imone, kategorija, reiksme) VALUES (?,?,?)",
+                            (st.session_state.get('imone'), CATEGORY, val.strip()),
+                        )
                     conn.commit()
                     st.session_state.show_add_type = False
                     st.success("✅ Įrašyta")
@@ -83,10 +103,16 @@ def show(conn, c):
 
     st.markdown("---")
     st.subheader("Priekabų tipų sąrašas")
-    rows = c.execute(
-        "SELECT id, reiksme FROM lookup WHERE kategorija=? ORDER BY reiksme",
-        (CATEGORY,),
-    ).fetchall()
+    if is_admin:
+        rows = c.execute(
+            "SELECT id, reiksme FROM lookup WHERE kategorija=? ORDER BY reiksme",
+            (CATEGORY,),
+        ).fetchall()
+    else:
+        rows = c.execute(
+            "SELECT id, reiksme FROM company_settings WHERE imone=? AND kategorija=? ORDER BY reiksme",
+            (st.session_state.get('imone'), CATEGORY),
+        ).fetchall()
     if not rows:
         st.info("Nėra priekabų tipų.")
         return
@@ -98,7 +124,8 @@ def show(conn, c):
             st.session_state.edit_type = (rec_id, val)
             st.experimental_rerun()
         if cols[2].button("🗑️", key=f"del_{rec_id}"):
-            c.execute("DELETE FROM lookup WHERE id=?", (rec_id,))
+            table = "lookup" if is_admin else "company_settings"
+            c.execute(f"DELETE FROM {table} WHERE id=?", (rec_id,))
             conn.commit()
             st.success("❎ Ištrinta")
             st.experimental_rerun()
