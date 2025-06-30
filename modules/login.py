@@ -86,9 +86,13 @@ def show(conn, c):
             st.sidebar.success(msg)
 
         st.sidebar.subheader("Prisijungimas")
-        username = st.sidebar.text_input("El. paštas")
-        password = st.sidebar.text_input("Slaptažodis", type="password")
-        if st.sidebar.button("Prisijungti"):
+        with st.sidebar.form("login_form"):
+            username = st.text_input("El. paštas")
+            password = st.text_input("Slaptažodis", type="password")
+            login_submit = st.form_submit_button("Prisijungti")
+            register_submit = st.form_submit_button("Registruotis")
+
+        if login_submit:
             user_id, imone = verify_user(conn, c, username, password)
             if user_id:
                 st.session_state.user_id = user_id
@@ -97,7 +101,8 @@ def show(conn, c):
                 rerun()
             else:
                 st.sidebar.error("Neteisingi prisijungimo duomenys")
-        if st.sidebar.button("Registruotis"):
+
+        if register_submit:
             st.session_state.show_register = True
             rerun()
 

@@ -50,7 +50,6 @@ from modules import (
     audit,
     planavimas,
     update,
-    trailer_types,
     settings,
     login,
 )
@@ -74,14 +73,12 @@ module_functions = {
     "Audit": audit.show,
     "Planavimas": planavimas.show,
     "Update": update.show,
-    "Priekabų tipai": trailer_types.show,
     "Nustatymai": settings.show,
 }
 
 MODULE_ROLES = {
     "Registracijos": [Role.ADMIN, Role.COMPANY_ADMIN],
     "Audit": [Role.ADMIN],
-    "Priekabų tipai": [Role.ADMIN],
     "Nustatymai": [Role.ADMIN],
 }
 
