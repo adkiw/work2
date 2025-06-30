@@ -315,17 +315,17 @@ def init_db(db_path: str | None = None):
     conn.commit()
 
     # Sukuriame numatytąjį administratoriaus naudotoją, jei jo nėra
+    # Insert the default admin user if it doesn't exist yet. Using
+    # ``INSERT OR IGNORE`` avoids ``IntegrityError`` when multiple
+    # ``init_db`` calls race to create the account.
+    admin_hash = hash_password("admin")
+    c.execute(
+        "INSERT OR IGNORE INTO users (username, password_hash, imone, aktyvus) VALUES (?, ?, ?, 1)",
+        ("admin", admin_hash, "Admin"),
+    )
+    conn.commit()
     c.execute("SELECT id FROM users WHERE username = 'admin'")
     row = c.fetchone()
-    if not row:
-        admin_hash = hash_password('admin')
-        c.execute(
-            "INSERT INTO users (username, password_hash, imone, aktyvus) VALUES (?, ?, ?, 1)",
-            ('admin', admin_hash, 'Admin')
-        )
-        conn.commit()
-        row = (c.lastrowid,)
-
     admin_user_id = row[0]
 
     # Užtikriname, kad egzistuotų būtinos rolės
