@@ -6,7 +6,7 @@ from .utils import title_with_add, rerun
 CATEGORY = "Priekabos tipas"
 
 
-def show(conn, c, *, key_prefix: str = ""):
+def show(conn, c, *, key_prefix: str = "trailer_types_"):
     """Interface to manage trailer types."""
     is_admin = login.has_role(conn, c, Role.ADMIN)
     is_comp_admin = login.has_role(conn, c, Role.COMPANY_ADMIN)
