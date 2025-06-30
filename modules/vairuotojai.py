@@ -64,6 +64,28 @@ def show(conn, c):
     _ensure_columns(c, conn)
     is_admin = login.has_role(conn, c, Role.ADMIN)
 
+    st.markdown(
+        """
+        <style>
+          .scroll-container {
+            overflow-x: auto;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            white-space: nowrap;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            vertical-align: top;
+            text-align: center;
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     # --- sesijos kintamieji ---
     if "selected_vair" not in st.session_state:
         st.session_state.selected_vair = None

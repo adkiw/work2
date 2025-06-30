@@ -15,6 +15,28 @@ def show(conn, c):
         c.execute("ALTER TABLE darbuotojai ADD COLUMN imone TEXT")
     conn.commit()
 
+    st.markdown(
+        """
+        <style>
+          .scroll-container {
+            overflow-x: auto;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            white-space: nowrap;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            vertical-align: top;
+            text-align: center;
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     # Callback’ai
     def clear_selection():
         st.session_state.selected_emp = None
