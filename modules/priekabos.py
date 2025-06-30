@@ -23,6 +23,28 @@ def show(conn, c):
             c.execute(f"ALTER TABLE priekabos ADD COLUMN {col} {typ}")
     conn.commit()
 
+    st.markdown(
+        """
+        <style>
+          .scroll-container {
+            overflow-x: auto;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            white-space: nowrap;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            vertical-align: top;
+            text-align: center;
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     # 2) Paruošiame Dropdown duomenis
     vilkikai_list = [
         r[0]

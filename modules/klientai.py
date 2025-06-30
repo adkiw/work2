@@ -32,6 +32,29 @@ def show(conn, c):
     conn.commit()
     is_admin = login.has_role(conn, c, Role.ADMIN)
 
+    # CSS stilius lentelėms su aiškiomis linijomis
+    st.markdown(
+        """
+        <style>
+          .scroll-container {
+            overflow-x: auto;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            white-space: nowrap;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            vertical-align: top;
+            text-align: center;
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     # Atgaliniai kvietimai
     def clear_selection():
         st.session_state.selected_client = None
