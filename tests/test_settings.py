@@ -2,22 +2,29 @@ from db import init_db
 from modules import settings
 
 
-def test_default_trailer_type_read_write(tmp_path):
+def test_default_trailer_types_read_write(tmp_path):
     db_file = tmp_path / "s.db"
     conn, c = init_db(str(db_file))
 
     imone = "ACME"
-    # ensure reading when none returns None
-    assert settings.get_default_trailer_type(c, imone) is None
+    assert settings.get_default_trailer_types(c, imone) == []
 
-    settings.set_default_trailer_type(conn, c, imone, "Tent")
-    assert settings.get_default_trailer_type(c, imone) == "Tent"
+    settings.set_default_trailer_types(conn, c, imone, ["Tent", "Box"])
+    assert settings.get_default_trailer_types(c, imone) == ["Tent", "Box"]
 
-    # update value
-    settings.set_default_trailer_type(conn, c, imone, "Kieta")
-    assert settings.get_default_trailer_type(c, imone) == "Kieta"
+    settings.set_default_trailer_types(conn, c, imone, ["Mega"])
+    assert settings.get_default_trailer_types(c, imone) == ["Mega"]
 
-    # clear value
-    settings.set_default_trailer_type(conn, c, imone, None)
-    assert settings.get_default_trailer_type(c, imone) is None
+    settings.set_default_trailer_types(conn, c, imone, [])
+    assert settings.get_default_trailer_types(c, imone) == []
+
+
+def test_default_trailer_types_order(tmp_path):
+    db_file = tmp_path / "o.db"
+    conn, c = init_db(str(db_file))
+
+    imone = "B"
+    vals = ["Box", "Tent", "Mega"]
+    settings.set_default_trailer_types(conn, c, imone, vals)
+    assert settings.get_default_trailer_types(c, imone) == vals
 

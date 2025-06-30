@@ -5,24 +5,22 @@ from .roles import Role
 DEFAULT_CATEGORY = "Numatytas priekabos tipas"
 
 
-def get_default_trailer_type(c, imone: str) -> str | None:
-    c.execute(
-        "SELECT reiksme FROM company_settings WHERE imone=? AND kategorija=?",
-        (imone, DEFAULT_CATEGORY),
-    )
-    row = c.fetchone()
-    return row[0] if row else None
+def get_default_trailer_types(c, imone: str) -> list[str]:
+    """Return ordered list of default trailer types for a company."""
+    rows = c.execute(
+        "SELECT reiksme FROM company_default_trailers WHERE imone=? ORDER BY priority",
+        (imone,),
+    ).fetchall()
+    return [r[0] for r in rows]
 
 
-def set_default_trailer_type(conn, c, imone: str, value: str | None) -> None:
-    c.execute(
-        "DELETE FROM company_settings WHERE imone=? AND kategorija=?",
-        (imone, DEFAULT_CATEGORY),
-    )
-    if value:
+def set_default_trailer_types(conn, c, imone: str, values: list[str]) -> None:
+    """Replace company's default trailer type list with the given values."""
+    c.execute("DELETE FROM company_default_trailers WHERE imone=?", (imone,))
+    for pr, val in enumerate(values):
         c.execute(
-            "INSERT INTO company_settings (imone, kategorija, reiksme) VALUES (?,?,?)",
-            (imone, DEFAULT_CATEGORY, value),
+            "INSERT INTO company_default_trailers (imone, reiksme, priority) VALUES (?,?,?)",
+            (imone, val, pr),
         )
     conn.commit()
 
@@ -61,11 +59,37 @@ def show(conn, c):
             ).fetchall()
         ]
 
-    current = get_default_trailer_type(c, imone)
-    idx = options.index(current) + 1 if current in options else 0
-    choice = st.selectbox("Pasirinkite numatytąjį priekabos tipą", [""] + options, index=idx)
+    defaults = get_default_trailer_types(c, imone)
+    if "def_trailers" not in st.session_state:
+        st.session_state.def_trailers = defaults or []
+
+    for i, val in enumerate(st.session_state.def_trailers):
+        cols = st.columns([6, 1, 1, 1])
+        idx = options.index(val) if val in options else 0
+        st.session_state.def_trailers[i] = cols[0].selectbox(
+            f"Numatytoji #{i+1}", options, index=idx, key=f"def_sel_{i}"
+        )
+        if cols[1].button("⬆️", key=f"def_up_{i}") and i > 0:
+            st.session_state.def_trailers[i - 1], st.session_state.def_trailers[i] = (
+                st.session_state.def_trailers[i],
+                st.session_state.def_trailers[i - 1],
+            )
+            st.experimental_rerun()
+        if cols[2].button("⬇️", key=f"def_down_{i}") and i < len(st.session_state.def_trailers) - 1:
+            st.session_state.def_trailers[i + 1], st.session_state.def_trailers[i] = (
+                st.session_state.def_trailers[i],
+                st.session_state.def_trailers[i + 1],
+            )
+            st.experimental_rerun()
+        if cols[3].button("🗑️", key=f"def_del_{i}"):
+            st.session_state.def_trailers.pop(i)
+            st.experimental_rerun()
+
+    if st.button("➕ Pridėti numatytąjį"):
+        st.session_state.def_trailers.append(options[0] if options else "")
+        st.experimental_rerun()
 
     if st.button("💾 Išsaugoti nustatymą"):
-        set_default_trailer_type(conn, c, imone, choice or None)
+        set_default_trailer_types(conn, c, imone, st.session_state.def_trailers)
         st.success("✅ Išsaugota")
 
