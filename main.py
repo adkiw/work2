@@ -51,6 +51,7 @@ from modules import (
     planavimas,
     update,
     trailer_types,
+    settings,
     login,
 )
 
@@ -74,12 +75,14 @@ module_functions = {
     "Planavimas": planavimas.show,
     "Update": update.show,
     "Priekabų tipai": trailer_types.show,
+    "Nustatymai": settings.show,
 }
 
 MODULE_ROLES = {
     "Registracijos": [Role.ADMIN, Role.COMPANY_ADMIN],
     "Audit": [Role.ADMIN],
     "Priekabų tipai": [Role.ADMIN],
+    "Nustatymai": [Role.ADMIN],
 }
 
 def allowed(name: str) -> bool:
