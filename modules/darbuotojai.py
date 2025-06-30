@@ -3,7 +3,7 @@ import pandas as pd
 from . import login
 from .roles import Role
 from .audit import log_action
-from .utils import rerun, title_with_add
+from .utils import rerun, title_with_add, display_table_with_edit
 
 def show(conn, c):
     # Užtikrinti, kad egzistuotų stulpelis „aktyvus“ darbuotojų lentelėje
@@ -89,20 +89,11 @@ def show(conn, c):
             if val:
                 df_filt = df_filt[df_filt[col].astype(str).str.contains(val, case=False, na=False)]
 
-        # 1.3) Eilučių atvaizdavimas su redagavimo mygtuku (be headerių po filtrų)
-        for _, row in df_filt.iterrows():
-            row_cols = st.columns(len(df_filt.columns) + 1)
-            for i, col in enumerate(df_filt.columns):
-                if col == "aktyvus":
-                    row_cols[i].write("Taip" if row[col] == 1 else "Ne")
-                else:
-                    row_cols[i].write(row[col])
-            row_cols[-1].button(
-                "✏️",
-                key=f"edit_emp_{row['id']}",
-                on_click=start_edit,
-                args=(row['id'],)
-            )
+        df_show = df_filt.copy()
+        if "aktyvus" in df_show.columns:
+            df_show["aktyvus"] = df_show["aktyvus"].apply(lambda v: "Taip" if v == 1 else "Ne")
+
+        display_table_with_edit(df_show, start_edit, id_col="id")
         return
 
     # 2. DETALĖS / NAUJAS DARBUOTOJAS
