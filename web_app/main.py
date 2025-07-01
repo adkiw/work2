@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi import FastAPI, Request, Form, HTTPException, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 import sqlite3
+from typing import Generator
 from db import init_db
 
 app = FastAPI()
@@ -11,10 +12,7 @@ app = FastAPI()
 app.mount('/static', StaticFiles(directory='web_app/static'), name='static')
 templates = Jinja2Templates(directory='web_app/templates')
 
-# Initialize DB and ensure tables exist
-conn, cursor = init_db()
 
-# Ensure shipments table has required columns
 EXPECTED_KROVINIAI_COLUMNS = {
     'klientas': 'TEXT',
     'uzsakymo_numeris': 'TEXT',
@@ -25,12 +23,25 @@ EXPECTED_KROVINIAI_COLUMNS = {
     'busena': 'TEXT',
     'imone': 'TEXT'
 }
-cursor.execute('PRAGMA table_info(kroviniai)')
-existing = {r[1] for r in cursor.fetchall()}
-for col, typ in EXPECTED_KROVINIAI_COLUMNS.items():
-    if col not in existing:
-        cursor.execute(f'ALTER TABLE kroviniai ADD COLUMN {col} {typ}')
-conn.commit()
+
+
+def ensure_columns(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
+    """Ensure kroviniai table contains expected columns."""
+    cursor.execute('PRAGMA table_info(kroviniai)')
+    existing = {r[1] for r in cursor.fetchall()}
+    for col, typ in EXPECTED_KROVINIAI_COLUMNS.items():
+        if col not in existing:
+            cursor.execute(f'ALTER TABLE kroviniai ADD COLUMN {col} {typ}')
+    conn.commit()
+
+
+def get_db() -> Generator[tuple[sqlite3.Connection, sqlite3.Cursor], None, None]:
+    conn, cursor = init_db()
+    ensure_columns(conn, cursor)
+    try:
+        yield conn, cursor
+    finally:
+        conn.close()
 
 @app.get('/', response_class=HTMLResponse)
 def index(request: Request):
@@ -45,7 +56,12 @@ def kroviniai_add_form(request: Request):
     return templates.TemplateResponse('kroviniai_form.html', {'request': request, 'data': {}})
 
 @app.get('/kroviniai/{cid}/edit', response_class=HTMLResponse)
-def kroviniai_edit_form(cid: int, request: Request):
+def kroviniai_edit_form(
+    cid: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
     row = cursor.execute('SELECT * FROM kroviniai WHERE id=?', (cid,)).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail='Not found')
@@ -65,7 +81,9 @@ def kroviniai_save(
     frachtas: float = Form(0.0),
     busena: str = Form('Nesuplanuotas'),
     imone: str = Form(''),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
+    conn, cursor = db
     if cid:
         cursor.execute(
             'UPDATE kroviniai SET klientas=?, uzsakymo_numeris=?, pakrovimo_data=?, iskrovimo_data=?, kilometrai=?, frachtas=?, busena=?, imone=? WHERE id=?',
@@ -81,7 +99,8 @@ def kroviniai_save(
     return RedirectResponse(f'/kroviniai', status_code=303)
 
 @app.get('/api/kroviniai')
-def kroviniai_api():
+def kroviniai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
     cursor.execute('SELECT * FROM kroviniai')
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute('PRAGMA table_info(kroviniai)')]
