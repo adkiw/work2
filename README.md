@@ -23,17 +23,20 @@ Besides the Streamlit UI, the repository now provides an alternative FastAPI bas
    `vilkikai` and `priekabos` tables by default. When run on an older database
    it will automatically add this column if it is missing.
 
-3. Start the application:
-   ```bash
-   streamlit run main.py
-   ```
-   The main page displays a horizontal menu for modules such as shipments, trucks, trailers, groups, drivers, clients, employees, planning and updates.
-
-4. Alternatively you can run the FastAPI interface located in `web_app`:
+3. Paleiskite aplikaciją kaip FastAPI servisą:
    ```bash
    uvicorn web_app.main:app --reload
    ```
-   This starts a local server on http://127.0.0.1:8000 without Streamlit.
+   Serveris pasileis adresu http://127.0.0.1:8000. Windows sistemoje galite
+   tiesiog dukart spustelėti skriptą `start_work2_server.bat`.
+
+4. Jei norite, vis dar galite naudoti seną Streamlit sąsają:
+   ```bash
+   streamlit run main.py
+   ```
+   Pagrindiniame puslapyje rodoma horizontali meniu juosta su siuntų,
+   vilkikų, priekabų, grupių, vairuotojų, klientų, darbuotojų,
+   planavimo ir atnaujinimų moduliais.
 
 5. To enable dark mode in the Streamlit UI, open the sidebar in the running app and choose **Dark** in the Theme selector.
 
