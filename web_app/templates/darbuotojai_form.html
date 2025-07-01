@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{% if data.id %}Redaguoti darbuotoją{% else %}Naujas darbuotojas{% endif %}</h2>
+<form method="post" action="/darbuotojai/save">
+    <input type="hidden" name="did" value="{{ data.id or 0 }}">
+    <label>Vardas: <input type="text" name="vardas" value="{{ data.vardas or '' }}"></label><br>
+    <label>Pavardė: <input type="text" name="pavarde" value="{{ data.pavarde or '' }}"></label><br>
+    <label>Pareigybė: <input type="text" name="pareigybe" value="{{ data.pareigybe or '' }}"></label><br>
+    <label>El. paštas: <input type="email" name="el_pastas" value="{{ data.el_pastas or '' }}"></label><br>
+    <label>Telefonas: <input type="text" name="telefonas" value="{{ data.telefonas or '' }}"></label><br>
+    <label>Grupė: <input type="text" name="grupe" value="{{ data.grupe or '' }}"></label><br>
+    <label>Įmonė: <input type="text" name="imone" value="{{ data.imone or '' }}"></label><br>
+    <label>Aktyvus: <input type="checkbox" name="aktyvus" {% if data.aktyvus == 0 %}{% else %}checked{% endif %}></label><br>
+    <button type="submit">Išsaugoti</button>
+</form>
+{% endblock %}
