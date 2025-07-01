@@ -1,4 +1,4 @@
-# Streamlit Logistics App
+# Streamlit Logistics Appsas
 
 This repository contains a Streamlit based application for logistics companies. The app manages shipments, vehicles and staff information in a single dashboard and stores all data in a local SQLite database.
 
