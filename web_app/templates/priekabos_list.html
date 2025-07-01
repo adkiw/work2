@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Priekabos</h2>
+<a href="/priekabos/add">Pridėti naują</a>
+<table id="trailer-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Numeris</th>
+            <th>Markė</th>
+            <th>Pirmos reg. data</th>
+            <th>Tech apžiūra</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+</table>
+<script>
+$(document).ready(function() {
+    $('#trailer-table').DataTable({
+        ajax: '/api/priekabos',
+        columns: [
+            { data: 'id' },
+            { data: 'numeris' },
+            { data: 'marke' },
+            { data: 'pagaminimo_metai' },
+            { data: 'tech_apziura' },
+            { data: null, render: function (data, type, row) {
+                return '<a href="/priekabos/' + row.id + '/edit">Edit</a>';
+            }}
+        ]
+    });
+});
+</script>
+{% endblock %}

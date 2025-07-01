@@ -35,12 +35,35 @@ EXPECTED_VILKIKAI_COLUMNS = {
     "imone": "TEXT",
 }
 
+EXPECTED_PRIEKABOS_COLUMNS = {
+    "priekabu_tipas": "TEXT",
+    "numeris": "TEXT",
+    "marke": "TEXT",
+    "pagaminimo_metai": "TEXT",
+    "tech_apziura": "TEXT",
+    "draudimas": "TEXT",
+    "imone": "TEXT",
+}
+
+EXPECTED_DARBUOTOJAI_COLUMNS = {
+    "vardas": "TEXT",
+    "pavarde": "TEXT",
+    "pareigybe": "TEXT",
+    "el_pastas": "TEXT",
+    "telefonas": "TEXT",
+    "grupe": "TEXT",
+    "imone": "TEXT",
+    "aktyvus": "INTEGER",
+}
+
 
 def ensure_columns(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
     """Ensure required columns exist for tables used by the web app."""
     tables = {
         "kroviniai": EXPECTED_KROVINIAI_COLUMNS,
         "vilkikai": EXPECTED_VILKIKAI_COLUMNS,
+        "priekabos": EXPECTED_PRIEKABOS_COLUMNS,
+        "darbuotojai": EXPECTED_DARBUOTOJAI_COLUMNS,
     }
     for table, cols in tables.items():
         cursor.execute(f"PRAGMA table_info({table})")
@@ -236,5 +259,129 @@ def vilkikai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
     cursor.execute("SELECT * FROM vilkikai")
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkikai)")]
+    data = [dict(zip(columns, row)) for row in rows]
+    return {"data": data}
+
+
+# ---- Priekabos ----
+
+@app.get("/priekabos", response_class=HTMLResponse)
+def priekabos_list(request: Request):
+    return templates.TemplateResponse("priekabos_list.html", {"request": request})
+
+
+@app.get("/priekabos/add", response_class=HTMLResponse)
+def priekabos_add_form(request: Request):
+    return templates.TemplateResponse("priekabos_form.html", {"request": request, "data": {}})
+
+
+@app.get("/priekabos/{pid}/edit", response_class=HTMLResponse)
+def priekabos_edit_form(pid: int, request: Request, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    row = cursor.execute("SELECT * FROM priekabos WHERE id=?", (pid,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(priekabos)")]
+    data = dict(zip(columns, row))
+    return templates.TemplateResponse("priekabos_form.html", {"request": request, "data": data})
+
+
+@app.post("/priekabos/save")
+def priekabos_save(
+    request: Request,
+    pid: int = Form(0),
+    priekabu_tipas: str = Form(""),
+    numeris: str = Form(...),
+    marke: str = Form(""),
+    pagaminimo_metai: str = Form(""),
+    tech_apziura: str = Form(""),
+    draudimas: str = Form(""),
+    imone: str = Form(""),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    if pid:
+        cursor.execute(
+            "UPDATE priekabos SET priekabu_tipas=?, numeris=?, marke=?, pagaminimo_metai=?, tech_apziura=?, draudimas=?, imone=? WHERE id=?",
+            (priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas, imone, pid),
+        )
+    else:
+        cursor.execute(
+            "INSERT INTO priekabos (priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas, imone) VALUES (?,?,?,?,?,?,?)",
+            (priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas, imone),
+        )
+    conn.commit()
+    return RedirectResponse("/priekabos", status_code=303)
+
+
+@app.get("/api/priekabos")
+def priekabos_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT * FROM priekabos")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(priekabos)")]
+    data = [dict(zip(columns, row)) for row in rows]
+    return {"data": data}
+
+
+# ---- Darbuotojai ----
+
+@app.get("/darbuotojai", response_class=HTMLResponse)
+def darbuotojai_list(request: Request):
+    return templates.TemplateResponse("darbuotojai_list.html", {"request": request})
+
+
+@app.get("/darbuotojai/add", response_class=HTMLResponse)
+def darbuotojai_add_form(request: Request):
+    return templates.TemplateResponse("darbuotojai_form.html", {"request": request, "data": {}})
+
+
+@app.get("/darbuotojai/{did}/edit", response_class=HTMLResponse)
+def darbuotojai_edit_form(did: int, request: Request, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    row = cursor.execute("SELECT * FROM darbuotojai WHERE id=?", (did,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(darbuotojai)")]
+    data = dict(zip(columns, row))
+    return templates.TemplateResponse("darbuotojai_form.html", {"request": request, "data": data})
+
+
+@app.post("/darbuotojai/save")
+def darbuotojai_save(
+    request: Request,
+    did: int = Form(0),
+    vardas: str = Form(...),
+    pavarde: str = Form(""),
+    pareigybe: str = Form(""),
+    el_pastas: str = Form(""),
+    telefonas: str = Form(""),
+    grupe: str = Form(""),
+    imone: str = Form(""),
+    aktyvus: str = Form(None),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    akt = 1 if aktyvus else 0
+    if did:
+        cursor.execute(
+            "UPDATE darbuotojai SET vardas=?, pavarde=?, pareigybe=?, el_pastas=?, telefonas=?, grupe=?, imone=?, aktyvus=? WHERE id=?",
+            (vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone, akt, did),
+        )
+    else:
+        cursor.execute(
+            "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone, aktyvus) VALUES (?,?,?,?,?,?,?,?)",
+            (vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone, akt),
+        )
+    conn.commit()
+    return RedirectResponse("/darbuotojai", status_code=303)
+
+
+@app.get("/api/darbuotojai")
+def darbuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT * FROM darbuotojai")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(darbuotojai)")]
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
