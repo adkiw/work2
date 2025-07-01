@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Vilkikai</h2>
+<a href="/vilkikai/add">Pridėti naują</a>
+<table id="truck-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Numeris</th>
+            <th>Markė</th>
+            <th>Pirm. registracija</th>
+            <th>Tech apžiūra</th>
+            <th>Vadybininkas</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+</table>
+<script>
+$(document).ready(function() {
+    $('#truck-table').DataTable({
+        ajax: '/api/vilkikai',
+        columns: [
+            { data: 'id' },
+            { data: 'numeris' },
+            { data: 'marke' },
+            { data: 'pagaminimo_metai' },
+            { data: 'tech_apziura' },
+            { data: 'vadybininkas' },
+            { data: null, render: function (data, type, row) {
+                return '<a href="/vilkikai/' + row.id + '/edit">Edit</a>';
+            }}
+        ]
+    });
+});
+</script>
+{% endblock %}
