@@ -83,3 +83,27 @@ def test_klientai_basic(tmp_path):
     data = resp.json()["data"]
     assert len(data) == 1
     assert data[0]["pavadinimas"] == "Acme"
+
+
+def test_priekabos_basic(tmp_path):
+    client = create_client(tmp_path)
+    resp = client.get("/api/priekabos")
+    assert resp.status_code == 200
+    assert resp.json() == {"data": []}
+    form = {
+        "id": "0",
+        "priekabu_tipas": "Tent",
+        "numeris": "TR2",
+        "marke": "Krone",
+        "pagaminimo_metai": "2019",
+        "tech_apziura": "2023-01-01",
+        "priskirtas_vilkikas": "",
+        "draudimas": "2023-01-01",
+        "imone": "A",
+    }
+    resp = client.post("/priekabos/save", data=form, allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get("/api/priekabos")
+    data = resp.json()["data"]
+    assert len(data) == 1
+    assert data[0]["numeris"] == "TR2"

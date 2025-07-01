@@ -2,7 +2,7 @@
 
 This repository contains a Streamlit based application for logistics companies. The app manages shipments, vehicles and staff information in a single dashboard and stores all data in a local SQLite database.
 
-Besides the Streamlit UI, the repository now provides an alternative FastAPI based web interface located in the `web_app` directory. This interface relies on DataTables for an Excel-style look and can be started locally without Streamlit. It started with shipments only but has been expanded to cover trucks and other main tables using generic CRUD pages.
+Besides the Streamlit UI, the repository now provides an alternative FastAPI based web interface located in the `web_app` directory. This interface relies on DataTables for an Excel-style look and can be started locally without Streamlit. Initially only shipments were supported but now all data modules have matching pages using generic CRUD logic.
 
 ## Setup
 
