@@ -2,6 +2,8 @@
 
 This repository contains a Streamlit based application for logistics companies. The app manages shipments, vehicles and staff information in a single dashboard and stores all data in a local SQLite database.
 
+Besides the Streamlit UI, the repository now provides an alternative FastAPI based web interface located in the `web_app` directory. This interface relies on DataTables for an Excel-style look and can be started locally without Streamlit.
+
 ## Setup
 
 1. Create and activate a Python virtual environment and install the
