@@ -60,3 +60,24 @@ def test_vilkikai_basic(tmp_path):
     data = resp.json()["data"]
     assert len(data) == 1
     assert data[0]["numeris"] == "AAA111"
+
+
+def test_vilkikai_form_shows_trailers(tmp_path):
+    client = create_client(tmp_path)
+    trailer_form = {
+        "pid": "0",
+        "priekabu_tipas": "Tipas",
+        "numeris": "TR123",
+        "marke": "X",
+        "pagaminimo_metai": "2020",
+        "tech_apziura": "2023-01-01",
+        "draudimas": "2023-01-01",
+        "imone": "A",
+    }
+    resp = client.post("/priekabos/save", data=trailer_form, allow_redirects=False)
+    assert resp.status_code == 303
+
+    resp = client.get("/vilkikai/add")
+    assert resp.status_code == 200
+    assert "<select" in resp.text
+    assert '<option value="TR123"' in resp.text

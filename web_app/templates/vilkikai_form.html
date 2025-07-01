@@ -9,7 +9,14 @@
     <label>Tech apžiūra: <input type="date" name="tech_apziura" value="{{ data.tech_apziura or '' }}"></label><br>
     <label>Vadybininkas: <input type="text" name="vadybininkas" value="{{ data.vadybininkas or '' }}"></label><br>
     <label>Vairuotojai: <input type="text" name="vairuotojai" value="{{ data.vairuotojai or '' }}"></label><br>
-    <label>Priekaba: <input type="text" name="priekaba" value="{{ data.priekaba or '' }}"></label><br>
+    <label>Priekaba:
+        <select name="priekaba">
+            <option value=""></option>
+            {% for tr in trailers %}
+            <option value="{{ tr }}" {% if data.priekaba == tr %}selected{% endif %}>{{ tr }}</option>
+            {% endfor %}
+        </select>
+    </label><br>
     <label>Įmonė: <input type="text" name="imone" value="{{ data.imone or '' }}"></label><br>
     <button type="submit">Išsaugoti</button>
 </form>
