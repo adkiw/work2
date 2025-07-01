@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{% if data.id %}Redaguoti {{ table }}{% else %}Naujas {{ table }}{% endif %}</h2>
+<form method="post" action="/{{ table }}/save">
+    <input type="hidden" name="id" value="{{ data.id or 0 }}">
+    {% for col in columns %}
+        {% if col != 'id' %}
+    <label>{{ col }}: <input type="text" name="{{ col }}" value="{{ data[col] or '' }}"></label><br>
+        {% endif %}
+    {% endfor %}
+    <button type="submit">Išsaugoti</button>
+</form>
+{% endblock %}

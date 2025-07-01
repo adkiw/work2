@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ table|capitalize }}</h2>
+<a href="/{{ table }}/add">Pridėti naują</a>
+<table id="generic-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            {% for col in columns %}
+            <th>{{ col }}</th>
+            {% endfor %}
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+</table>
+<script>
+$(document).ready(function() {
+    $('#generic-table').DataTable({
+        ajax: '/api/{{ table }}',
+        columns: [
+            {% for col in columns %}
+            { data: '{{ col }}' },
+            {% endfor %}
+            { data: null, render: function (data, type, row) {
+                return '<a href="/{{ table }}/' + row.id + '/edit">Edit</a>';
+            }}
+        ]
+    });
+});
+</script>
+{% endblock %}
