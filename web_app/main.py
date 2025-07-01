@@ -182,9 +182,14 @@ def vilkikai_list(request: Request):
 
 
 @app.get("/vilkikai/add", response_class=HTMLResponse)
-def vilkikai_add_form(request: Request):
+def vilkikai_add_form(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
     return templates.TemplateResponse(
-        "vilkikai_form.html", {"request": request, "data": {}}
+        "vilkikai_form.html", {"request": request, "data": {}, "trailers": trailers}
     )
 
 
@@ -200,8 +205,9 @@ def vilkikai_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkikai)")]
     data = dict(zip(columns, row))
+    trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
     return templates.TemplateResponse(
-        "vilkikai_form.html", {"request": request, "data": data}
+        "vilkikai_form.html", {"request": request, "data": data, "trailers": trailers}
     )
 
 
