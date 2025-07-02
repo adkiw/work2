@@ -75,6 +75,15 @@ EXPECTED_PRIEKABOS_COLUMNS = {
     "imone": "TEXT",
 }
 
+EXPECTED_TRAILER_SPECS_COLUMNS = {
+    "tipas": "TEXT",
+    "ilgis": "REAL",
+    "plotis": "REAL",
+    "aukstis": "REAL",
+    "keliamoji_galia": "REAL",
+    "talpa": "REAL",
+}
+
 EXPECTED_VAIRUOTOJAI_COLUMNS = {
     "vardas": "TEXT",
     "pavarde": "TEXT",
@@ -149,6 +158,7 @@ def ensure_columns(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
         "kroviniai": EXPECTED_KROVINIAI_COLUMNS,
         "vilkikai": EXPECTED_VILKIKAI_COLUMNS,
         "priekabos": EXPECTED_PRIEKABOS_COLUMNS,
+        "trailer_specs": EXPECTED_TRAILER_SPECS_COLUMNS,
         "vairuotojai": EXPECTED_VAIRUOTOJAI_COLUMNS,
         "darbuotojai": EXPECTED_DARBUOTOJAI_COLUMNS,
         "grupes": EXPECTED_GRUPES_COLUMNS,
@@ -904,6 +914,74 @@ def trailer_types_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(ge
     cursor.execute("SELECT id, reiksme FROM lookup WHERE kategorija='Priekabos tipas'")
     rows = cursor.fetchall()
     data = [{"id": r[0], "reiksme": r[1]} for r in rows]
+    return {"data": data}
+
+
+# ---- Trailer specs ----
+
+@app.get("/trailer-specs", response_class=HTMLResponse)
+def trailer_specs_list(request: Request):
+    return templates.TemplateResponse("trailer_specs_list.html", {"request": request})
+
+
+@app.get("/trailer-specs/add", response_class=HTMLResponse)
+def trailer_specs_add_form(request: Request):
+    return templates.TemplateResponse("trailer_specs_form.html", {"request": request, "data": {}})
+
+
+@app.get("/trailer-specs/{sid}/edit", response_class=HTMLResponse)
+def trailer_specs_edit_form(
+    sid: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    row = cursor.execute("SELECT * FROM trailer_specs WHERE id=?", (sid,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(trailer_specs)")]
+    data = dict(zip(columns, row))
+    return templates.TemplateResponse("trailer_specs_form.html", {"request": request, "data": data})
+
+
+@app.post("/trailer-specs/save")
+def trailer_specs_save(
+    request: Request,
+    sid: int = Form(0),
+    tipas: str = Form(...),
+    ilgis: float = Form(0.0),
+    plotis: float = Form(0.0),
+    aukstis: float = Form(0.0),
+    keliamoji_galia: float = Form(0.0),
+    talpa: float = Form(0.0),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    if sid:
+        cursor.execute(
+            "UPDATE trailer_specs SET tipas=?, ilgis=?, plotis=?, aukstis=?, keliamoji_galia=?, talpa=? WHERE id=?",
+            (tipas, ilgis, plotis, aukstis, keliamoji_galia, talpa, sid),
+        )
+        action = "update"
+    else:
+        cursor.execute(
+            "INSERT INTO trailer_specs (tipas, ilgis, plotis, aukstis, keliamoji_galia, talpa) VALUES (?,?,?,?,?,?)",
+            (tipas, ilgis, plotis, aukstis, keliamoji_galia, talpa),
+        )
+        sid = cursor.lastrowid
+        action = "insert"
+    conn.commit()
+    log_action(conn, cursor, None, action, "trailer_specs", sid)
+    return RedirectResponse("/trailer-specs", status_code=303)
+
+
+@app.get("/api/trailer-specs")
+def trailer_specs_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT * FROM trailer_specs")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(trailer_specs)")]
+    data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
 
 

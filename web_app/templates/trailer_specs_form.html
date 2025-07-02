@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{% if data.id %}Redaguoti specifikaciją{% else %}Nauja specifikacija{% endif %}</h2>
+<form method="post" action="/trailer-specs/save">
+    <input type="hidden" name="sid" value="{{ data.id or 0 }}">
+    <label>Tipas: <input type="text" name="tipas" value="{{ data.tipas or '' }}"></label><br>
+    <label>Ilgis: <input type="number" step="any" name="ilgis" value="{{ data.ilgis or '' }}"></label><br>
+    <label>Plotis: <input type="number" step="any" name="plotis" value="{{ data.plotis or '' }}"></label><br>
+    <label>Aukštis: <input type="number" step="any" name="aukstis" value="{{ data.aukstis or '' }}"></label><br>
+    <label>Keliamoji galia: <input type="number" step="any" name="keliamoji_galia" value="{{ data.keliamoji_galia or '' }}"></label><br>
+    <label>Talpa: <input type="number" step="any" name="talpa" value="{{ data.talpa or '' }}"></label><br>
+    <button type="submit">Išsaugoti</button>
+</form>
+{% endblock %}
