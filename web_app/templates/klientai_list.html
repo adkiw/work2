@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Klientai</h2>
+<a href="/klientai/add">Pridėti naują</a>
+<table id="cli-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Pavadinimas</th>
+            <th>VAT</th>
+            <th>Kontaktinis asmuo</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+</table>
+<script>
+$(document).ready(function() {
+    $('#cli-table').DataTable({
+        ajax: '/api/klientai',
+        columns: [
+            { data: 'id' },
+            { data: 'pavadinimas' },
+            { data: 'vat_numeris' },
+            { data: 'kontaktinis_asmuo' },
+            { data: null, render: function (data, type, row) {
+                return '<a href="/klientai/' + row.id + '/edit">Edit</a>';
+            }}
+        ]
+    });
+});
+</script>
+{% endblock %}
