@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Darbuotojai</h2>
-<a href="/darbuotojai/add">Pridėti naują</a>
+<div class="page-header">
+    <h2>Darbuotojai</h2>
+    <a class="add-btn" href="/darbuotojai/add">Pridėti naują darbuotoją</a>
+</div>
 <table id="emp-table" class="display" style="width:100%">
     <thead>
         <tr>
@@ -31,4 +33,12 @@ $(document).ready(function() {
     });
 });
 </script>
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+</style>
 {% endblock %}
