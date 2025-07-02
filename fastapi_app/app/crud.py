@@ -317,3 +317,51 @@ def delete_trailer_spec(db: Session, spec_id: int) -> bool:
 def get_trailer_specs(db: Session) -> list[models.TrailerSpec]:
     return db.query(models.TrailerSpec).order_by(models.TrailerSpec.id.desc()).all()
 
+
+def create_trailer_type(db: Session, data: schemas.TrailerTypeCreate) -> models.TrailerType:
+    tt = models.TrailerType(name=data.name)
+    db.add(tt)
+    db.commit()
+    db.refresh(tt)
+    return tt
+
+
+def update_trailer_type(db: Session, type_id: int, data: schemas.TrailerTypeCreate) -> models.TrailerType | None:
+    tt = db.query(models.TrailerType).filter(models.TrailerType.id == type_id).first()
+    if not tt:
+        return None
+    tt.name = data.name
+    db.commit()
+    db.refresh(tt)
+    return tt
+
+
+def delete_trailer_type(db: Session, type_id: int) -> bool:
+    tt = db.query(models.TrailerType).filter(models.TrailerType.id == type_id).first()
+    if not tt:
+        return False
+    db.delete(tt)
+    db.commit()
+    return True
+
+
+def get_trailer_types(db: Session) -> list[models.TrailerType]:
+    return db.query(models.TrailerType).order_by(models.TrailerType.id.desc()).all()
+
+
+def set_default_trailer_types(db: Session, tenant_id: UUID, values: list[str]) -> None:
+    db.query(models.DefaultTrailerType).filter(models.DefaultTrailerType.tenant_id == tenant_id).delete()
+    for pr, val in enumerate(values):
+        db.add(models.DefaultTrailerType(tenant_id=tenant_id, value=val, priority=pr))
+    db.commit()
+
+
+def get_default_trailer_types(db: Session, tenant_id: UUID) -> list[str]:
+    rows = (
+        db.query(models.DefaultTrailerType)
+        .filter(models.DefaultTrailerType.tenant_id == tenant_id)
+        .order_by(models.DefaultTrailerType.priority)
+        .all()
+    )
+    return [r.value for r in rows]
+

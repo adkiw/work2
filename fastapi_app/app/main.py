@@ -620,6 +620,72 @@ def delete_trailer_spec(
     return Response(status_code=204)
 
 
+@app.post("/trailer-types", response_model=schemas.TrailerType)
+def create_trailer_type(
+    tt: schemas.TrailerTypeCreate,
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    return crud.create_trailer_type(db, tt)
+
+
+@app.get("/trailer-types", response_model=list[schemas.TrailerType])
+def read_trailer_types(
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    return crud.get_trailer_types(db)
+
+
+@app.put("/trailer-types/{type_id}", response_model=schemas.TrailerType)
+def update_trailer_type(
+    type_id: int,
+    tt: schemas.TrailerTypeCreate,
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    updated = crud.update_trailer_type(db, type_id, tt)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return updated
+
+
+@app.delete("/trailer-types/{type_id}", status_code=204)
+def delete_trailer_type(
+    type_id: int,
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    ok = crud.delete_trailer_type(db, type_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return Response(status_code=204)
+
+
+@app.get("/{tenant_id}/default-trailer-types", response_model=list[str])
+def get_default_trailer_types_api(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return crud.get_default_trailer_types(db, UUID(tenant_id))
+
+
+@app.put("/{tenant_id}/default-trailer-types", status_code=204)
+def set_default_trailer_types_api(
+    tenant_id: str,
+    data: schemas.DefaultTrailerTypes,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    crud.set_default_trailer_types(db, UUID(tenant_id), data.values)
+    return Response(status_code=204)
+
+
 @app.post("/audit", response_model=schemas.AuditLog)
 def create_audit_entry(
     log: schemas.AuditLogCreate,

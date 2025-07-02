@@ -136,3 +136,23 @@ class TrailerSpec(Base):
     keliamoji_galia = Column(Integer)
     talpa = Column(Integer)
 
+
+class TrailerType(Base):
+    """Galimų priekabų tipų sąrašas"""
+
+    __tablename__ = "trailer_types"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True, nullable=False)
+
+
+class DefaultTrailerType(Base):
+    """Įmonės numatytieji priekabų tipai"""
+
+    __tablename__ = "default_trailer_types"
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    value = Column(String, nullable=False)
+    priority = Column(Integer, nullable=False, default=0)
+
+    tenant = relationship("Tenant")
+
