@@ -126,3 +126,23 @@ class Truck(TruckBase):
 
     class Config:
         orm_mode = True
+
+
+class DriverBase(BaseModel):
+    vardas: str
+    pavarde: str
+    gimimo_metai: Optional[str] = None
+    tautybe: Optional[str] = None
+    kadencijos_pabaiga: Optional[str] = None
+    atostogu_pabaiga: Optional[str] = None
+
+class DriverCreate(DriverBase):
+    pass
+
+class Driver(DriverBase):
+    id: int
+    tenant_id: UUID
+
+    class Config:
+        orm_mode = True
+

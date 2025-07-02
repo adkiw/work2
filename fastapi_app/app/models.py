@@ -94,3 +94,18 @@ class Truck(Base):
     draudimas = Column(String)
 
     tenant = relationship("Tenant")
+
+
+class Driver(Base):
+    __tablename__ = "drivers"
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    vardas = Column(String, nullable=False)
+    pavarde = Column(String, nullable=False)
+    gimimo_metai = Column(String)
+    tautybe = Column(String)
+    kadencijos_pabaiga = Column(String)
+    atostogu_pabaiga = Column(String)
+
+    tenant = relationship("Tenant")
+
