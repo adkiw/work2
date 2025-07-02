@@ -559,3 +559,24 @@ def klientai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(klientai)")]
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
+
+
+# ---- Audit log ----
+
+@app.get("/audit", response_class=HTMLResponse)
+def audit_list(request: Request):
+    return templates.TemplateResponse("audit_list.html", {"request": request})
+
+
+@app.get("/api/audit")
+def audit_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute(
+        """SELECT al.id, u.username as user, al.action, al.table_name, al.record_id, al.timestamp
+           FROM audit_log al LEFT JOIN users u ON al.user_id = u.id
+           ORDER BY al.timestamp DESC"""
+    )
+    rows = cursor.fetchall()
+    columns = [d[0] for d in cursor.description]
+    data = [dict(zip(columns, row)) for row in rows]
+    return {"data": data}
