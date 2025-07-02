@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Numatytieji priekabų tipai</h2>
+<form id="defaults-form" method="post" action="/settings/save">
+    <label>Įmonė: <input type="text" id="imone-field" name="imone" value="A"></label>
+    <div id="rows"></div>
+    <button type="button" id="add-row">Pridėti</button>
+    <button type="submit">Išsaugoti</button>
+</form>
+<script>
+async function loadData() {
+    const typesResp = await fetch('/api/trailer-types');
+    const typesData = await typesResp.json();
+    const opts = typesData.data.map(t => `<option value="${t.reiksme}">${t.reiksme}</option>`).join('');
+    const imone = document.getElementById('imone-field').value;
+    const defResp = await fetch('/api/default-trailer-types?imone=' + encodeURIComponent(imone));
+    const defData = await defResp.json();
+    const container = document.getElementById('rows');
+    function addRow(value='') {
+        const row = document.createElement('div');
+        row.innerHTML = `<select name="values" class="val">${opts}</select>
+            <button type="button" class="up">⬆️</button>
+            <button type="button" class="down">⬇️</button>
+            <button type="button" class="del">🗑️</button>`;
+        container.appendChild(row);
+        if(value) row.querySelector('select').value = value;
+    }
+    defData.data.forEach(v => addRow(v));
+    document.getElementById('add-row').onclick = () => addRow(typesData.data[0]?.reiksme || '');
+    container.addEventListener('click', e => {
+        if(e.target.classList.contains('del')) e.target.parentElement.remove();
+        if(e.target.classList.contains('up')) {
+            const r = e.target.parentElement, p = r.previousElementSibling; if(p) r.parentElement.insertBefore(r, p);
+        }
+        if(e.target.classList.contains('down')) {
+            const r = e.target.parentElement, n = r.nextElementSibling; if(n) r.parentElement.insertBefore(n, r);
+        }
+    });
+}
+loadData();
+</script>
+{% endblock %}

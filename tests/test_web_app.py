@@ -209,3 +209,17 @@ def test_planavimas_basic(tmp_path):
     assert "columns" in data and "data" in data
     assert any(row[data["columns"][0]].startswith("AAA111") for row in data["data"])
     assert today in data["columns"]
+
+
+def test_settings_defaults(tmp_path):
+    client = create_client(tmp_path)
+    form = {
+        "imone": "A",
+        "values": ["Van", "Box"],
+    }
+    resp = client.post("/settings/save", data=form, allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get("/api/default-trailer-types?imone=A")
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert data == ["Van", "Box"]

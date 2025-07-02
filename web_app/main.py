@@ -8,6 +8,9 @@ from typing import Generator
 from db import init_db
 from modules.audit import log_action
 
+import datetime
+import pandas as pd
+
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="web_app/static"), name="static")
@@ -885,6 +888,43 @@ def trailer_types_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(ge
     rows = cursor.fetchall()
     data = [{"id": r[0], "reiksme": r[1]} for r in rows]
     return {"data": data}
+
+
+# ---- Settings ----
+
+@app.get("/settings", response_class=HTMLResponse)
+def settings_page(request: Request):
+    return templates.TemplateResponse("settings.html", {"request": request})
+
+
+@app.get("/api/default-trailer-types")
+def default_trailer_types_api(
+    imone: str = "",
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    cursor.execute(
+        "SELECT reiksme FROM company_default_trailers WHERE imone=? ORDER BY priority",
+        (imone,),
+    )
+    rows = cursor.fetchall()
+    return {"data": [r[0] for r in rows]}
+
+
+@app.post("/settings/save")
+async def settings_save(request: Request, imone: str = Form(""), db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    form = await request.form()
+    values = form.getlist("values")
+    conn, cursor = db
+    cursor.execute("DELETE FROM company_default_trailers WHERE imone=?", (imone,))
+    for pr, val in enumerate(values):
+        cursor.execute(
+            "INSERT INTO company_default_trailers (imone, reiksme, priority) VALUES (?,?,?)",
+            (imone, val, pr),
+        )
+    conn.commit()
+    log_action(conn, cursor, None, "update", "company_default_trailers", 0)
+    return RedirectResponse("/settings", status_code=303)
 
 
 # ---- Audit log ----
