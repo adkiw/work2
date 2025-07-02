@@ -146,3 +146,24 @@ class Driver(DriverBase):
     class Config:
         orm_mode = True
 
+
+class TrailerBase(BaseModel):
+    numeris: str
+    priekabu_tipas: Optional[str] = None
+    marke: Optional[str] = None
+    pagaminimo_metai: Optional[int] = None
+    tech_apziura: Optional[str] = None
+    draudimas: Optional[str] = None
+
+
+class TrailerCreate(TrailerBase):
+    pass
+
+
+class Trailer(TrailerBase):
+    id: int
+    tenant_id: UUID
+
+    class Config:
+        orm_mode = True
+
