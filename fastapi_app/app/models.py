@@ -1,7 +1,8 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Table
+from sqlalchemy import Column, String, Integer, ForeignKey, Table, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
+from datetime import datetime
 
 from .database import Base
 
@@ -47,4 +48,17 @@ class Document(Base):
     content = Column(String, nullable=False)
 
     tenant = relationship('Tenant')
+
+
+class AuditLog(Base):
+    __tablename__ = 'audit_logs'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=True)
+    action = Column(String, nullable=False)
+    table_name = Column(String, nullable=False)
+    record_id = Column(String)
+    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    details = Column(String)
+
+    user = relationship('User')
 
