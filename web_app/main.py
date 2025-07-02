@@ -2,6 +2,10 @@ from fastapi import FastAPI, Request, Form, HTTPException, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+
+import os
+import bcrypt
 
 import sqlite3
 from typing import Generator
@@ -12,6 +16,8 @@ import datetime
 import pandas as pd
 
 app = FastAPI()
+
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("WEBAPP_SECRET", "devsecret"))
 
 app.mount("/static", StaticFiles(directory="web_app/static"), name="static")
 templates = Jinja2Templates(directory="web_app/templates")
@@ -156,6 +162,17 @@ def ensure_columns(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
             if col not in existing:
                 cursor.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
     conn.commit()
+
+
+def verify_user(cursor: sqlite3.Cursor, username: str, password: str):
+    cursor.execute(
+        "SELECT id, password_hash, imone FROM users WHERE username=? AND aktyvus=1",
+        (username,),
+    )
+    row = cursor.fetchone()
+    if row and bcrypt.checkpw(password.encode(), row[1].encode()):
+        return row[0], row[2]
+    return None, None
 
 
 def get_db() -> Generator[tuple[sqlite3.Connection, sqlite3.Cursor], None, None]:
@@ -946,3 +963,77 @@ def audit_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
     columns = [d[0] for d in cursor.description]
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
+
+
+# ---- Authentication ----
+
+@app.get("/login", response_class=HTMLResponse)
+def login_form(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+
+
+@app.post("/login", response_class=HTMLResponse)
+def login_submit(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    user_id, imone = verify_user(cursor, username, password)
+    if user_id:
+        ts = datetime.datetime.utcnow().replace(second=0, microsecond=0).isoformat(timespec="minutes")
+        cursor.execute("UPDATE users SET last_login=? WHERE id=?", (ts, user_id))
+        conn.commit()
+        request.session["user_id"] = user_id
+        request.session["username"] = username
+        request.session["imone"] = imone
+        return RedirectResponse("/", status_code=303)
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request, "error": "Neteisingi prisijungimo duomenys"},
+        status_code=400,
+    )
+
+
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/", status_code=303)
+
+
+@app.get("/register", response_class=HTMLResponse)
+def register_form(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request, "error": None, "msg": None})
+
+
+@app.post("/register", response_class=HTMLResponse)
+def register_submit(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    vardas: str = Form(""),
+    pavarde: str = Form(""),
+    pareigybe: str = Form(""),
+    imone: str = Form(""),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    cursor.execute("SELECT 1 FROM users WHERE username=?", (username,))
+    if cursor.fetchone():
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": "Toks vartotojas jau egzistuoja", "msg": None},
+            status_code=400,
+        )
+    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    cursor.execute(
+        "INSERT INTO users (username, password_hash, imone, vardas, pavarde, pareigybe, aktyvus) VALUES (?,?,?,?,?,?,0)",
+        (username, pw_hash, imone or None, vardas, pavarde, pareigybe),
+    )
+    conn.commit()
+    log_action(conn, cursor, None, "register", "users", cursor.lastrowid)
+    return templates.TemplateResponse(
+        "register.html",
+        {"request": request, "error": None, "msg": "Parai\u0161ka pateikta"},
+    )

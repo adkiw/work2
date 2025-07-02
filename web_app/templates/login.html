@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Prisijungimas</h2>
+<form method="post">
+    <label>El. paštas: <input type="text" name="username"></label><br>
+    <label>Slaptažodis: <input type="password" name="password"></label><br>
+    <button type="submit">Prisijungti</button>
+</form>
+<p><a href="/register">Registruotis</a></p>
+{% if error %}<p style="color:red">{{ error }}</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Registracija</h2>
+<form method="post">
+    <label>El. paštas: <input type="text" name="username"></label><br>
+    <label>Slaptažodis: <input type="password" name="password"></label><br>
+    <label>Vardas: <input type="text" name="vardas"></label><br>
+    <label>Pavardė: <input type="text" name="pavarde"></label><br>
+    <label>Pareigybė: <input type="text" name="pareigybe"></label><br>
+    <label>Įmonė: <input type="text" name="imone"></label><br>
+    <button type="submit">Pateikti paraišką</button>
+</form>
+{% if msg %}<p style="color:green">{{ msg }}</p>{% endif %}
+{% if error %}<p style="color:red">{{ error }}</p>{% endif %}
+{% endblock %}
