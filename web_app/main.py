@@ -61,6 +61,17 @@ app.mount("/static", StaticFiles(directory="web_app/static"), name="static")
 templates = Jinja2Templates(directory="web_app/templates")
 
 
+def table_csv_response(cursor: sqlite3.Cursor, table: str, filename: str) -> Response:
+    """Sukurti CSV atsakymą visos lentelės duomenims."""
+    cursor.execute(f"SELECT * FROM {table}")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute(f"PRAGMA table_info({table})")]
+    df = pd.DataFrame(rows, columns=columns)
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": f"attachment; filename={filename}"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 EXPECTED_KROVINIAI_COLUMNS = {
     "klientas": "TEXT",
     "uzsakymo_numeris": "TEXT",
@@ -989,6 +1000,12 @@ def vairuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_
     return {"data": data}
 
 
+@app.get("/api/vairuotojai.csv")
+def vairuotojai_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    return table_csv_response(cursor, "vairuotojai", "vairuotojai.csv")
+
+
 # ---- Darbuotojai ----
 
 
@@ -1083,6 +1100,12 @@ def darbuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_
     return {"data": data}
 
 
+@app.get("/api/darbuotojai.csv")
+def darbuotojai_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    return table_csv_response(cursor, "darbuotojai", "darbuotojai.csv")
+
+
 # ---- Grupes ----
 
 
@@ -1152,6 +1175,12 @@ def grupes_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(grupes)")]
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
+
+
+@app.get("/api/grupes.csv")
+def grupes_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    return table_csv_response(cursor, "grupes", "grupes.csv")
 
 
 # ---- Klientai ----
@@ -1277,6 +1306,12 @@ def klientai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
     return {"data": data}
 
 
+@app.get("/api/klientai.csv")
+def klientai_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    return table_csv_response(cursor, "klientai", "klientai.csv")
+
+
 # ---- Trailer types ----
 
 
@@ -1390,6 +1425,27 @@ def trailer_types_api(
     return {"data": data}
 
 
+@app.get("/api/trailer-types.csv")
+def trailer_types_csv(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
+):
+    conn, cursor = db
+    if user_has_role(request, cursor, Role.ADMIN):
+        return table_csv_response(cursor, "lookup", "trailer-types.csv")
+    imone = request.session.get("imone", "")
+    cursor.execute(
+        "SELECT id, reiksme FROM company_settings WHERE imone=? AND kategorija='Priekabos tipas'",
+        (imone,),
+    )
+    rows = cursor.fetchall()
+    df = pd.DataFrame(rows, columns=["id", "reiksme"])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=trailer-types.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 # ---- Trailer specs ----
 
 
@@ -1472,6 +1528,15 @@ def trailer_specs_api(
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(trailer_specs)")]
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
+
+
+@app.get("/api/trailer-specs.csv")
+def trailer_specs_csv(
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN)),
+):
+    conn, cursor = db
+    return table_csv_response(cursor, "trailer_specs", "trailer-specs.csv")
 
 
 # ---- Settings ----
