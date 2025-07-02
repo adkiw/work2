@@ -18,6 +18,12 @@ from modules.roles import Role
 import datetime
 import pandas as pd
 
+# Available employee roles for form select boxes
+EMPLOYEE_ROLES = [
+    "Ekspedicijos vadybininkas",
+    "Transporto vadybininkas",
+]
+
 app = FastAPI()
 
 
@@ -855,9 +861,20 @@ def darbuotojai_list(request: Request):
 
 
 @app.get("/darbuotojai/add", response_class=HTMLResponse)
-def darbuotojai_add_form(request: Request):
+def darbuotojai_add_form(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    grupes = [r[0] for r in cursor.execute("SELECT numeris FROM grupes").fetchall()]
     return templates.TemplateResponse(
-        "darbuotojai_form.html", {"request": request, "data": {}}
+        "darbuotojai_form.html",
+        {
+            "request": request,
+            "data": {},
+            "roles": EMPLOYEE_ROLES,
+            "grupes": grupes,
+        },
     )
 
 
@@ -873,8 +890,15 @@ def darbuotojai_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(darbuotojai)")]
     data = dict(zip(columns, row))
+    grupes = [r[0] for r in cursor.execute("SELECT numeris FROM grupes").fetchall()]
     return templates.TemplateResponse(
-        "darbuotojai_form.html", {"request": request, "data": data}
+        "darbuotojai_form.html",
+        {
+            "request": request,
+            "data": data,
+            "roles": EMPLOYEE_ROLES,
+            "grupes": grupes,
+        },
     )
 
 
