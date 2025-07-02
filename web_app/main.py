@@ -87,6 +87,7 @@ EXPECTED_VILKIKAI_COLUMNS = {
     "marke": "TEXT",
     "pagaminimo_metai": "INTEGER",
     "tech_apziura": "TEXT",
+    "draudimas": "TEXT",
     "vadybininkas": "TEXT",
     "vairuotojai": "TEXT",
     "priekaba": "TEXT",
@@ -496,12 +497,28 @@ def vilkikai_add_form(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
-    trailers = [
-        r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()
+    trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
+    markes = [r[0] for r in cursor.execute("SELECT reiksme FROM lookup WHERE kategorija='Markė'").fetchall()]
+    vairuotojai = [f"{r[1]} {r[2]}" for r in cursor.execute("SELECT id, vardas, pavarde FROM vairuotojai").fetchall()]
+    vadybininkai = [
+        f"{r[0]} {r[1]}"
+        for r in cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
+            ("Transporto vadybininkas",),
+        ).fetchall()
     ]
-    return templates.TemplateResponse(
-        "vilkikai_form.html", {"request": request, "data": {}, "trailers": trailers}
-    )
+    context = {
+        "request": request,
+        "data": {},
+        "trailers": trailers,
+        "markes": markes,
+        "vairuotojai": vairuotojai,
+        "vadybininkai": vadybininkai,
+        "drv1": "",
+        "drv2": "",
+        "transporto_grupe": "",
+    }
+    return templates.TemplateResponse("vilkikai_form.html", context)
 
 
 @app.get("/vilkikai/{vid}/edit", response_class=HTMLResponse)
@@ -516,12 +533,44 @@ def vilkikai_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkikai)")]
     data = dict(zip(columns, row))
-    trailers = [
-        r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()
+    trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
+    markes = [r[0] for r in cursor.execute("SELECT reiksme FROM lookup WHERE kategorija='Markė'").fetchall()]
+    vairuotojai = [f"{r[1]} {r[2]}" for r in cursor.execute("SELECT id, vardas, pavarde FROM vairuotojai").fetchall()]
+    vadybininkai = [
+        f"{r[0]} {r[1]}"
+        for r in cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
+            ("Transporto vadybininkas",),
+        ).fetchall()
     ]
-    return templates.TemplateResponse(
-        "vilkikai_form.html", {"request": request, "data": data, "trailers": trailers}
-    )
+    drv1 = ""
+    drv2 = ""
+    if data.get("vairuotojai"):
+        parts = [p.strip() for p in data["vairuotojai"].split(",") if p.strip()]
+        if parts:
+            drv1 = parts[0]
+        if len(parts) > 1:
+            drv2 = parts[1]
+    grp = ""
+    if data.get("vadybininkas"):
+        v_parts = data["vadybininkas"].split(" ", 1)
+        row_g = cursor.execute(
+            "SELECT grupe FROM darbuotojai WHERE vardas=? AND pavarde=?",
+            (v_parts[0], v_parts[1] if len(v_parts) > 1 else ""),
+        ).fetchone()
+        grp = row_g[0] if row_g else ""
+    context = {
+        "request": request,
+        "data": data,
+        "trailers": trailers,
+        "markes": markes,
+        "vairuotojai": vairuotojai,
+        "vadybininkai": vadybininkai,
+        "drv1": drv1,
+        "drv2": drv2,
+        "transporto_grupe": grp,
+    }
+    return templates.TemplateResponse("vilkikai_form.html", context)
 
 
 @app.post("/vilkikai/save")
@@ -530,25 +579,29 @@ def vilkikai_save(
     vid: int = Form(0),
     numeris: str = Form(...),
     marke: str = Form(""),
-    pagaminimo_metai: int = Form(0),
+    pagaminimo_metai: str = Form(""),
     tech_apziura: str = Form(""),
+    draudimas: str = Form(""),
     vadybininkas: str = Form(""),
-    vairuotojai: str = Form(""),
+    vairuotojas1: str = Form(""),
+    vairuotojas2: str = Form(""),
     priekaba: str = Form(""),
     imone: str = Form(""),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    drivers = ", ".join(filter(None, [vairuotojas1, vairuotojas2]))
     if vid:
         cursor.execute(
-            "UPDATE vilkikai SET numeris=?, marke=?, pagaminimo_metai=?, tech_apziura=?, vadybininkas=?, vairuotojai=?, priekaba=?, imone=? WHERE id=?",
+            "UPDATE vilkikai SET numeris=?, marke=?, pagaminimo_metai=?, tech_apziura=?, draudimas=?, vadybininkas=?, vairuotojai=?, priekaba=?, imone=? WHERE id=?",
             (
                 numeris,
                 marke,
                 pagaminimo_metai,
                 tech_apziura,
+                draudimas,
                 vadybininkas,
-                vairuotojai,
+                drivers,
                 priekaba,
                 imone,
                 vid,
@@ -557,14 +610,15 @@ def vilkikai_save(
         action = "update"
     else:
         cursor.execute(
-            "INSERT INTO vilkikai (numeris, marke, pagaminimo_metai, tech_apziura, vadybininkas, vairuotojai, priekaba, imone) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO vilkikai (numeris, marke, pagaminimo_metai, tech_apziura, draudimas, vadybininkas, vairuotojai, priekaba, imone) VALUES (?,?,?,?,?,?,?,?,?)",
             (
                 numeris,
                 marke,
                 pagaminimo_metai,
                 tech_apziura,
+                draudimas,
                 vadybininkas,
-                vairuotojai,
+                drivers,
                 priekaba,
                 imone,
             ),
