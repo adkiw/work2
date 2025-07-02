@@ -20,10 +20,6 @@ import pandas as pd
 
 app = FastAPI()
 
-app.add_middleware(
-    SessionMiddleware, secret_key=os.getenv("WEBAPP_SECRET", "devsecret")
-)
-
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """Redirect anonymous users to the login page."""
@@ -41,6 +37,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(AuthMiddleware)
+
+app.add_middleware(
+    SessionMiddleware, secret_key=os.getenv("WEBAPP_SECRET", "devsecret")
+)
 
 
 def ensure_logged_in(request: Request) -> bool:
