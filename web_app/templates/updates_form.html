@@ -7,13 +7,30 @@
     <label>Data: <input type="date" name="data" value="{{ data.data or '' }}"></label><br>
     <label>Darbo laikas: <input type="number" name="darbo_laikas" value="{{ data.darbo_laikas or 0 }}"></label><br>
     <label>Likusios valandos: <input type="number" name="likes_laikas" value="{{ data.likes_laikas or 0 }}"></label><br>
+    <label>SA: <input type="text" name="sa" value="{{ data.sa or '' }}"></label><br>
     <label>Pakrovimo statusas: <input type="text" name="pakrovimo_statusas" value="{{ data.pakrovimo_statusas or '' }}"></label><br>
-    <label>Pakrovimo laikas: <input type="text" name="pakrovimo_laikas" value="{{ data.pakrovimo_laikas or '' }}"></label><br>
+    <label>Pakrovimo laikas: <input class="time" type="text" name="pakrovimo_laikas" value="{{ data.pakrovimo_laikas or '' }}" placeholder="HHMM"></label><br>
     <label>Pakrovimo data: <input type="date" name="pakrovimo_data" value="{{ data.pakrovimo_data or '' }}"></label><br>
     <label>Iškrovimo statusas: <input type="text" name="iskrovimo_statusas" value="{{ data.iskrovimo_statusas or '' }}"></label><br>
-    <label>Iškrovimo laikas: <input type="text" name="iskrovimo_laikas" value="{{ data.iskrovimo_laikas or '' }}"></label><br>
+    <label>Iškrovimo laikas: <input class="time" type="text" name="iskrovimo_laikas" value="{{ data.iskrovimo_laikas or '' }}" placeholder="HHMM"></label><br>
     <label>Iškrovimo data: <input type="date" name="iskrovimo_data" value="{{ data.iskrovimo_data or '' }}"></label><br>
     <label>Komentaras: <input type="text" name="komentaras" value="{{ data.komentaras or '' }}"></label><br>
     <button type="submit">Išsaugoti</button>
 </form>
+<script>
+function formatTime(val) {
+    if (!val) return '';
+    var digits = String(val).replace(/\D/g, '');
+    if (digits.length === 1) return '0' + digits + ':00';
+    if (digits.length === 2) return digits.padStart(2, '0') + ':00';
+    if (digits.length === 3) return '0' + digits[0] + ':' + digits.slice(1).padStart(2, '0');
+    if (digits.length === 4) return digits.slice(0, 2) + ':' + digits.slice(2);
+    return val;
+}
+document.querySelectorAll('input.time').forEach(function(el){
+    el.addEventListener('blur', function(){
+        this.value = formatTime(this.value);
+    });
+});
+</script>
 {% endblock %}

@@ -438,6 +438,7 @@ def test_updates_basic(tmp_path):
         "data": "2023-01-01",
         "darbo_laikas": "8",
         "likes_laikas": "4",
+        "sa": "SA",
         "pakrovimo_statusas": "Pakrauta",
         "pakrovimo_laikas": "10:00",
         "pakrovimo_data": "2023-01-01",
@@ -453,6 +454,7 @@ def test_updates_basic(tmp_path):
     data = resp.json()["data"]
     assert len(data) == 1
     assert data[0]["vilkiko_numeris"] == "AAA111"
+    assert data[0]["sa"] == "SA"
 
     resp = client.get("/api/updates.csv")
     assert resp.status_code == 200
