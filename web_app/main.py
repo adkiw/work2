@@ -1137,6 +1137,104 @@ def audit_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
     return {"data": data}
 
 
+# ---- Updates ----
+
+@app.get("/updates", response_class=HTMLResponse)
+def updates_list(request: Request):
+    return templates.TemplateResponse("updates_list.html", {"request": request})
+
+
+@app.get("/updates/add", response_class=HTMLResponse)
+def updates_add_form(request: Request):
+    return templates.TemplateResponse("updates_form.html", {"request": request, "data": {}})
+
+
+@app.get("/updates/{uid}/edit", response_class=HTMLResponse)
+def updates_edit_form(
+    uid: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    row = cursor.execute("SELECT * FROM vilkiku_darbo_laikai WHERE id=?", (uid,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")]
+    data = dict(zip(columns, row))
+    return templates.TemplateResponse("updates_form.html", {"request": request, "data": data})
+
+
+@app.post("/updates/save")
+def updates_save(
+    request: Request,
+    uid: int = Form(0),
+    vilkiko_numeris: str = Form(...),
+    data: str = Form(...),
+    darbo_laikas: int = Form(0),
+    likes_laikas: int = Form(0),
+    pakrovimo_statusas: str = Form(""),
+    pakrovimo_laikas: str = Form(""),
+    pakrovimo_data: str = Form(""),
+    iskrovimo_statusas: str = Form(""),
+    iskrovimo_laikas: str = Form(""),
+    iskrovimo_data: str = Form(""),
+    komentaras: str = Form(""),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    if uid:
+        cursor.execute(
+            "UPDATE vilkiku_darbo_laikai SET vilkiko_numeris=?, data=?, darbo_laikas=?, likes_laikas=?, pakrovimo_statusas=?, pakrovimo_laikas=?, pakrovimo_data=?, iskrovimo_statusas=?, iskrovimo_laikas=?, iskrovimo_data=?, komentaras=? WHERE id=?",
+            (
+                vilkiko_numeris,
+                data,
+                darbo_laikas,
+                likes_laikas,
+                pakrovimo_statusas,
+                pakrovimo_laikas,
+                pakrovimo_data,
+                iskrovimo_statusas,
+                iskrovimo_laikas,
+                iskrovimo_data,
+                komentaras,
+                uid,
+            ),
+        )
+        action = "update"
+    else:
+        cursor.execute(
+            "INSERT INTO vilkiku_darbo_laikai (vilkiko_numeris, data, darbo_laikas, likes_laikas, pakrovimo_statusas, pakrovimo_laikas, pakrovimo_data, iskrovimo_statusas, iskrovimo_laikas, iskrovimo_data, komentaras) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                vilkiko_numeris,
+                data,
+                darbo_laikas,
+                likes_laikas,
+                pakrovimo_statusas,
+                pakrovimo_laikas,
+                pakrovimo_data,
+                iskrovimo_statusas,
+                iskrovimo_laikas,
+                iskrovimo_data,
+                komentaras,
+            ),
+        )
+        uid = cursor.lastrowid
+        action = "insert"
+    conn.commit()
+    log_action(conn, cursor, None, action, "vilkiku_darbo_laikai", uid)
+    return RedirectResponse("/updates", status_code=303)
+
+
+@app.get("/api/updates")
+def updates_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT * FROM vilkiku_darbo_laikai")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")]
+    data = [dict(zip(columns, row)) for row in rows]
+    return {"data": data}
+
+
 # ---- Authentication ----
 
 @app.get("/login", response_class=HTMLResponse)
