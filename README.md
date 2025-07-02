@@ -29,6 +29,10 @@ Besides the Streamlit UI, the repository now provides an alternative FastAPI bas
    ```
    The main page displays a horizontal menu for modules such as shipments, trucks, trailers, groups, drivers, clients, employees, planning and updates.
 
+   On Windows systems you can alternatively execute `start_work2_server.bat` to
+   create the virtual environment (if missing), install dependencies and launch
+   the FastAPI interface automatically.
+
 4. Alternatively you can run the FastAPI interface located in `web_app`:
    ```bash
    uvicorn web_app.main:app --reload
