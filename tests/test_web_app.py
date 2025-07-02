@@ -5,11 +5,24 @@ import datetime
 from fastapi.testclient import TestClient
 
 
-def create_client(tmp_path):
+def login_default(client: TestClient):
+    resp = client.post(
+        "/login",
+        data={"username": "admin", "password": "admin"},
+        allow_redirects=False,
+    )
+    assert resp.status_code == 303
+    return client
+
+
+def create_client(tmp_path, do_login=True):
     os.environ["DB_PATH"] = str(tmp_path / "app.db")
     module = importlib.import_module("web_app.main")
     importlib.reload(module)
-    return TestClient(module.app)
+    client = TestClient(module.app)
+    if do_login:
+        login_default(client)
+    return client
 
 
 def test_kroviniai_empty(tmp_path):
@@ -292,7 +305,7 @@ def test_settings_defaults(tmp_path):
 
 
 def test_login_and_register(tmp_path):
-    client = create_client(tmp_path)
+    client = create_client(tmp_path, do_login=False)
     reg_form = {
         "username": "new@a.com",
         "password": "pass",
