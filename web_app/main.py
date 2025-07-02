@@ -321,6 +321,18 @@ def kroviniai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db
     return {"data": data}
 
 
+@app.get("/api/kroviniai.csv")
+def kroviniai_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT * FROM kroviniai")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(kroviniai)")]
+    df = pd.DataFrame(rows, columns=columns)
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=kroviniai.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 # ---- Planavimas ----
 
 
@@ -566,6 +578,18 @@ def vilkikai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
     return {"data": data}
 
 
+@app.get("/api/vilkikai.csv")
+def vilkikai_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT * FROM vilkikai")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkikai)")]
+    df = pd.DataFrame(rows, columns=columns)
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=vilkikai.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 # ---- Priekabos ----
 
 
@@ -655,6 +679,18 @@ def priekabos_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(priekabos)")]
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
+
+
+@app.get("/api/priekabos.csv")
+def priekabos_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT * FROM priekabos")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(priekabos)")]
+    df = pd.DataFrame(rows, columns=columns)
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=priekabos.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
 # ---- Vairuotojai ----

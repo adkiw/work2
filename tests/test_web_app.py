@@ -40,6 +40,26 @@ def test_save_and_fetch(tmp_path):
     assert data[0]["klientas"] == "ACME"
 
 
+def test_kroviniai_csv(tmp_path):
+    client = create_client(tmp_path)
+    form = {
+        "cid": "0",
+        "klientas": "ACME",
+        "uzsakymo_numeris": "1",
+        "pakrovimo_data": "2023-01-01",
+        "iskrovimo_data": "2023-01-02",
+        "kilometrai": "10",
+        "frachtas": "20",
+        "busena": "Nesuplanuotas",
+        "imone": "A",
+    }
+    client.post("/kroviniai/save", data=form, allow_redirects=False)
+    resp = client.get("/api/kroviniai.csv")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "uzsakymo_numeris" in resp.text.splitlines()[0]
+
+
 def test_vilkikai_basic(tmp_path):
     client = create_client(tmp_path)
     resp = client.get("/api/vilkikai")
@@ -64,6 +84,26 @@ def test_vilkikai_basic(tmp_path):
     assert data[0]["numeris"] == "AAA111"
 
 
+def test_vilkikai_csv(tmp_path):
+    client = create_client(tmp_path)
+    form = {
+        "vid": "0",
+        "numeris": "AAA111",
+        "marke": "MAN",
+        "pagaminimo_metai": "2020",
+        "tech_apziura": "2023-01-01",
+        "vadybininkas": "John",
+        "vairuotojai": "A B",
+        "priekaba": "TR1",
+        "imone": "A",
+    }
+    client.post("/vilkikai/save", data=form, allow_redirects=False)
+    resp = client.get("/api/vilkikai.csv")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "numeris" in resp.text.splitlines()[0]
+
+
 def test_vilkikai_form_shows_trailers(tmp_path):
     client = create_client(tmp_path)
     trailer_form = {
@@ -83,6 +123,25 @@ def test_vilkikai_form_shows_trailers(tmp_path):
     assert resp.status_code == 200
     assert "<select" in resp.text
     assert '<option value="TR123"' in resp.text
+
+
+def test_priekabos_csv(tmp_path):
+    client = create_client(tmp_path)
+    form = {
+        "pid": "0",
+        "priekabu_tipas": "Tipas",
+        "numeris": "TR1",
+        "marke": "X",
+        "pagaminimo_metai": "2020",
+        "tech_apziura": "2023-01-01",
+        "draudimas": "2023-01-01",
+        "imone": "A",
+    }
+    client.post("/priekabos/save", data=form, allow_redirects=False)
+    resp = client.get("/api/priekabos.csv")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "numeris" in resp.text.splitlines()[0]
 
 
 def test_audit_log_records_actions(tmp_path):
