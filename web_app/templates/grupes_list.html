@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Grupės</h2>
+<a href="/grupes/add">Pridėti naują</a>
+<table id="group-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Numeris</th>
+            <th>Pavadinimas</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+</table>
+<script>
+$(document).ready(function() {
+    $('#group-table').DataTable({
+        ajax: '/api/grupes',
+        columns: [
+            { data: 'id' },
+            { data: 'numeris' },
+            { data: 'pavadinimas' },
+            { data: null, render: function (data, type, row) {
+                return '<a href="/grupes/' + row.id + '/edit">Edit</a>';
+            }}
+        ]
+    });
+});
+</script>
+{% endblock %}
