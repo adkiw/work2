@@ -1,5 +1,7 @@
 import importlib
 import os
+import sqlite3
+import datetime
 from fastapi.testclient import TestClient
 
 
@@ -163,3 +165,47 @@ def test_vairuotojai_basic(tmp_path):
     data = resp.json()["data"]
     assert len(data) == 1
     assert data[0]["vardas"] == "Jonas"
+
+def test_planavimas_basic(tmp_path):
+    client = create_client(tmp_path)
+    today = datetime.date.today().isoformat()
+    truck_form = {
+        "vid": "0",
+        "numeris": "AAA111",
+        "marke": "MAN",
+        "pagaminimo_metai": "2020",
+        "tech_apziura": "2023-01-01",
+        "vadybininkas": "John",
+        "vairuotojai": "",
+        "priekaba": "TR1",
+        "imone": "A",
+    }
+    client.post("/vilkikai/save", data=truck_form, allow_redirects=False)
+    load_form = {
+        "cid": "0",
+        "klientas": "ACME",
+        "uzsakymo_numeris": "1",
+        "pakrovimo_data": today,
+        "iskrovimo_data": today,
+        "kilometrai": "10",
+        "frachtas": "1",
+        "busena": "Nesuplanuotas",
+        "imone": "A",
+        "vilkikas": "AAA111",
+    }
+    client.post("/kroviniai/save", data=load_form, allow_redirects=False)
+    db_path = tmp_path / "app.db"
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO vilkiku_darbo_laikai (vilkiko_numeris, data, iskrovimo_laikas, darbo_laikas, likes_laikas, sa) VALUES (?,?,?,?,?,?)",
+        ("AAA111", today, "10:00", 8, 4, "SA"),
+    )
+    conn.commit()
+    conn.close()
+    resp = client.get("/api/planavimas")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "columns" in data and "data" in data
+    assert any(row[data["columns"][0]].startswith("AAA111") for row in data["data"])
+    assert today in data["columns"]
