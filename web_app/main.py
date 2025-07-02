@@ -24,6 +24,9 @@ EMPLOYEE_ROLES = [
     "Transporto vadybininkas",
 ]
 
+# Nationality options for driver forms
+DRIVER_NATIONALITIES = ["LT", "BY", "UA", "UZ", "IN", "NG", "PL"]
+
 app = FastAPI()
 
 
@@ -772,7 +775,12 @@ def vairuotojai_list(request: Request):
 @app.get("/vairuotojai/add", response_class=HTMLResponse)
 def vairuotojai_add_form(request: Request):
     return templates.TemplateResponse(
-        "vairuotojai_form.html", {"request": request, "data": {}}
+        "vairuotojai_form.html",
+        {
+            "request": request,
+            "data": {},
+            "tautybes": DRIVER_NATIONALITIES,
+        },
     )
 
 
@@ -789,7 +797,12 @@ def vairuotojai_edit_form(
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vairuotojai)")]
     data = dict(zip(columns, row))
     return templates.TemplateResponse(
-        "vairuotojai_form.html", {"request": request, "data": data}
+        "vairuotojai_form.html",
+        {
+            "request": request,
+            "data": data,
+            "tautybes": DRIVER_NATIONALITIES,
+        },
     )
 
 
