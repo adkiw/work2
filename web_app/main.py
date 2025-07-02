@@ -234,6 +234,36 @@ def compute_limits(cursor: sqlite3.Cursor, vat: str, coface: float) -> tuple[flo
     return musu, liks
 
 
+def user_has_role(request: Request, cursor: sqlite3.Cursor, role: Role) -> bool:
+    """Check if current session user has the given role."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return False
+    cursor.execute(
+        """
+        SELECT 1 FROM user_roles ur
+        JOIN roles r ON ur.role_id = r.id
+        WHERE ur.user_id = ? AND r.name = ?
+        """,
+        (user_id, role.value),
+    )
+    return cursor.fetchone() is not None
+
+
+def require_roles(*roles: Role):
+    """Dependency ensuring the current user has any of the given roles."""
+
+    def wrapper(
+        request: Request,
+        db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    ) -> None:
+        _, cursor = db
+        if not any(user_has_role(request, cursor, role) for role in roles):
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+    return Depends(wrapper)
+
+
 def get_db() -> Generator[tuple[sqlite3.Connection, sqlite3.Cursor], None, None]:
     conn, cursor = init_db()
     ensure_columns(conn, cursor)
@@ -1159,12 +1189,18 @@ def klientai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
 
 
 @app.get("/trailer-types", response_class=HTMLResponse)
-def trailer_types_list(request: Request):
+def trailer_types_list(
+    request: Request,
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
+):
     return templates.TemplateResponse("trailer_types_list.html", {"request": request})
 
 
 @app.get("/trailer-types/add", response_class=HTMLResponse)
-def trailer_types_add_form(request: Request):
+def trailer_types_add_form(
+    request: Request,
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
+):
     return templates.TemplateResponse(
         "trailer_types_form.html", {"request": request, "data": {}}
     )
@@ -1175,12 +1211,20 @@ def trailer_types_edit_form(
     tid: int,
     request: Request,
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
 ):
     conn, cursor = db
-    row = cursor.execute(
-        "SELECT id, reiksme FROM lookup WHERE kategorija='Priekabos tipas' AND id=?",
-        (tid,),
-    ).fetchone()
+    if user_has_role(request, cursor, Role.ADMIN):
+        row = cursor.execute(
+            "SELECT id, reiksme FROM lookup WHERE kategorija='Priekabos tipas' AND id=?",
+            (tid,),
+        ).fetchone()
+    else:
+        imone = request.session.get("imone", "")
+        row = cursor.execute(
+            "SELECT id, reiksme FROM company_settings WHERE kategorija='Priekabos tipas' AND id=? AND imone=?",
+            (tid, imone),
+        ).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Not found")
     data = {"id": row[0], "reiksme": row[1]}
@@ -1191,33 +1235,64 @@ def trailer_types_edit_form(
 
 @app.post("/trailer-types/save")
 def trailer_types_save(
+    request: Request,
     tid: int = Form(0),
     reiksme: str = Form(...),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
 ):
     conn, cursor = db
-    if tid:
-        cursor.execute(
-            "UPDATE lookup SET reiksme=? WHERE id=? AND kategorija='Priekabos tipas'",
-            (reiksme, tid),
-        )
-        action = "update"
+    if user_has_role(request, cursor, Role.ADMIN):
+        table = "lookup"
+        if tid:
+            cursor.execute(
+                "UPDATE lookup SET reiksme=? WHERE id=? AND kategorija='Priekabos tipas'",
+                (reiksme, tid),
+            )
+            action = "update"
+        else:
+            cursor.execute(
+                "INSERT INTO lookup (kategorija, reiksme) VALUES ('Priekabos tipas', ?)",
+                (reiksme,),
+            )
+            tid = cursor.lastrowid
+            action = "insert"
     else:
-        cursor.execute(
-            "INSERT INTO lookup (kategorija, reiksme) VALUES ('Priekabos tipas', ?)",
-            (reiksme,),
-        )
-        tid = cursor.lastrowid
-        action = "insert"
+        table = "company_settings"
+        imone = request.session.get("imone", "")
+        if tid:
+            cursor.execute(
+                "UPDATE company_settings SET reiksme=? WHERE id=?",
+                (reiksme, tid),
+            )
+            action = "update"
+        else:
+            cursor.execute(
+                "INSERT INTO company_settings (imone, kategorija, reiksme) VALUES (?,?,?)",
+                (imone, "Priekabos tipas", reiksme),
+            )
+            tid = cursor.lastrowid
+            action = "insert"
     conn.commit()
-    log_action(conn, cursor, request.session.get("user_id"), action, "lookup", tid)
+    log_action(conn, cursor, request.session.get("user_id"), action, table, tid)
     return RedirectResponse("/trailer-types", status_code=303)
 
 
 @app.get("/api/trailer-types")
-def trailer_types_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def trailer_types_api(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
+):
     conn, cursor = db
-    cursor.execute("SELECT id, reiksme FROM lookup WHERE kategorija='Priekabos tipas'")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT id, reiksme FROM lookup WHERE kategorija='Priekabos tipas'")
+    else:
+        imone = request.session.get("imone", "")
+        cursor.execute(
+            "SELECT id, reiksme FROM company_settings WHERE imone=? AND kategorija='Priekabos tipas'",
+            (imone,),
+        )
     rows = cursor.fetchall()
     data = [{"id": r[0], "reiksme": r[1]} for r in rows]
     return {"data": data}
@@ -1227,12 +1302,18 @@ def trailer_types_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(ge
 
 
 @app.get("/trailer-specs", response_class=HTMLResponse)
-def trailer_specs_list(request: Request):
+def trailer_specs_list(
+    request: Request,
+    auth: None = Depends(require_roles(Role.ADMIN)),
+):
     return templates.TemplateResponse("trailer_specs_list.html", {"request": request})
 
 
 @app.get("/trailer-specs/add", response_class=HTMLResponse)
-def trailer_specs_add_form(request: Request):
+def trailer_specs_add_form(
+    request: Request,
+    auth: None = Depends(require_roles(Role.ADMIN)),
+):
     return templates.TemplateResponse(
         "trailer_specs_form.html", {"request": request, "data": {}}
     )
@@ -1243,6 +1324,7 @@ def trailer_specs_edit_form(
     sid: int,
     request: Request,
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN)),
 ):
     conn, cursor = db
     row = cursor.execute("SELECT * FROM trailer_specs WHERE id=?", (sid,)).fetchone()
@@ -1266,6 +1348,7 @@ def trailer_specs_save(
     keliamoji_galia: float = Form(0.0),
     talpa: float = Form(0.0),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN)),
 ):
     conn, cursor = db
     if sid:
@@ -1287,7 +1370,10 @@ def trailer_specs_save(
 
 
 @app.get("/api/trailer-specs")
-def trailer_specs_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def trailer_specs_api(
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN)),
+):
     conn, cursor = db
     cursor.execute("SELECT * FROM trailer_specs")
     rows = cursor.fetchall()
@@ -1300,7 +1386,10 @@ def trailer_specs_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(ge
 
 
 @app.get("/settings", response_class=HTMLResponse)
-def settings_page(request: Request):
+def settings_page(
+    request: Request,
+    auth: None = Depends(require_roles(Role.ADMIN)),
+):
     return templates.TemplateResponse("settings.html", {"request": request})
 
 
@@ -1308,6 +1397,7 @@ def settings_page(request: Request):
 def default_trailer_types_api(
     imone: str = "",
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN)),
 ):
     conn, cursor = db
     cursor.execute(
@@ -1323,6 +1413,7 @@ async def settings_save(
     request: Request,
     imone: str = Form(""),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN)),
 ):
     form = await request.form()
     values = form.getlist("values")
@@ -1342,12 +1433,18 @@ async def settings_save(
 
 
 @app.get("/registracijos", response_class=HTMLResponse)
-def registracijos_list(request: Request):
+def registracijos_list(
+    request: Request,
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
+):
     return templates.TemplateResponse("registracijos_list.html", {"request": request})
 
 
 @app.get("/api/registracijos")
-def registracijos_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def registracijos_api(
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
+):
     conn, cursor = db
     rows = cursor.execute(
         "SELECT id, username, imone, vardas, pavarde, pareigybe FROM users WHERE aktyvus=0"
@@ -1367,7 +1464,10 @@ def registracijos_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(ge
 
 
 @app.get("/api/aktyvus")
-def aktyvus_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def aktyvus_api(
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
+):
     conn, cursor = db
     rows = cursor.execute(
         "SELECT username, imone, last_login FROM users WHERE aktyvus=1 ORDER BY imone, username"
@@ -1378,7 +1478,9 @@ def aktyvus_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db))
 
 @app.get("/registracijos/{uid}/approve")
 def registracijos_approve(
-    uid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
+    uid: int,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
 ):
     conn, cursor = db
     row = cursor.execute(
@@ -1401,7 +1503,9 @@ def registracijos_approve(
 
 @app.get("/registracijos/{uid}/approve-admin")
 def registracijos_approve_admin(
-    uid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
+    uid: int,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
 ):
     conn, cursor = db
     row = cursor.execute(
@@ -1424,7 +1528,9 @@ def registracijos_approve_admin(
 
 @app.get("/registracijos/{uid}/delete")
 def registracijos_delete(
-    uid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
+    uid: int,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
 ):
     conn, cursor = db
     cursor.execute("DELETE FROM users WHERE id=? AND aktyvus=0", (uid,))
@@ -1439,9 +1545,10 @@ def registracijos_delete(
 
 
 @app.get("/audit", response_class=HTMLResponse)
-def audit_list(request: Request):
-    if not ensure_logged_in(request):
-        return RedirectResponse("/login")
+def audit_list(
+    request: Request,
+    auth: None = Depends(require_roles(Role.ADMIN)),
+):
     return templates.TemplateResponse("audit_list.html", {"request": request})
 
 
@@ -1450,6 +1557,7 @@ def audit_api(
     user: str | None = None,
     table: str | None = None,
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN)),
 ):
     conn, cursor = db
     df = fetch_logs(conn, cursor)
@@ -1466,6 +1574,7 @@ def audit_csv(
     user: str | None = None,
     table: str | None = None,
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN)),
 ):
     conn, cursor = db
     df = fetch_logs(conn, cursor)
@@ -1585,6 +1694,18 @@ def updates_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db))
     ]
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
+
+
+@app.get("/api/updates.csv")
+def updates_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT * FROM vilkiku_darbo_laikai")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")]
+    df = pd.DataFrame(rows, columns=columns)
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=updates.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
 # ---- Authentication ----
