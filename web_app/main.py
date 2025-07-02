@@ -10,7 +10,7 @@ import bcrypt
 import sqlite3
 from typing import Generator
 from db import init_db
-from modules.audit import log_action
+from modules.audit import log_action, fetch_logs
 
 import datetime
 import pandas as pd
@@ -1032,14 +1032,8 @@ def audit_list(request: Request):
 @app.get("/api/audit")
 def audit_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
     conn, cursor = db
-    cursor.execute(
-        """SELECT al.id, u.username as user, al.action, al.table_name, al.record_id, al.timestamp, al.details
-           FROM audit_log al LEFT JOIN users u ON al.user_id = u.id
-           ORDER BY al.timestamp DESC"""
-    )
-    rows = cursor.fetchall()
-    columns = [d[0] for d in cursor.description]
-    data = [dict(zip(columns, row)) for row in rows]
+    df = fetch_logs(conn, cursor)
+    data = df.to_dict(orient="records")
     return {"data": data}
 
 
