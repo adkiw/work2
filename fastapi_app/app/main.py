@@ -686,6 +686,91 @@ def set_default_trailer_types_api(
     return Response(status_code=204)
 
 
+@app.post("/{tenant_id}/clients", response_model=schemas.Client)
+def create_client_api(
+    tenant_id: str,
+    client: schemas.ClientCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    created = crud.create_client(db, UUID(tenant_id), client)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="create",
+            table_name="clients",
+            record_id=str(created.id),
+            details=client.dict(),
+        ),
+    )
+    return created
+
+
+@app.get("/{tenant_id}/clients", response_model=list[schemas.Client])
+def read_clients_api(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return crud.get_clients(db, UUID(tenant_id))
+
+
+@app.put("/{tenant_id}/clients/{client_id}", response_model=schemas.Client)
+def update_client_api(
+    tenant_id: str,
+    client_id: int,
+    client: schemas.ClientCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    updated = crud.update_client(db, UUID(tenant_id), client_id, client)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="update",
+            table_name="clients",
+            record_id=str(client_id),
+            details=client.dict(),
+        ),
+    )
+    return updated
+
+
+@app.delete("/{tenant_id}/clients/{client_id}", status_code=204)
+def delete_client_api(
+    tenant_id: str,
+    client_id: int,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    ok = crud.delete_client(db, UUID(tenant_id), client_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="delete",
+            table_name="clients",
+            record_id=str(client_id),
+            details=None,
+        ),
+    )
+    return Response(status_code=204)
+
+
 @app.post("/audit", response_model=schemas.AuditLog)
 def create_audit_entry(
     log: schemas.AuditLogCreate,

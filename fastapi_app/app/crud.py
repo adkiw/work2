@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from uuid import UUID
 from . import models, schemas, auth
 import json
@@ -364,4 +365,84 @@ def get_default_trailer_types(db: Session, tenant_id: UUID) -> list[str]:
         .all()
     )
     return [r.value for r in rows]
+
+
+def _compute_client_limits(db: Session, tenant_id: UUID, name: str, coface: float) -> tuple[float, float]:
+    total = (
+        db.query(func.sum(models.Shipment.frachtas))
+        .filter(models.Shipment.tenant_id == tenant_id, models.Shipment.klientas == name)
+        .scalar()
+        or 0
+    )
+    musu = coface / 3.0 if coface else 0.0
+    liks = musu - total
+    if liks < 0:
+        liks = 0.0
+    return round(musu, 2), round(liks, 2)
+
+
+def create_client(db: Session, tenant_id: UUID, data: schemas.ClientCreate) -> models.Client:
+    musu, liks = _compute_client_limits(db, tenant_id, data.pavadinimas, data.coface_limitas or 0)
+    client = models.Client(
+        tenant_id=tenant_id,
+        pavadinimas=data.pavadinimas,
+        vat_numeris=data.vat_numeris,
+        kontaktinis_asmuo=data.kontaktinis_asmuo,
+        kontaktinis_el_pastas=data.kontaktinis_el_pastas,
+        kontaktinis_tel=data.kontaktinis_tel,
+        salis=data.salis,
+        regionas=data.regionas,
+        miestas=data.miestas,
+        adresas=data.adresas,
+        saskaitos_asmuo=data.saskaitos_asmuo,
+        saskaitos_el_pastas=data.saskaitos_el_pastas,
+        saskaitos_tel=data.saskaitos_tel,
+        coface_limitas=data.coface_limitas,
+        musu_limitas=musu,
+        likes_limitas=liks,
+    )
+    db.add(client)
+    db.commit()
+    db.refresh(client)
+    return client
+
+
+def update_client(db: Session, tenant_id: UUID, client_id: int, data: schemas.ClientCreate) -> models.Client | None:
+    client = (
+        db.query(models.Client)
+        .filter(models.Client.id == client_id, models.Client.tenant_id == tenant_id)
+        .first()
+    )
+    if not client:
+        return None
+    for field, value in data.dict().items():
+        setattr(client, field, value)
+    musu, liks = _compute_client_limits(db, tenant_id, client.pavadinimas, data.coface_limitas or 0)
+    client.musu_limitas = musu
+    client.likes_limitas = liks
+    db.commit()
+    db.refresh(client)
+    return client
+
+
+def delete_client(db: Session, tenant_id: UUID, client_id: int) -> bool:
+    client = (
+        db.query(models.Client)
+        .filter(models.Client.id == client_id, models.Client.tenant_id == tenant_id)
+        .first()
+    )
+    if not client:
+        return False
+    db.delete(client)
+    db.commit()
+    return True
+
+
+def get_clients(db: Session, tenant_id: UUID) -> list[models.Client]:
+    return (
+        db.query(models.Client)
+        .filter(models.Client.tenant_id == tenant_id)
+        .order_by(models.Client.id.desc())
+        .all()
+    )
 

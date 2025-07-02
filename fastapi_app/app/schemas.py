@@ -206,3 +206,34 @@ class TrailerType(TrailerTypeBase):
 class DefaultTrailerTypes(BaseModel):
     values: list[str]
 
+
+class ClientBase(BaseModel):
+    pavadinimas: str
+    vat_numeris: Optional[str] = None
+    kontaktinis_asmuo: Optional[str] = None
+    kontaktinis_el_pastas: Optional[str] = None
+    kontaktinis_tel: Optional[str] = None
+    salis: Optional[str] = None
+    regionas: Optional[str] = None
+    miestas: Optional[str] = None
+    adresas: Optional[str] = None
+    saskaitos_asmuo: Optional[str] = None
+    saskaitos_el_pastas: Optional[str] = None
+    saskaitos_tel: Optional[str] = None
+    coface_limitas: Optional[float] = 0
+
+
+class ClientCreate(ClientBase):
+    pass
+
+
+class Client(ClientBase):
+    id: int
+    tenant_id: UUID
+
+    musu_limitas: Optional[float] = None
+    likes_limitas: Optional[float] = None
+
+    class Config:
+        orm_mode = True
+

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Table, DateTime
+from sqlalchemy import Column, String, Integer, ForeignKey, Table, DateTime, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
@@ -153,6 +153,31 @@ class DefaultTrailerType(Base):
     tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
     value = Column(String, nullable=False)
     priority = Column(Integer, nullable=False, default=0)
+
+    tenant = relationship("Tenant")
+
+
+class Client(Base):
+    """Klientų lentelė"""
+
+    __tablename__ = "clients"
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    pavadinimas = Column(String, nullable=False)
+    vat_numeris = Column(String)
+    kontaktinis_asmuo = Column(String)
+    kontaktinis_el_pastas = Column(String)
+    kontaktinis_tel = Column(String)
+    salis = Column(String)
+    regionas = Column(String)
+    miestas = Column(String)
+    adresas = Column(String)
+    saskaitos_asmuo = Column(String)
+    saskaitos_el_pastas = Column(String)
+    saskaitos_tel = Column(String)
+    coface_limitas = Column(Float)
+    musu_limitas = Column(Float)
+    likes_limitas = Column(Float)
 
     tenant = relationship("Tenant")
 
