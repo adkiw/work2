@@ -187,3 +187,22 @@ class TrailerSpec(TrailerSpecBase):
     class Config:
         orm_mode = True
 
+
+class TrailerTypeBase(BaseModel):
+    name: str
+
+
+class TrailerTypeCreate(TrailerTypeBase):
+    pass
+
+
+class TrailerType(TrailerTypeBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+
+class DefaultTrailerTypes(BaseModel):
+    values: list[str]
+
