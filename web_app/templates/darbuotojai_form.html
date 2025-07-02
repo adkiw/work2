@@ -3,27 +3,51 @@
 <h2>{% if data.id %}Redaguoti darbuotoją{% else %}Naujas darbuotojas{% endif %}</h2>
 <form method="post" action="/darbuotojai/save">
     <input type="hidden" name="did" value="{{ data.id or 0 }}">
-    <label>Vardas: <input type="text" name="vardas" value="{{ data.vardas or '' }}"></label><br>
-    <label>Pavardė: <input type="text" name="pavarde" value="{{ data.pavarde or '' }}"></label><br>
-    <label>Pareigybė:
-        <select name="pareigybe">
-        {% for role in roles %}
-            <option value="{{ role }}" {% if role == data.pareigybe %}selected{% endif %}>{{ role }}</option>
-        {% endfor %}
-        </select>
-    </label><br>
-    <label>El. paštas: <input type="email" name="el_pastas" value="{{ data.el_pastas or '' }}"></label><br>
-    <label>Telefonas: <input type="text" name="telefonas" value="{{ data.telefonas or '' }}"></label><br>
-    <label>Grupė:
-        <select name="grupe">
-            <option value="">--</option>
-            {% for g in grupes %}
-            <option value="{{ g }}" {% if g == data.grupe %}selected{% endif %}>{{ g }}</option>
+    <input type="hidden" name="imone" value="{{ data.imone or '' }}">
+    <div class="form-grid">
+        <label>Vardas
+            <input type="text" name="vardas" value="{{ data.vardas or '' }}">
+        </label>
+        <label>Pavardė
+            <input type="text" name="pavarde" value="{{ data.pavarde or '' }}">
+        </label>
+        <label>Pareigybė
+            <select name="pareigybe">
+            {% for role in roles %}
+                <option value="{{ role }}" {% if role == data.pareigybe %}selected{% endif %}>{{ role }}</option>
             {% endfor %}
-        </select>
-    </label><br>
-    <label>Įmonė: <input type="text" name="imone" value="{{ data.imone or '' }}"></label><br>
-    <label>Aktyvus: <input type="checkbox" name="aktyvus" {% if data.aktyvus == 0 %}{% else %}checked{% endif %}></label><br>
-    <button type="submit">Išsaugoti</button>
+            </select>
+        </label>
+        <label>El. paštas
+            <input type="email" name="el_pastas" value="{{ data.el_pastas or '' }}">
+        </label>
+        <label>Telefonas
+            <input type="text" name="telefonas" value="{{ data.telefonas or '' }}">
+        </label>
+        <label>Grupė
+            <select name="grupe">
+                <option value="">--</option>
+                {% for g in grupes %}
+                <option value="{{ g }}" {% if g == data.grupe %}selected{% endif %}>{{ g }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </div>
+    <label>Aktyvus darbuotojas
+        <input type="checkbox" name="aktyvus" {% if data.aktyvus == 0 %}{% else %}checked{% endif %}>
+    </label>
+    <button type="submit">💾 Išsaugoti darbuotoją</button>
+    <a href="/darbuotojai">← Grįžti į sąrašą</a>
 </form>
+<style>
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.form-grid label {
+    display: flex;
+    flex-direction: column;
+}
+</style>
 {% endblock %}
