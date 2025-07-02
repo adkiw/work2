@@ -1510,3 +1510,9 @@ def register_submit(
         "register.html",
         {"request": request, "error": None, "msg": "Parai\u0161ka pateikta"},
     )
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
