@@ -249,7 +249,18 @@ def create_shipment(
 ):
     if str(current_user.current_tenant_id) != tenant_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-    return crud.create_shipment(db, UUID(tenant_id), shipment)
+    created = crud.create_shipment(db, UUID(tenant_id), shipment)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="create",
+            table_name="shipments",
+            record_id=str(created.id),
+            details=shipment.dict(),
+        ),
+    )
+    return created
 
 
 @app.get("/{tenant_id}/shipments", response_model=list[schemas.Shipment])
@@ -261,6 +272,56 @@ def read_shipments(
     if str(current_user.current_tenant_id) != tenant_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     return crud.get_shipments(db, UUID(tenant_id))
+
+
+@app.put("/{tenant_id}/shipments/{shipment_id}", response_model=schemas.Shipment)
+def update_shipment(
+    tenant_id: str,
+    shipment_id: int,
+    shipment: schemas.ShipmentCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    updated = crud.update_shipment(db, UUID(tenant_id), shipment_id, shipment)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="update",
+            table_name="shipments",
+            record_id=str(shipment_id),
+            details=shipment.dict(),
+        ),
+    )
+    return updated
+
+
+@app.delete("/{tenant_id}/shipments/{shipment_id}", status_code=204)
+def delete_shipment(
+    tenant_id: str,
+    shipment_id: int,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    ok = crud.delete_shipment(db, UUID(tenant_id), shipment_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="delete",
+            table_name="shipments",
+            record_id=str(shipment_id),
+            details=None,
+        ),
+    )
 
 
 @app.post("/audit", response_model=schemas.AuditLog)

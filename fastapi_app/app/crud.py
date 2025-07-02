@@ -74,6 +74,42 @@ def create_shipment(
     return shipment
 
 
+def update_shipment(
+    db: Session, tenant_id: UUID, shipment_id: int, data: schemas.ShipmentCreate
+) -> models.Shipment | None:
+    shipment = (
+        db.query(models.Shipment)
+        .filter(
+            models.Shipment.id == shipment_id,
+            models.Shipment.tenant_id == tenant_id,
+        )
+        .first()
+    )
+    if not shipment:
+        return None
+    for field, value in data.dict().items():
+        setattr(shipment, field, value)
+    db.commit()
+    db.refresh(shipment)
+    return shipment
+
+
+def delete_shipment(db: Session, tenant_id: UUID, shipment_id: int) -> bool:
+    shipment = (
+        db.query(models.Shipment)
+        .filter(
+            models.Shipment.id == shipment_id,
+            models.Shipment.tenant_id == tenant_id,
+        )
+        .first()
+    )
+    if not shipment:
+        return False
+    db.delete(shipment)
+    db.commit()
+    return True
+
+
 def get_shipments(db: Session, tenant_id: UUID) -> list[models.Shipment]:
     return (
         db.query(models.Shipment)
