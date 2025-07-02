@@ -302,7 +302,7 @@ def kroviniai_save(
         cid = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, None, action, "kroviniai", cid)
+    log_action(conn, cursor, request.session.get("user_id"), action, "kroviniai", cid)
     return RedirectResponse(f"/kroviniai", status_code=303)
 
 
@@ -547,7 +547,7 @@ def vilkikai_save(
         vid = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, None, action, "vilkikai", vid)
+    log_action(conn, cursor, request.session.get("user_id"), action, "vilkikai", vid)
     return RedirectResponse(f"/vilkikai", status_code=303)
 
 
@@ -638,7 +638,7 @@ def priekabos_save(
         pid = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, None, action, "priekabos", pid)
+    log_action(conn, cursor, request.session.get("user_id"), action, "priekabos", pid)
     return RedirectResponse("/priekabos", status_code=303)
 
 
@@ -729,7 +729,7 @@ def vairuotojai_save(
         did = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, None, action, "vairuotojai", did)
+    log_action(conn, cursor, request.session.get("user_id"), action, "vairuotojai", did)
     return RedirectResponse("/vairuotojai", status_code=303)
 
 
@@ -805,7 +805,7 @@ def darbuotojai_save(
         did = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, None, action, "darbuotojai", did)
+    log_action(conn, cursor, request.session.get("user_id"), action, "darbuotojai", did)
     return RedirectResponse("/darbuotojai", status_code=303)
 
 
@@ -876,7 +876,7 @@ def grupes_save(
         gid = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, None, action, "grupes", gid)
+    log_action(conn, cursor, request.session.get("user_id"), action, "grupes", gid)
     return RedirectResponse("/grupes", status_code=303)
 
 
@@ -976,7 +976,7 @@ def klientai_save(
         (coface_limitas, musu, liks, vat_numeris),
     )
     conn.commit()
-    log_action(conn, cursor, None, action, "klientai", cid)
+    log_action(conn, cursor, request.session.get("user_id"), action, "klientai", cid)
     return RedirectResponse("/klientai", status_code=303)
 
 
@@ -1045,7 +1045,7 @@ def trailer_types_save(
         tid = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, None, action, "lookup", tid)
+    log_action(conn, cursor, request.session.get("user_id"), action, "lookup", tid)
     return RedirectResponse("/trailer-types", status_code=303)
 
 
@@ -1117,7 +1117,7 @@ def trailer_specs_save(
         sid = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, None, action, "trailer_specs", sid)
+    log_action(conn, cursor, request.session.get("user_id"), action, "trailer_specs", sid)
     return RedirectResponse("/trailer-specs", status_code=303)
 
 
@@ -1169,7 +1169,7 @@ async def settings_save(
             (imone, val, pr),
         )
     conn.commit()
-    log_action(conn, cursor, None, "update", "company_default_trailers", 0)
+    log_action(conn, cursor, request.session.get("user_id"), "update", "company_default_trailers", 0)
     return RedirectResponse("/settings", status_code=303)
 
 
@@ -1229,8 +1229,8 @@ def registracijos_approve(
         (row[3], row[4], row[5], row[1], row[2]),
     )
     conn.commit()
-    log_action(conn, cursor, None, "approve", "users", uid)
-    log_action(conn, cursor, None, "create", "darbuotojai", cursor.lastrowid)
+    log_action(conn, cursor, request.session.get("user_id"), "approve", "users", uid)
+    log_action(conn, cursor, request.session.get("user_id"), "create", "darbuotojai", cursor.lastrowid)
     return RedirectResponse("/registracijos", status_code=303)
 
 
@@ -1252,8 +1252,8 @@ def registracijos_approve_admin(
         (row[3], row[4], row[5], row[1], row[2]),
     )
     conn.commit()
-    log_action(conn, cursor, None, "approve_admin", "users", uid)
-    log_action(conn, cursor, None, "create_admin", "darbuotojai", cursor.lastrowid)
+    log_action(conn, cursor, request.session.get("user_id"), "approve_admin", "users", uid)
+    log_action(conn, cursor, request.session.get("user_id"), "create_admin", "darbuotojai", cursor.lastrowid)
     return RedirectResponse("/registracijos", status_code=303)
 
 
@@ -1266,7 +1266,7 @@ def registracijos_delete(
     if cursor.rowcount == 0:
         raise HTTPException(status_code=404, detail="Not found")
     conn.commit()
-    log_action(conn, cursor, None, "delete", "users", uid)
+    log_action(conn, cursor, request.session.get("user_id"), "delete", "users", uid)
     return RedirectResponse("/registracijos", status_code=303)
 
 
@@ -1379,7 +1379,7 @@ def updates_save(
         uid = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, None, action, "vilkiku_darbo_laikai", uid)
+    log_action(conn, cursor, request.session.get("user_id"), action, "vilkiku_darbo_laikai", uid)
     return RedirectResponse("/updates", status_code=303)
 
 
@@ -1473,7 +1473,7 @@ def register_submit(
         (username, pw_hash, imone or None, vardas, pavarde, pareigybe),
     )
     conn.commit()
-    log_action(conn, cursor, None, "register", "users", cursor.lastrowid)
+    log_action(conn, cursor, request.session.get("user_id"), "register", "users", cursor.lastrowid)
     return templates.TemplateResponse(
         "register.html",
         {"request": request, "error": None, "msg": "Parai\u0161ka pateikta"},
