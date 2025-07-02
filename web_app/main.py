@@ -176,6 +176,7 @@ def kroviniai_save(
                 cid,
             ),
         )
+        action = "update"
     else:
         cursor.execute(
             "INSERT INTO kroviniai (klientas, uzsakymo_numeris, pakrovimo_data, iskrovimo_data, kilometrai, frachtas, busena, imone) VALUES (?,?,?,?,?,?,?,?)",
@@ -191,7 +192,9 @@ def kroviniai_save(
             ),
         )
         cid = cursor.lastrowid
+        action = "insert"
     conn.commit()
+    log_action(conn, cursor, None, action, "kroviniai", cid)
     return RedirectResponse(f"/kroviniai", status_code=303)
 
 
@@ -270,6 +273,7 @@ def vilkikai_save(
                 vid,
             ),
         )
+        action = "update"
     else:
         cursor.execute(
             "INSERT INTO vilkikai (numeris, marke, pagaminimo_metai, tech_apziura, vadybininkas, vairuotojai, priekaba, imone) VALUES (?,?,?,?,?,?,?,?)",
@@ -284,7 +288,10 @@ def vilkikai_save(
                 imone,
             ),
         )
+        vid = cursor.lastrowid
+        action = "insert"
     conn.commit()
+    log_action(conn, cursor, None, action, "vilkikai", vid)
     return RedirectResponse(f"/vilkikai", status_code=303)
 
 
@@ -472,12 +479,16 @@ def grupes_save(
             "UPDATE grupes SET numeris=?, pavadinimas=?, aprasymas=?, imone=? WHERE id=?",
             (numeris, pavadinimas, aprasymas, imone, gid),
         )
+        action = "update"
     else:
         cursor.execute(
             "INSERT INTO grupes (numeris, pavadinimas, aprasymas, imone) VALUES (?,?,?,?)",
             (numeris, pavadinimas, aprasymas, imone),
         )
+        gid = cursor.lastrowid
+        action = "insert"
     conn.commit()
+    log_action(conn, cursor, None, action, "grupes", gid)
     return RedirectResponse("/grupes", status_code=303)
 
 
@@ -543,6 +554,7 @@ def klientai_save(
                 cid,
             ),
         )
+        action = "update"
     else:
         cursor.execute(
             "INSERT INTO klientai (pavadinimas, vat_numeris, kontaktinis_asmuo, kontaktinis_el_pastas, kontaktinis_tel, imone) VALUES (?,?,?,?,?,?)",
@@ -556,7 +568,9 @@ def klientai_save(
             ),
         )
         cid = cursor.lastrowid
+        action = "insert"
     conn.commit()
+    log_action(conn, cursor, None, action, "klientai", cid)
     return RedirectResponse("/klientai", status_code=303)
 
 
