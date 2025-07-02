@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Planavimas</h2>
+<table id="plan-table" class="display" style="width:100%"></table>
+<script>
+$(document).ready(function() {
+    $.getJSON('/api/planavimas', function(resp) {
+        var cols = resp.columns.map(function(c) { return {data: c, title: c}; });
+        $('#plan-table').DataTable({
+            data: resp.data,
+            columns: cols,
+            ordering: false
+        });
+    });
+});
+</script>
+{% endblock %}
