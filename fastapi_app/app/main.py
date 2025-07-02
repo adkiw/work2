@@ -492,6 +492,91 @@ def delete_driver(
     return Response(status_code=204)
 
 
+@app.post("/{tenant_id}/trailers", response_model=schemas.Trailer)
+def create_trailer(
+    tenant_id: str,
+    trailer: schemas.TrailerCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    created = crud.create_trailer(db, UUID(tenant_id), trailer)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="create",
+            table_name="trailers",
+            record_id=str(created.id),
+            details=trailer.dict(),
+        ),
+    )
+    return created
+
+
+@app.get("/{tenant_id}/trailers", response_model=list[schemas.Trailer])
+def read_trailers(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return crud.get_trailers(db, UUID(tenant_id))
+
+
+@app.put("/{tenant_id}/trailers/{trailer_id}", response_model=schemas.Trailer)
+def update_trailer(
+    tenant_id: str,
+    trailer_id: int,
+    trailer: schemas.TrailerCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    updated = crud.update_trailer(db, UUID(tenant_id), trailer_id, trailer)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="update",
+            table_name="trailers",
+            record_id=str(trailer_id),
+            details=trailer.dict(),
+        ),
+    )
+    return updated
+
+
+@app.delete("/{tenant_id}/trailers/{trailer_id}", status_code=204)
+def delete_trailer(
+    tenant_id: str,
+    trailer_id: int,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    ok = crud.delete_trailer(db, UUID(tenant_id), trailer_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="delete",
+            table_name="trailers",
+            record_id=str(trailer_id),
+            details=None,
+        ),
+    )
+    return Response(status_code=204)
+
+
 @app.post("/audit", response_model=schemas.AuditLog)
 def create_audit_entry(
     log: schemas.AuditLogCreate,

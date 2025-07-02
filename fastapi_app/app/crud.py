@@ -232,3 +232,56 @@ def get_drivers(db: Session, tenant_id: UUID) -> list[models.Driver]:
         .all()
     )
 
+
+def create_trailer(db: Session, tenant_id: UUID, data: schemas.TrailerCreate) -> models.Trailer:
+    trailer = models.Trailer(
+        tenant_id=tenant_id,
+        numeris=data.numeris,
+        priekabu_tipas=data.priekabu_tipas,
+        marke=data.marke,
+        pagaminimo_metai=data.pagaminimo_metai,
+        tech_apziura=data.tech_apziura,
+        draudimas=data.draudimas,
+    )
+    db.add(trailer)
+    db.commit()
+    db.refresh(trailer)
+    return trailer
+
+
+def update_trailer(db: Session, tenant_id: UUID, trailer_id: int, data: schemas.TrailerCreate) -> models.Trailer | None:
+    trailer = (
+        db.query(models.Trailer)
+        .filter(models.Trailer.id == trailer_id, models.Trailer.tenant_id == tenant_id)
+        .first()
+    )
+    if not trailer:
+        return None
+    for field, value in data.dict().items():
+        setattr(trailer, field, value)
+    db.commit()
+    db.refresh(trailer)
+    return trailer
+
+
+def delete_trailer(db: Session, tenant_id: UUID, trailer_id: int) -> bool:
+    trailer = (
+        db.query(models.Trailer)
+        .filter(models.Trailer.id == trailer_id, models.Trailer.tenant_id == tenant_id)
+        .first()
+    )
+    if not trailer:
+        return False
+    db.delete(trailer)
+    db.commit()
+    return True
+
+
+def get_trailers(db: Session, tenant_id: UUID) -> list[models.Trailer]:
+    return (
+        db.query(models.Trailer)
+        .filter(models.Trailer.tenant_id == tenant_id)
+        .order_by(models.Trailer.id.desc())
+        .all()
+    )
+

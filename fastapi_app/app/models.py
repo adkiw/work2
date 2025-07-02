@@ -109,3 +109,19 @@ class Driver(Base):
 
     tenant = relationship("Tenant")
 
+
+class Trailer(Base):
+    """Priekabos lentelė"""
+
+    __tablename__ = "trailers"
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    numeris = Column(String, nullable=False)
+    priekabu_tipas = Column(String)
+    marke = Column(String)
+    pagaminimo_metai = Column(Integer)
+    tech_apziura = Column(String)
+    draudimas = Column(String)
+
+    tenant = relationship("Tenant")
+
