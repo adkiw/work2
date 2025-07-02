@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Klientai</h2>
-<a href="/klientai/add">Pridėti naują</a>
+<div class="page-header">
+    <h2>Klientai</h2>
+    <a class="add-btn" href="/klientai/add">Pridėti naują klientą</a>
+</div>
 <table id="cli-table" class="display" style="width:100%">
     <thead>
         <tr>
@@ -35,4 +37,12 @@ $(document).ready(function() {
     });
 });
 </script>
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+</style>
 {% endblock %}
