@@ -314,3 +314,32 @@ def test_user_admin_approve(tmp_path):
     resp = client.get("/api/aktyvus")
     data = resp.json()["data"]
     assert any(r["username"] == "u@a.com" for r in data)
+
+
+def test_updates_basic(tmp_path):
+    client = create_client(tmp_path)
+    resp = client.get("/api/updates")
+    assert resp.status_code == 200
+    assert resp.json() == {"data": []}
+
+    form = {
+        "uid": "0",
+        "vilkiko_numeris": "AAA111",
+        "data": "2023-01-01",
+        "darbo_laikas": "8",
+        "likes_laikas": "4",
+        "pakrovimo_statusas": "Pakrauta",
+        "pakrovimo_laikas": "10:00",
+        "pakrovimo_data": "2023-01-01",
+        "iskrovimo_statusas": "",
+        "iskrovimo_laikas": "",
+        "iskrovimo_data": "",
+        "komentaras": "t",
+    }
+    resp = client.post("/updates/save", data=form, allow_redirects=False)
+    assert resp.status_code == 303
+
+    resp = client.get("/api/updates")
+    data = resp.json()["data"]
+    assert len(data) == 1
+    assert data[0]["vilkiko_numeris"] == "AAA111"

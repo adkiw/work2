@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{% if data.id %}Redaguoti įrašą{% else %}Naujas įrašas{% endif %}</h2>
+<form method="post" action="/updates/save">
+    <input type="hidden" name="uid" value="{{ data.id or 0 }}">
+    <label>Vilkikas: <input type="text" name="vilkiko_numeris" value="{{ data.vilkiko_numeris or '' }}"></label><br>
+    <label>Data: <input type="date" name="data" value="{{ data.data or '' }}"></label><br>
+    <label>Darbo laikas: <input type="number" name="darbo_laikas" value="{{ data.darbo_laikas or 0 }}"></label><br>
+    <label>Likusios valandos: <input type="number" name="likes_laikas" value="{{ data.likes_laikas or 0 }}"></label><br>
+    <label>Pakrovimo statusas: <input type="text" name="pakrovimo_statusas" value="{{ data.pakrovimo_statusas or '' }}"></label><br>
+    <label>Pakrovimo laikas: <input type="text" name="pakrovimo_laikas" value="{{ data.pakrovimo_laikas or '' }}"></label><br>
+    <label>Pakrovimo data: <input type="date" name="pakrovimo_data" value="{{ data.pakrovimo_data or '' }}"></label><br>
+    <label>Iškrovimo statusas: <input type="text" name="iskrovimo_statusas" value="{{ data.iskrovimo_statusas or '' }}"></label><br>
+    <label>Iškrovimo laikas: <input type="text" name="iskrovimo_laikas" value="{{ data.iskrovimo_laikas or '' }}"></label><br>
+    <label>Iškrovimo data: <input type="date" name="iskrovimo_data" value="{{ data.iskrovimo_data or '' }}"></label><br>
+    <label>Komentaras: <input type="text" name="komentaras" value="{{ data.komentaras or '' }}"></label><br>
+    <button type="submit">Išsaugoti</button>
+</form>
+{% endblock %}
