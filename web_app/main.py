@@ -1786,6 +1786,7 @@ def updates_save(
     data: str = Form(...),
     darbo_laikas: int = Form(0),
     likes_laikas: int = Form(0),
+    sa: str = Form(""),
     pakrovimo_statusas: str = Form(""),
     pakrovimo_laikas: str = Form(""),
     pakrovimo_data: str = Form(""),
@@ -1796,12 +1797,14 @@ def updates_save(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    now_str = datetime.datetime.now().replace(second=0, microsecond=0).isoformat(timespec="minutes")
     if uid:
         cursor.execute(
-            "UPDATE vilkiku_darbo_laikai SET vilkiko_numeris=?, data=?, darbo_laikas=?, likes_laikas=?, pakrovimo_statusas=?, pakrovimo_laikas=?, pakrovimo_data=?, iskrovimo_statusas=?, iskrovimo_laikas=?, iskrovimo_data=?, komentaras=? WHERE id=?",
+            "UPDATE vilkiku_darbo_laikai SET vilkiko_numeris=?, data=?, sa=?, darbo_laikas=?, likes_laikas=?, pakrovimo_statusas=?, pakrovimo_laikas=?, pakrovimo_data=?, iskrovimo_statusas=?, iskrovimo_laikas=?, iskrovimo_data=?, komentaras=?, created_at=? WHERE id=?",
             (
                 vilkiko_numeris,
                 data,
+                sa,
                 darbo_laikas,
                 likes_laikas,
                 pakrovimo_statusas,
@@ -1811,16 +1814,18 @@ def updates_save(
                 iskrovimo_laikas,
                 iskrovimo_data,
                 komentaras,
+                now_str,
                 uid,
             ),
         )
         action = "update"
     else:
         cursor.execute(
-            "INSERT INTO vilkiku_darbo_laikai (vilkiko_numeris, data, darbo_laikas, likes_laikas, pakrovimo_statusas, pakrovimo_laikas, pakrovimo_data, iskrovimo_statusas, iskrovimo_laikas, iskrovimo_data, komentaras) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO vilkiku_darbo_laikai (vilkiko_numeris, data, sa, darbo_laikas, likes_laikas, pakrovimo_statusas, pakrovimo_laikas, pakrovimo_data, iskrovimo_statusas, iskrovimo_laikas, iskrovimo_data, komentaras, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 vilkiko_numeris,
                 data,
+                sa,
                 darbo_laikas,
                 likes_laikas,
                 pakrovimo_statusas,
@@ -1830,6 +1835,7 @@ def updates_save(
                 iskrovimo_laikas,
                 iskrovimo_data,
                 komentaras,
+                now_str,
             ),
         )
         uid = cursor.lastrowid
