@@ -127,3 +127,54 @@ def get_shipments(db: Session, tenant_id: UUID) -> list[models.Shipment]:
         .order_by(models.Shipment.id.desc())
         .all()
     )
+
+def create_truck(db: Session, tenant_id: UUID, data: schemas.TruckCreate) -> models.Truck:
+    truck = models.Truck(
+        tenant_id=tenant_id,
+        numeris=data.numeris,
+        marke=data.marke,
+        pagaminimo_metai=data.pagaminimo_metai,
+        tech_apziura=data.tech_apziura,
+        draudimas=data.draudimas,
+    )
+    db.add(truck)
+    db.commit()
+    db.refresh(truck)
+    return truck
+
+
+def update_truck(db: Session, tenant_id: UUID, truck_id: int, data: schemas.TruckCreate) -> models.Truck | None:
+    truck = (
+        db.query(models.Truck)
+        .filter(models.Truck.id == truck_id, models.Truck.tenant_id == tenant_id)
+        .first()
+    )
+    if not truck:
+        return None
+    for field, value in data.dict().items():
+        setattr(truck, field, value)
+    db.commit()
+    db.refresh(truck)
+    return truck
+
+
+def delete_truck(db: Session, tenant_id: UUID, truck_id: int) -> bool:
+    truck = (
+        db.query(models.Truck)
+        .filter(models.Truck.id == truck_id, models.Truck.tenant_id == tenant_id)
+        .first()
+    )
+    if not truck:
+        return False
+    db.delete(truck)
+    db.commit()
+    return True
+
+
+def get_trucks(db: Session, tenant_id: UUID) -> list[models.Truck]:
+    return (
+        db.query(models.Truck)
+        .filter(models.Truck.tenant_id == tenant_id)
+        .order_by(models.Truck.id.desc())
+        .all()
+    )

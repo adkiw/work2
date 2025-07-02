@@ -325,6 +325,87 @@ def delete_shipment(
         ),
     )
 
+@app.post("/{tenant_id}/trucks", response_model=schemas.Truck)
+def create_truck(
+    tenant_id: str,
+    truck: schemas.TruckCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    created = crud.create_truck(db, UUID(tenant_id), truck)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="create",
+            table_name="trucks",
+            record_id=str(created.id),
+            details=truck.dict(),
+        ),
+    )
+    return created
+
+@app.get("/{tenant_id}/trucks", response_model=list[schemas.Truck])
+def read_trucks(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return crud.get_trucks(db, UUID(tenant_id))
+
+@app.put("/{tenant_id}/trucks/{truck_id}", response_model=schemas.Truck)
+def update_truck(
+    tenant_id: str,
+    truck_id: int,
+    truck: schemas.TruckCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    updated = crud.update_truck(db, UUID(tenant_id), truck_id, truck)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="update",
+            table_name="trucks",
+            record_id=str(truck_id),
+            details=truck.dict(),
+        ),
+    )
+    return updated
+
+@app.delete("/{tenant_id}/trucks/{truck_id}", status_code=204)
+def delete_truck(
+    tenant_id: str,
+    truck_id: int,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    ok = crud.delete_truck(db, UUID(tenant_id), truck_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="delete",
+            table_name="trucks",
+            record_id=str(truck_id),
+            details=None,
+        ),
+    )
+    return Response(status_code=204)
+
 
 @app.post("/audit", response_model=schemas.AuditLog)
 def create_audit_entry(
@@ -352,6 +433,7 @@ def read_audit_entries(
         table_name=table_name,
         action=action,
     )
+
 
 
 @app.get("/audit.csv")
