@@ -69,3 +69,14 @@ def test_create_and_read_audit():
     assert r2.status_code == 200
     data = r2.json()
     assert any(l['action'] == 'test' for l in data)
+
+    # Filtering by user and table name should return the log
+    r3 = client.get(f'/audit?user_id={user.id}&table_name=doc&action=test', headers=headers)
+    assert r3.status_code == 200
+    filtered = r3.json()
+    assert len(filtered) == 1 and filtered[0]['record_id'] == '1'
+
+    # CSV export should contain table header
+    r4 = client.get(f'/audit.csv?user_id={user.id}', headers=headers)
+    assert r4.status_code == 200
+    assert 'table_name' in r4.text.splitlines()[0]

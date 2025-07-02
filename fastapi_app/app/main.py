@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Response
 from sqlalchemy import or_, and_
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -10,6 +10,8 @@ import os
 from datetime import datetime, timedelta
 from uuid import UUID
 
+
+import pandas as pd
 
 from . import models, schemas, crud, auth, dependencies
 from .database import Base
@@ -337,7 +339,38 @@ def create_audit_entry(
 @app.get("/audit", response_model=list[schemas.AuditLog])
 def read_audit_entries(
     limit: int = 100,
+    user_id: UUID | None = None,
+    table_name: str | None = None,
+    action: str | None = None,
     current_user=Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db),
 ):
-    return crud.get_audit_logs(db, limit)
+    return crud.get_audit_logs(
+        db,
+        limit=limit,
+        user_id=user_id,
+        table_name=table_name,
+        action=action,
+    )
+
+
+@app.get("/audit.csv")
+def read_audit_csv(
+    limit: int = 100,
+    user_id: UUID | None = None,
+    table_name: str | None = None,
+    action: str | None = None,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    logs = crud.get_audit_logs(
+        db,
+        limit=limit,
+        user_id=user_id,
+        table_name=table_name,
+        action=action,
+    )
+    df = pd.DataFrame([l.__dict__ for l in logs])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=audit.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)

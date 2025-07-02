@@ -46,12 +46,22 @@ def create_audit_log(
     return log
 
 
-def get_audit_logs(db: Session, limit: int = 100) -> list[models.AuditLog]:
+def get_audit_logs(
+    db: Session,
+    limit: int = 100,
+    user_id: UUID | None = None,
+    table_name: str | None = None,
+    action: str | None = None,
+) -> list[models.AuditLog]:
+    query = db.query(models.AuditLog)
+    if user_id:
+        query = query.filter(models.AuditLog.user_id == user_id)
+    if table_name:
+        query = query.filter(models.AuditLog.table_name == table_name)
+    if action:
+        query = query.filter(models.AuditLog.action == action)
     return (
-        db.query(models.AuditLog)
-        .order_by(models.AuditLog.timestamp.desc())
-        .limit(limit)
-        .all()
+        query.order_by(models.AuditLog.timestamp.desc()).limit(limit).all()
     )
 
 
