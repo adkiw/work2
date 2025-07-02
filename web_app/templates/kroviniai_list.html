@@ -1,16 +1,18 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Kroviniai</h2>
-<a href="/kroviniai/add">Pridėti naują</a>
+<div class="page-header">
+    <h2>Užsakymų valdymas</h2>
+    <a class="add-btn" href="/kroviniai/add">Pridėti naują krovinį</a>
+</div>
 <table id="cargo-table" class="display" style="width:100%">
     <thead>
         <tr>
             <th>ID</th>
             <th>Klientas</th>
             <th>Užsakymo nr.</th>
+            <th>Vilkikas</th>
             <th>Pakrovimo data</th>
             <th>Iškrovimo data</th>
-            <th>Kilometrai</th>
             <th>Frachtas</th>
             <th>Būsena</th>
             <th>Veiksmai</th>
@@ -25,9 +27,9 @@ $(document).ready(function() {
             { data: 'id' },
             { data: 'klientas' },
             { data: 'uzsakymo_numeris' },
+            { data: 'vilkikas' },
             { data: 'pakrovimo_data' },
             { data: 'iskrovimo_data' },
-            { data: 'kilometrai' },
             { data: 'frachtas' },
             { data: 'busena' },
             { data: null, render: function (data, type, row) {
@@ -37,4 +39,12 @@ $(document).ready(function() {
     });
 });
 </script>
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+</style>
 {% endblock %}
