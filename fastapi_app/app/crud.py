@@ -25,14 +25,20 @@ def get_user_by_email(db: Session, email: str) -> models.User | None:
     return db.query(models.User).filter(models.User.email == email).first()
 
 
-def create_audit_log(db: Session, user_id: UUID | None, data: schemas.AuditLogCreate) -> models.AuditLog:
+def create_audit_log(
+    db: Session, user_id: UUID | None, data: schemas.AuditLogCreate
+) -> models.AuditLog:
     log = models.AuditLog(
         user_id=user_id,
         action=data.action,
         table_name=data.table_name,
         record_id=data.record_id,
         timestamp=datetime.utcnow(),
-        details=json.dumps(data.details, ensure_ascii=False) if data.details is not None else None,
+        details=(
+            json.dumps(data.details, ensure_ascii=False)
+            if data.details is not None
+            else None
+        ),
     )
     db.add(log)
     db.commit()
@@ -45,5 +51,33 @@ def get_audit_logs(db: Session, limit: int = 100) -> list[models.AuditLog]:
         db.query(models.AuditLog)
         .order_by(models.AuditLog.timestamp.desc())
         .limit(limit)
+        .all()
+    )
+
+
+def create_shipment(
+    db: Session, tenant_id: UUID, data: schemas.ShipmentCreate
+) -> models.Shipment:
+    shipment = models.Shipment(
+        tenant_id=tenant_id,
+        klientas=data.klientas,
+        uzsakymo_numeris=data.uzsakymo_numeris,
+        pakrovimo_data=data.pakrovimo_data,
+        iskrovimo_data=data.iskrovimo_data,
+        kilometrai=data.kilometrai,
+        frachtas=data.frachtas,
+        busena=data.busena,
+    )
+    db.add(shipment)
+    db.commit()
+    db.refresh(shipment)
+    return shipment
+
+
+def get_shipments(db: Session, tenant_id: UUID) -> list[models.Shipment]:
+    return (
+        db.query(models.Shipment)
+        .filter(models.Shipment.tenant_id == tenant_id)
+        .order_by(models.Shipment.id.desc())
         .all()
     )
