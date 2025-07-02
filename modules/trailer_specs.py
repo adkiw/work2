@@ -2,6 +2,7 @@ import streamlit as st
 from . import login
 from .roles import Role
 from .utils import title_with_add, rerun
+from .audit import log_action
 
 
 def show(conn, c):
@@ -63,6 +64,14 @@ def show(conn, c):
                     (tipas.strip(), ilgis, plotis, aukstis, galia, talpa, rec_id),
                 )
                 conn.commit()
+                log_action(
+                    conn,
+                    c,
+                    st.session_state.get('user_id'),
+                    'update',
+                    'trailer_specs',
+                    rec_id,
+                )
                 st.session_state.spec_edit = None
                 st.success("✅ Išsaugota")
                 rerun()
@@ -87,6 +96,14 @@ def show(conn, c):
                     (tipas.strip(), ilgis, plotis, aukstis, galia, talpa),
                 )
                 conn.commit()
+                log_action(
+                    conn,
+                    c,
+                    st.session_state.get('user_id'),
+                    'insert',
+                    'trailer_specs',
+                    c.lastrowid,
+                )
                 st.session_state.spec_add = False
                 st.success("✅ Įrašyta")
                 rerun()

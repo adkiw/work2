@@ -5,6 +5,7 @@ from datetime import date
 from . import login
 from .roles import Role
 from .utils import rerun, title_with_add
+from .audit import log_action
 
 # ---------- Konstantos ----------
 TAUTYBES = [
@@ -146,6 +147,14 @@ def show(conn, c):
                     ),
                 )
                 conn.commit()
+                log_action(
+                    conn,
+                    c,
+                    st.session_state.get('user_id'),
+                    'insert',
+                    'vairuotojai',
+                    c.lastrowid,
+                )
                 st.session_state.vairuotojai_msg = "✅ Įrašyta."
                 _clear_sel()
                 rerun()
@@ -236,6 +245,14 @@ def show(conn, c):
                 ),
             )
             conn.commit()
+            log_action(
+                conn,
+                c,
+                st.session_state.get('user_id'),
+                'update',
+                'vairuotojai',
+                sel,
+            )
             st.session_state.vairuotojai_msg = "✅ Pakeitimai išsaugoti."
             _clear_sel()
             rerun()

@@ -4,6 +4,7 @@ from . import login
 from .roles import Role
 from .constants import EU_COUNTRIES, country_flag
 from .utils import rerun, title_with_add
+from .audit import log_action
 
 def show(conn, c):
     # 1. Užtikrinti, kad egzistuotų reikiami stulpeliai
@@ -349,6 +350,20 @@ def show(conn, c):
                     tuple(vals_list),
                 )
             conn.commit()
+            if is_new:
+                rec_id = c.lastrowid
+                action = 'insert'
+            else:
+                rec_id = sel
+                action = 'update'
+            log_action(
+                conn,
+                c,
+                st.session_state.get('user_id'),
+                action,
+                'klientai',
+                rec_id,
+            )
 
             # Išsaugojus / atnaujinus, atnaujinti visus klientus su tuo pačiu PVM:
             vat = st.session_state["vat_numeris"]
@@ -402,6 +417,15 @@ def show(conn, c):
                 ),
             )
             conn.commit()
+            log_action(
+                conn,
+                c,
+                st.session_state.get('user_id'),
+                'update_many',
+                'klientai',
+                None,
+                {'vat': vat},
+            )
 
             st.session_state.klientai_msg = "✅ Duomenys įrašyti ir limitai atnaujinti visiems su tuo pačiu VAT numeriu."
             clear_selection()

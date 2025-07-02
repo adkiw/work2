@@ -4,6 +4,7 @@ from datetime import date
 from . import login
 from .roles import Role
 from .utils import rerun, title_with_add
+from .audit import log_action
 
 def show(conn, c):
     # 1) Užtikriname, kad lentelėje „vilkikai“ būtų visi reikalingi stulpeliai
@@ -146,6 +147,20 @@ def show(conn, c):
                 (prn or "", sel_vilk, st.session_state.get('imone'))
             )
             conn.commit()
+            for num in filter(None, [sel_vilk, other_truck]):
+                row = c.execute(
+                    "SELECT id FROM vilkikai WHERE numeris = ? AND imone = ?",
+                    (num, st.session_state.get('imone')),
+                ).fetchone()
+                if row:
+                    log_action(
+                        conn,
+                        c,
+                        st.session_state.get('user_id'),
+                        'update',
+                        'vilkikai',
+                        row[0],
+                    )
             st.session_state.vilkikai_msg = "✅ Priekabos paskirstymas sėkmingai atnaujintas."
             clear_selection()
             rerun()
@@ -436,6 +451,24 @@ def show(conn, c):
                         )
                     )
                 conn.commit()
+                if is_new:
+                    rec_id = c.lastrowid
+                    action = 'insert'
+                else:
+                    row = c.execute(
+                        "SELECT id FROM vilkikai WHERE numeris=? AND imone=?",
+                        (sel, st.session_state.get('imone')),
+                    ).fetchone()
+                    rec_id = row[0] if row else None
+                    action = 'update'
+                log_action(
+                    conn,
+                    c,
+                    st.session_state.get('user_id'),
+                    action,
+                    'vilkikai',
+                    rec_id,
+                )
                 st.session_state.vilkikai_msg = "✅ Vilkikas išsaugotas sėkmingai."
                 if tech_date:
                     st.session_state.vilkikai_msg += f"\n🔧 Dienų iki tech. apžiūros liko: {(tech_date - date.today()).days}"

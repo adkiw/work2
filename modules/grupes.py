@@ -5,6 +5,7 @@ import pandas as pd
 from . import login
 from .roles import Role
 from .utils import title_with_add
+from .audit import log_action
 
 def show(conn, c):
 
@@ -80,6 +81,14 @@ def show(conn, c):
                             )
                         )
                         conn.commit()
+                        log_action(
+                            conn,
+                            c,
+                            st.session_state.get('user_id'),
+                            'insert',
+                            'grupes',
+                            c.lastrowid,
+                        )
                         st.success(f"✅ Grupė „{kodas}“ įrašyta.")
                         st.session_state["show_add_form"] = False
                     except Exception as e:
@@ -218,6 +227,14 @@ def show(conn, c):
                                         (grupe_id, kodas_val)
                                     )
                                     conn.commit()
+                                    log_action(
+                                        conn,
+                                        c,
+                                        st.session_state.get('user_id'),
+                                        'insert',
+                                        'grupiu_regionai',
+                                        c.lastrowid,
+                                    )
                                     pridėta.append(kodas_val)
                                 except Exception as e:
                                     klaidos.append((kodas_val, str(e)))

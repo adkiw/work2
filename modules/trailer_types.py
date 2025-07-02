@@ -2,6 +2,7 @@ import streamlit as st
 from . import login
 from .roles import Role
 from .utils import title_with_add, rerun
+from .audit import log_action
 
 CATEGORY = "Priekabos tipas"
 
@@ -61,6 +62,14 @@ def show(conn, c, *, key_prefix: str = "trailer_types_"):
                     table = "lookup" if is_admin else "company_settings"
                     c.execute(f"UPDATE {table} SET reiksme=? WHERE id=?", (val.strip(), rec_id))
                     conn.commit()
+                    log_action(
+                        conn,
+                        c,
+                        st.session_state.get('user_id'),
+                        'update',
+                        'trailer_types',
+                        rec_id,
+                    )
                     st.session_state.edit_type = None
                     st.success("✅ Išsaugota")
                     rerun()
@@ -92,6 +101,14 @@ def show(conn, c, *, key_prefix: str = "trailer_types_"):
                             (st.session_state.get('imone'), CATEGORY, val.strip()),
                         )
                     conn.commit()
+                    log_action(
+                        conn,
+                        c,
+                        st.session_state.get('user_id'),
+                        'insert',
+                        'trailer_types',
+                        c.lastrowid,
+                    )
                     st.session_state.show_add_type = False
                     st.success("✅ Įrašyta")
                     rerun()
@@ -127,5 +144,13 @@ def show(conn, c, *, key_prefix: str = "trailer_types_"):
             table = "lookup" if is_admin else "company_settings"
             c.execute(f"DELETE FROM {table} WHERE id=?", (rec_id,))
             conn.commit()
+            log_action(
+                conn,
+                c,
+                st.session_state.get('user_id'),
+                'delete',
+                'trailer_types',
+                rec_id,
+            )
             st.success("❎ Ištrinta")
             rerun()
