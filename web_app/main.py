@@ -19,7 +19,9 @@ import pandas as pd
 
 app = FastAPI()
 
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("WEBAPP_SECRET", "devsecret"))
+app.add_middleware(
+    SessionMiddleware, secret_key=os.getenv("WEBAPP_SECRET", "devsecret")
+)
 
 app.mount("/static", StaticFiles(directory="web_app/static"), name="static")
 templates = Jinja2Templates(directory="web_app/templates")
@@ -220,6 +222,28 @@ def kroviniai_edit_form(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+
+    def compute_limits(vat: str, coface: float) -> tuple[float, float]:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='kroviniai'"
+        )
+        if cursor.fetchone():
+            r = cursor.execute(
+                """
+                SELECT SUM(k.frachtas)
+                FROM kroviniai AS k
+                JOIN klientai AS cl ON k.klientas = cl.pavadinimas
+                WHERE cl.vat_numeris = ? AND k.saskaitos_busena != 'Apmokėta'
+                """,
+                (vat,),
+            ).fetchone()
+            unpaid = r[0] if r and r[0] is not None else 0.0
+        else:
+            unpaid = 0.0
+        musu = round(coface / 3.0, 2)
+        liks = round(max(musu - unpaid, 0.0), 2)
+        return musu, liks
+
     row = cursor.execute("SELECT * FROM kroviniai WHERE id=?", (cid,)).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Not found")
@@ -294,6 +318,7 @@ def kroviniai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db
 
 # ---- Planavimas ----
 
+
 @app.get("/planavimas", response_class=HTMLResponse)
 def planavimas_page(request: Request):
     return templates.TemplateResponse("planavimas.html", {"request": request})
@@ -308,7 +333,10 @@ def planavimas_api(
     today = datetime.date.today()
     start_date = today - datetime.timedelta(days=1)
     end_date = today + datetime.timedelta(days=14)
-    date_list = [start_date + datetime.timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+    date_list = [
+        start_date + datetime.timedelta(days=i)
+        for i in range((end_date - start_date).days + 1)
+    ]
     date_strs = [d.isoformat() for d in date_list]
 
     # truck info
@@ -344,10 +372,16 @@ def planavimas_api(
         r = cursor.fetchone()
         if r:
             gid = r[0]
-            cursor.execute("SELECT regiono_kodas FROM grupiu_regionai WHERE grupe_id=?", (gid,))
+            cursor.execute(
+                "SELECT regiono_kodas FROM grupiu_regionai WHERE grupe_id=?", (gid,)
+            )
             regionai = [row[0] for row in cursor.fetchall()]
             if regionai:
-                df = df[df["vietos_kodas"].apply(lambda x: any(x.startswith(r) for r in regionai))]
+                df = df[
+                    df["vietos_kodas"].apply(
+                        lambda x: any(x.startswith(r) for r in regionai)
+                    )
+                ]
 
     if df.empty:
         return {"columns": ["Vilkikas"] + date_strs, "data": []}
@@ -380,10 +414,17 @@ def planavimas_api(
         if not vieta:
             return ""
         info = papildomi_map.get((vilk, iskr_data), {})
-        parts = [vieta, info.get("ikr_laikas", "--") or "--", info.get("bdl", "--") or "--", info.get("ldl", "--") or "--"]
+        parts = [
+            vieta,
+            info.get("ikr_laikas", "--") or "--",
+            info.get("bdl", "--") or "--",
+            info.get("ldl", "--") or "--",
+        ]
         return " ".join(parts)
 
-    df_last["cell_val"] = df_last.apply(lambda r: make_cell(r["vilkikas"], r["data"], r["vietos_kodas"]), axis=1)
+    df_last["cell_val"] = df_last.apply(
+        lambda r: make_cell(r["vilkikas"], r["data"], r["vietos_kodas"]), axis=1
+    )
     pivot_df = df_last.pivot(index="vilkikas", columns="data", values="cell_val")
     pivot_df = pivot_df.reindex(columns=date_strs, fill_value="")
     pivot_df = pivot_df.reindex(index=df_last["vilkikas"].unique(), fill_value="")
@@ -430,7 +471,9 @@ def vilkikai_add_form(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
-    trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
+    trailers = [
+        r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()
+    ]
     return templates.TemplateResponse(
         "vilkikai_form.html", {"request": request, "data": {}, "trailers": trailers}
     )
@@ -448,7 +491,9 @@ def vilkikai_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkikai)")]
     data = dict(zip(columns, row))
-    trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
+    trailers = [
+        r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()
+    ]
     return templates.TemplateResponse(
         "vilkikai_form.html", {"request": request, "data": data, "trailers": trailers}
     )
@@ -518,6 +563,7 @@ def vilkikai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
 
 # ---- Priekabos ----
 
+
 @app.get("/priekabos", response_class=HTMLResponse)
 def priekabos_list(request: Request):
     return templates.TemplateResponse("priekabos_list.html", {"request": request})
@@ -525,18 +571,26 @@ def priekabos_list(request: Request):
 
 @app.get("/priekabos/add", response_class=HTMLResponse)
 def priekabos_add_form(request: Request):
-    return templates.TemplateResponse("priekabos_form.html", {"request": request, "data": {}})
+    return templates.TemplateResponse(
+        "priekabos_form.html", {"request": request, "data": {}}
+    )
 
 
 @app.get("/priekabos/{pid}/edit", response_class=HTMLResponse)
-def priekabos_edit_form(pid: int, request: Request, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def priekabos_edit_form(
+    pid: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
     row = cursor.execute("SELECT * FROM priekabos WHERE id=?", (pid,)).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(priekabos)")]
     data = dict(zip(columns, row))
-    return templates.TemplateResponse("priekabos_form.html", {"request": request, "data": data})
+    return templates.TemplateResponse(
+        "priekabos_form.html", {"request": request, "data": data}
+    )
 
 
 @app.post("/priekabos/save")
@@ -556,13 +610,30 @@ def priekabos_save(
     if pid:
         cursor.execute(
             "UPDATE priekabos SET priekabu_tipas=?, numeris=?, marke=?, pagaminimo_metai=?, tech_apziura=?, draudimas=?, imone=? WHERE id=?",
-            (priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas, imone, pid),
+            (
+                priekabu_tipas,
+                numeris,
+                marke,
+                pagaminimo_metai,
+                tech_apziura,
+                draudimas,
+                imone,
+                pid,
+            ),
         )
         action = "update"
     else:
         cursor.execute(
             "INSERT INTO priekabos (priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas, imone) VALUES (?,?,?,?,?,?,?)",
-            (priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas, imone),
+            (
+                priekabu_tipas,
+                numeris,
+                marke,
+                pagaminimo_metai,
+                tech_apziura,
+                draudimas,
+                imone,
+            ),
         )
         pid = cursor.lastrowid
         action = "insert"
@@ -583,6 +654,7 @@ def priekabos_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db
 
 # ---- Vairuotojai ----
 
+
 @app.get("/vairuotojai", response_class=HTMLResponse)
 def vairuotojai_list(request: Request):
     return templates.TemplateResponse("vairuotojai_list.html", {"request": request})
@@ -590,18 +662,26 @@ def vairuotojai_list(request: Request):
 
 @app.get("/vairuotojai/add", response_class=HTMLResponse)
 def vairuotojai_add_form(request: Request):
-    return templates.TemplateResponse("vairuotojai_form.html", {"request": request, "data": {}})
+    return templates.TemplateResponse(
+        "vairuotojai_form.html", {"request": request, "data": {}}
+    )
 
 
 @app.get("/vairuotojai/{did}/edit", response_class=HTMLResponse)
-def vairuotojai_edit_form(did: int, request: Request, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def vairuotojai_edit_form(
+    did: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
     row = cursor.execute("SELECT * FROM vairuotojai WHERE id=?", (did,)).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vairuotojai)")]
     data = dict(zip(columns, row))
-    return templates.TemplateResponse("vairuotojai_form.html", {"request": request, "data": data})
+    return templates.TemplateResponse(
+        "vairuotojai_form.html", {"request": request, "data": data}
+    )
 
 
 @app.post("/vairuotojai/save")
@@ -621,13 +701,30 @@ def vairuotojai_save(
     if did:
         cursor.execute(
             "UPDATE vairuotojai SET vardas=?, pavarde=?, gimimo_metai=?, tautybe=?, kadencijos_pabaiga=?, atostogu_pabaiga=?, imone=? WHERE id=?",
-            (vardas, pavarde, gimimo_metai, tautybe, kadencijos_pabaiga, atostogu_pabaiga, imone, did),
+            (
+                vardas,
+                pavarde,
+                gimimo_metai,
+                tautybe,
+                kadencijos_pabaiga,
+                atostogu_pabaiga,
+                imone,
+                did,
+            ),
         )
         action = "update"
     else:
         cursor.execute(
             "INSERT INTO vairuotojai (vardas, pavarde, gimimo_metai, tautybe, kadencijos_pabaiga, atostogu_pabaiga, imone) VALUES (?,?,?,?,?,?,?)",
-            (vardas, pavarde, gimimo_metai, tautybe, kadencijos_pabaiga, atostogu_pabaiga, imone),
+            (
+                vardas,
+                pavarde,
+                gimimo_metai,
+                tautybe,
+                kadencijos_pabaiga,
+                atostogu_pabaiga,
+                imone,
+            ),
         )
         did = cursor.lastrowid
         action = "insert"
@@ -648,6 +745,7 @@ def vairuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_
 
 # ---- Darbuotojai ----
 
+
 @app.get("/darbuotojai", response_class=HTMLResponse)
 def darbuotojai_list(request: Request):
     return templates.TemplateResponse("darbuotojai_list.html", {"request": request})
@@ -655,18 +753,26 @@ def darbuotojai_list(request: Request):
 
 @app.get("/darbuotojai/add", response_class=HTMLResponse)
 def darbuotojai_add_form(request: Request):
-    return templates.TemplateResponse("darbuotojai_form.html", {"request": request, "data": {}})
+    return templates.TemplateResponse(
+        "darbuotojai_form.html", {"request": request, "data": {}}
+    )
 
 
 @app.get("/darbuotojai/{did}/edit", response_class=HTMLResponse)
-def darbuotojai_edit_form(did: int, request: Request, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def darbuotojai_edit_form(
+    did: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
     row = cursor.execute("SELECT * FROM darbuotojai WHERE id=?", (did,)).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(darbuotojai)")]
     data = dict(zip(columns, row))
-    return templates.TemplateResponse("darbuotojai_form.html", {"request": request, "data": data})
+    return templates.TemplateResponse(
+        "darbuotojai_form.html", {"request": request, "data": data}
+    )
 
 
 @app.post("/darbuotojai/save")
@@ -712,7 +818,9 @@ def darbuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
 
+
 # ---- Grupes ----
+
 
 @app.get("/grupes", response_class=HTMLResponse)
 def grupes_list(request: Request):
@@ -721,7 +829,9 @@ def grupes_list(request: Request):
 
 @app.get("/grupes/add", response_class=HTMLResponse)
 def grupes_add_form(request: Request):
-    return templates.TemplateResponse("grupes_form.html", {"request": request, "data": {}})
+    return templates.TemplateResponse(
+        "grupes_form.html", {"request": request, "data": {}}
+    )
 
 
 @app.get("/grupes/{gid}/edit", response_class=HTMLResponse)
@@ -736,7 +846,9 @@ def grupes_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(grupes)")]
     data = dict(zip(columns, row))
-    return templates.TemplateResponse("grupes_form.html", {"request": request, "data": data})
+    return templates.TemplateResponse(
+        "grupes_form.html", {"request": request, "data": data}
+    )
 
 
 @app.post("/grupes/save")
@@ -780,6 +892,7 @@ def grupes_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
 
 # ---- Klientai ----
 
+
 @app.get("/klientai", response_class=HTMLResponse)
 def klientai_list(request: Request):
     return templates.TemplateResponse("klientai_list.html", {"request": request})
@@ -787,7 +900,9 @@ def klientai_list(request: Request):
 
 @app.get("/klientai/add", response_class=HTMLResponse)
 def klientai_add_form(request: Request):
-    return templates.TemplateResponse("klientai_form.html", {"request": request, "data": {}})
+    return templates.TemplateResponse(
+        "klientai_form.html", {"request": request, "data": {}}
+    )
 
 
 @app.get("/klientai/{cid}/edit", response_class=HTMLResponse)
@@ -802,7 +917,9 @@ def klientai_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(klientai)")]
     data = dict(zip(columns, row))
-    return templates.TemplateResponse("klientai_form.html", {"request": request, "data": data})
+    return templates.TemplateResponse(
+        "klientai_form.html", {"request": request, "data": data}
+    )
 
 
 @app.post("/klientai/save")
@@ -813,19 +930,24 @@ def klientai_save(
     kontaktinis_asmuo: str = Form(""),
     kontaktinis_el_pastas: str = Form(""),
     kontaktinis_tel: str = Form(""),
+    coface_limitas: float = Form(0.0),
     imone: str = Form(""),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    musu, liks = compute_limits(vat_numeris, coface_limitas)
     if cid:
         cursor.execute(
-            "UPDATE klientai SET pavadinimas=?, vat_numeris=?, kontaktinis_asmuo=?, kontaktinis_el_pastas=?, kontaktinis_tel=?, imone=? WHERE id=?",
+            "UPDATE klientai SET pavadinimas=?, vat_numeris=?, kontaktinis_asmuo=?, kontaktinis_el_pastas=?, kontaktinis_tel=?, coface_limitas=?, musu_limitas=?, likes_limitas=?, imone=? WHERE id=?",
             (
                 pavadinimas,
                 vat_numeris,
                 kontaktinis_asmuo,
                 kontaktinis_el_pastas,
                 kontaktinis_tel,
+                coface_limitas,
+                musu,
+                liks,
                 imone,
                 cid,
             ),
@@ -833,18 +955,26 @@ def klientai_save(
         action = "update"
     else:
         cursor.execute(
-            "INSERT INTO klientai (pavadinimas, vat_numeris, kontaktinis_asmuo, kontaktinis_el_pastas, kontaktinis_tel, imone) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO klientai (pavadinimas, vat_numeris, kontaktinis_asmuo, kontaktinis_el_pastas, kontaktinis_tel, coface_limitas, musu_limitas, likes_limitas, imone) VALUES (?,?,?,?,?,?,?,?,?)",
             (
                 pavadinimas,
                 vat_numeris,
                 kontaktinis_asmuo,
                 kontaktinis_el_pastas,
                 kontaktinis_tel,
+                coface_limitas,
+                musu,
+                liks,
                 imone,
             ),
         )
         cid = cursor.lastrowid
         action = "insert"
+    conn.commit()
+    cursor.execute(
+        "UPDATE klientai SET coface_limitas=?, musu_limitas=?, likes_limitas=? WHERE vat_numeris=?",
+        (coface_limitas, musu, liks, vat_numeris),
+    )
     conn.commit()
     log_action(conn, cursor, None, action, "klientai", cid)
     return RedirectResponse("/klientai", status_code=303)
@@ -862,6 +992,7 @@ def klientai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
 
 # ---- Trailer types ----
 
+
 @app.get("/trailer-types", response_class=HTMLResponse)
 def trailer_types_list(request: Request):
     return templates.TemplateResponse("trailer_types_list.html", {"request": request})
@@ -869,20 +1000,28 @@ def trailer_types_list(request: Request):
 
 @app.get("/trailer-types/add", response_class=HTMLResponse)
 def trailer_types_add_form(request: Request):
-    return templates.TemplateResponse("trailer_types_form.html", {"request": request, "data": {}})
+    return templates.TemplateResponse(
+        "trailer_types_form.html", {"request": request, "data": {}}
+    )
 
 
 @app.get("/trailer-types/{tid}/edit", response_class=HTMLResponse)
-def trailer_types_edit_form(tid: int, request: Request, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def trailer_types_edit_form(
+    tid: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
     row = cursor.execute(
         "SELECT id, reiksme FROM lookup WHERE kategorija='Priekabos tipas' AND id=?",
-        (tid,)
+        (tid,),
     ).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Not found")
     data = {"id": row[0], "reiksme": row[1]}
-    return templates.TemplateResponse("trailer_types_form.html", {"request": request, "data": data})
+    return templates.TemplateResponse(
+        "trailer_types_form.html", {"request": request, "data": data}
+    )
 
 
 @app.post("/trailer-types/save")
@@ -921,6 +1060,7 @@ def trailer_types_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(ge
 
 # ---- Trailer specs ----
 
+
 @app.get("/trailer-specs", response_class=HTMLResponse)
 def trailer_specs_list(request: Request):
     return templates.TemplateResponse("trailer_specs_list.html", {"request": request})
@@ -928,7 +1068,9 @@ def trailer_specs_list(request: Request):
 
 @app.get("/trailer-specs/add", response_class=HTMLResponse)
 def trailer_specs_add_form(request: Request):
-    return templates.TemplateResponse("trailer_specs_form.html", {"request": request, "data": {}})
+    return templates.TemplateResponse(
+        "trailer_specs_form.html", {"request": request, "data": {}}
+    )
 
 
 @app.get("/trailer-specs/{sid}/edit", response_class=HTMLResponse)
@@ -943,7 +1085,9 @@ def trailer_specs_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(trailer_specs)")]
     data = dict(zip(columns, row))
-    return templates.TemplateResponse("trailer_specs_form.html", {"request": request, "data": data})
+    return templates.TemplateResponse(
+        "trailer_specs_form.html", {"request": request, "data": data}
+    )
 
 
 @app.post("/trailer-specs/save")
@@ -989,6 +1133,7 @@ def trailer_specs_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(ge
 
 # ---- Settings ----
 
+
 @app.get("/settings", response_class=HTMLResponse)
 def settings_page(request: Request):
     return templates.TemplateResponse("settings.html", {"request": request})
@@ -1009,7 +1154,11 @@ def default_trailer_types_api(
 
 
 @app.post("/settings/save")
-async def settings_save(request: Request, imone: str = Form(""), db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+async def settings_save(
+    request: Request,
+    imone: str = Form(""),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     form = await request.form()
     values = form.getlist("values")
     conn, cursor = db
@@ -1025,6 +1174,7 @@ async def settings_save(request: Request, imone: str = Form(""), db: tuple[sqlit
 
 
 # ---- Registracijos ----
+
 
 @app.get("/registracijos", response_class=HTMLResponse)
 def registracijos_list(request: Request):
@@ -1057,9 +1207,7 @@ def aktyvus_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db))
     rows = cursor.execute(
         "SELECT username, imone, last_login FROM users WHERE aktyvus=1 ORDER BY imone, username"
     ).fetchall()
-    data = [
-        {"username": r[0], "imone": r[1], "last_login": r[2] or ""} for r in rows
-    ]
+    data = [{"username": r[0], "imone": r[1], "last_login": r[2] or ""} for r in rows]
     return {"data": data}
 
 
@@ -1124,6 +1272,7 @@ def registracijos_delete(
 
 # ---- Audit log ----
 
+
 @app.get("/audit", response_class=HTMLResponse)
 def audit_list(request: Request):
     return templates.TemplateResponse("audit_list.html", {"request": request})
@@ -1139,6 +1288,7 @@ def audit_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
 
 # ---- Updates ----
 
+
 @app.get("/updates", response_class=HTMLResponse)
 def updates_list(request: Request):
     return templates.TemplateResponse("updates_list.html", {"request": request})
@@ -1146,7 +1296,9 @@ def updates_list(request: Request):
 
 @app.get("/updates/add", response_class=HTMLResponse)
 def updates_add_form(request: Request):
-    return templates.TemplateResponse("updates_form.html", {"request": request, "data": {}})
+    return templates.TemplateResponse(
+        "updates_form.html", {"request": request, "data": {}}
+    )
 
 
 @app.get("/updates/{uid}/edit", response_class=HTMLResponse)
@@ -1156,12 +1308,18 @@ def updates_edit_form(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
-    row = cursor.execute("SELECT * FROM vilkiku_darbo_laikai WHERE id=?", (uid,)).fetchone()
+    row = cursor.execute(
+        "SELECT * FROM vilkiku_darbo_laikai WHERE id=?", (uid,)
+    ).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Not found")
-    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")]
+    columns = [
+        col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")
+    ]
     data = dict(zip(columns, row))
-    return templates.TemplateResponse("updates_form.html", {"request": request, "data": data})
+    return templates.TemplateResponse(
+        "updates_form.html", {"request": request, "data": data}
+    )
 
 
 @app.post("/updates/save")
@@ -1230,12 +1388,15 @@ def updates_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db))
     conn, cursor = db
     cursor.execute("SELECT * FROM vilkiku_darbo_laikai")
     rows = cursor.fetchall()
-    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")]
+    columns = [
+        col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")
+    ]
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
 
 
 # ---- Authentication ----
+
 
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
@@ -1252,7 +1413,11 @@ def login_submit(
     conn, cursor = db
     user_id, imone = verify_user(cursor, username, password)
     if user_id:
-        ts = datetime.datetime.utcnow().replace(second=0, microsecond=0).isoformat(timespec="minutes")
+        ts = (
+            datetime.datetime.utcnow()
+            .replace(second=0, microsecond=0)
+            .isoformat(timespec="minutes")
+        )
         cursor.execute("UPDATE users SET last_login=? WHERE id=?", (ts, user_id))
         conn.commit()
         request.session["user_id"] = user_id
@@ -1274,7 +1439,9 @@ def logout(request: Request):
 
 @app.get("/register", response_class=HTMLResponse)
 def register_form(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request, "error": None, "msg": None})
+    return templates.TemplateResponse(
+        "register.html", {"request": request, "error": None, "msg": None}
+    )
 
 
 @app.post("/register", response_class=HTMLResponse)
@@ -1293,7 +1460,11 @@ def register_submit(
     if cursor.fetchone():
         return templates.TemplateResponse(
             "register.html",
-            {"request": request, "error": "Toks vartotojas jau egzistuoja", "msg": None},
+            {
+                "request": request,
+                "error": "Toks vartotojas jau egzistuoja",
+                "msg": None,
+            },
             status_code=400,
         )
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()

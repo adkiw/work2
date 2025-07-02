@@ -144,6 +144,7 @@ def test_audit_multiple_modules(tmp_path):
     tables = {row["table_name"] for row in data}
     assert {"kroviniai", "vilkikai"}.issubset(tables)
 
+
 def test_vairuotojai_basic(tmp_path):
     client = create_client(tmp_path)
     resp = client.get("/api/vairuotojai")
@@ -165,6 +166,7 @@ def test_vairuotojai_basic(tmp_path):
     data = resp.json()["data"]
     assert len(data) == 1
     assert data[0]["vardas"] == "Jonas"
+
 
 def test_planavimas_basic(tmp_path):
     client = create_client(tmp_path)
@@ -307,7 +309,9 @@ def test_user_admin_approve(tmp_path):
     c = conn.cursor()
     row = c.execute("SELECT aktyvus FROM users WHERE id=?", (uid,)).fetchone()
     assert row[0] == 1
-    row = c.execute("SELECT COUNT(*) FROM darbuotojai WHERE el_pastas=?", ("u@a.com",)).fetchone()
+    row = c.execute(
+        "SELECT COUNT(*) FROM darbuotojai WHERE el_pastas=?", ("u@a.com",)
+    ).fetchone()
     assert row[0] == 1
     conn.close()
 
@@ -343,3 +347,25 @@ def test_updates_basic(tmp_path):
     data = resp.json()["data"]
     assert len(data) == 1
     assert data[0]["vilkiko_numeris"] == "AAA111"
+
+
+def test_klientai_limits(tmp_path):
+    client = create_client(tmp_path)
+    form = {
+        "cid": "0",
+        "pavadinimas": "ACME",
+        "vat_numeris": "LT123",
+        "kontaktinis_asmuo": "Jonas",
+        "kontaktinis_el_pastas": "j@a.com",
+        "kontaktinis_tel": "123",
+        "coface_limitas": "900",
+        "imone": "A",
+    }
+    resp = client.post("/klientai/save", data=form, allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get("/api/klientai")
+    data = resp.json()["data"]
+    assert len(data) == 1
+    row = data[0]
+    assert row["musu_limitas"] == 300
+    assert row["likes_limitas"] == 300
