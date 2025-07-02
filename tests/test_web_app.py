@@ -81,3 +81,26 @@ def test_vilkikai_form_shows_trailers(tmp_path):
     assert resp.status_code == 200
     assert "<select" in resp.text
     assert '<option value="TR123"' in resp.text
+
+
+def test_audit_log_records_actions(tmp_path):
+    client = create_client(tmp_path)
+    trailer_form = {
+        "pid": "0",
+        "priekabu_tipas": "Tipas",
+        "numeris": "TR1",
+        "marke": "X",
+        "pagaminimo_metai": "2020",
+        "tech_apziura": "2023-01-01",
+        "draudimas": "2023-01-01",
+        "imone": "A",
+    }
+    resp = client.post("/priekabos/save", data=trailer_form, allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get("/api/audit")
+    data = resp.json()["data"]
+    assert len(data) == 1
+    row = data[0]
+    assert row["table_name"] == "priekabos"
+    assert row["action"] == "insert"
+    assert "details" in row
