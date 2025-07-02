@@ -178,3 +178,57 @@ def get_trucks(db: Session, tenant_id: UUID) -> list[models.Truck]:
         .order_by(models.Truck.id.desc())
         .all()
     )
+
+
+def create_driver(db: Session, tenant_id: UUID, data: schemas.DriverCreate) -> models.Driver:
+    driver = models.Driver(
+        tenant_id=tenant_id,
+        vardas=data.vardas,
+        pavarde=data.pavarde,
+        gimimo_metai=data.gimimo_metai,
+        tautybe=data.tautybe,
+        kadencijos_pabaiga=data.kadencijos_pabaiga,
+        atostogu_pabaiga=data.atostogu_pabaiga,
+    )
+    db.add(driver)
+    db.commit()
+    db.refresh(driver)
+    return driver
+
+
+def update_driver(db: Session, tenant_id: UUID, driver_id: int, data: schemas.DriverCreate) -> models.Driver | None:
+    driver = (
+        db.query(models.Driver)
+        .filter(models.Driver.id == driver_id, models.Driver.tenant_id == tenant_id)
+        .first()
+    )
+    if not driver:
+        return None
+    for field, value in data.dict().items():
+        setattr(driver, field, value)
+    db.commit()
+    db.refresh(driver)
+    return driver
+
+
+def delete_driver(db: Session, tenant_id: UUID, driver_id: int) -> bool:
+    driver = (
+        db.query(models.Driver)
+        .filter(models.Driver.id == driver_id, models.Driver.tenant_id == tenant_id)
+        .first()
+    )
+    if not driver:
+        return False
+    db.delete(driver)
+    db.commit()
+    return True
+
+
+def get_drivers(db: Session, tenant_id: UUID) -> list[models.Driver]:
+    return (
+        db.query(models.Driver)
+        .filter(models.Driver.tenant_id == tenant_id)
+        .order_by(models.Driver.id.desc())
+        .all()
+    )
+

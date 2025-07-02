@@ -407,6 +407,91 @@ def delete_truck(
     return Response(status_code=204)
 
 
+@app.post("/{tenant_id}/drivers", response_model=schemas.Driver)
+def create_driver(
+    tenant_id: str,
+    driver: schemas.DriverCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    created = crud.create_driver(db, UUID(tenant_id), driver)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="create",
+            table_name="drivers",
+            record_id=str(created.id),
+            details=driver.dict(),
+        ),
+    )
+    return created
+
+
+@app.get("/{tenant_id}/drivers", response_model=list[schemas.Driver])
+def read_drivers(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return crud.get_drivers(db, UUID(tenant_id))
+
+
+@app.put("/{tenant_id}/drivers/{driver_id}", response_model=schemas.Driver)
+def update_driver(
+    tenant_id: str,
+    driver_id: int,
+    driver: schemas.DriverCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    updated = crud.update_driver(db, UUID(tenant_id), driver_id, driver)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="update",
+            table_name="drivers",
+            record_id=str(driver_id),
+            details=driver.dict(),
+        ),
+    )
+    return updated
+
+
+@app.delete("/{tenant_id}/drivers/{driver_id}", status_code=204)
+def delete_driver(
+    tenant_id: str,
+    driver_id: int,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    ok = crud.delete_driver(db, UUID(tenant_id), driver_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="delete",
+            table_name="drivers",
+            record_id=str(driver_id),
+            details=None,
+        ),
+    )
+    return Response(status_code=204)
+
+
 @app.post("/audit", response_model=schemas.AuditLog)
 def create_audit_entry(
     log: schemas.AuditLogCreate,
