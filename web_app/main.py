@@ -56,6 +56,13 @@ EXPECTED_DARBUOTOJAI_COLUMNS = {
     "aktyvus": "INTEGER",
 }
 
+EXPECTED_GRUPES_COLUMNS = {
+    "numeris": "TEXT",
+    "pavadinimas": "TEXT",
+    "aprasymas": "TEXT",
+    "imone": "TEXT",
+}
+
 
 def ensure_columns(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
     """Ensure required columns exist for tables used by the web app."""
@@ -64,6 +71,7 @@ def ensure_columns(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
         "vilkikai": EXPECTED_VILKIKAI_COLUMNS,
         "priekabos": EXPECTED_PRIEKABOS_COLUMNS,
         "darbuotojai": EXPECTED_DARBUOTOJAI_COLUMNS,
+        "grupes": EXPECTED_GRUPES_COLUMNS,
     }
     for table, cols in tables.items():
         cursor.execute(f"PRAGMA table_info({table})")
@@ -389,5 +397,66 @@ def darbuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_
     cursor.execute("SELECT * FROM darbuotojai")
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(darbuotojai)")]
+    data = [dict(zip(columns, row)) for row in rows]
+    return {"data": data}
+
+# ---- Grupes ----
+
+@app.get("/grupes", response_class=HTMLResponse)
+def grupes_list(request: Request):
+    return templates.TemplateResponse("grupes_list.html", {"request": request})
+
+
+@app.get("/grupes/add", response_class=HTMLResponse)
+def grupes_add_form(request: Request):
+    return templates.TemplateResponse("grupes_form.html", {"request": request, "data": {}})
+
+
+@app.get("/grupes/{gid}/edit", response_class=HTMLResponse)
+def grupes_edit_form(
+    gid: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    row = cursor.execute("SELECT * FROM grupes WHERE id=?", (gid,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(grupes)")]
+    data = dict(zip(columns, row))
+    return templates.TemplateResponse("grupes_form.html", {"request": request, "data": data})
+
+
+@app.post("/grupes/save")
+def grupes_save(
+    request: Request,
+    gid: int = Form(0),
+    numeris: str = Form(...),
+    pavadinimas: str = Form(""),
+    aprasymas: str = Form(""),
+    imone: str = Form(""),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    if gid:
+        cursor.execute(
+            "UPDATE grupes SET numeris=?, pavadinimas=?, aprasymas=?, imone=? WHERE id=?",
+            (numeris, pavadinimas, aprasymas, imone, gid),
+        )
+    else:
+        cursor.execute(
+            "INSERT INTO grupes (numeris, pavadinimas, aprasymas, imone) VALUES (?,?,?,?)",
+            (numeris, pavadinimas, aprasymas, imone),
+        )
+    conn.commit()
+    return RedirectResponse("/grupes", status_code=303)
+
+
+@app.get("/api/grupes")
+def grupes_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT * FROM grupes")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(grupes)")]
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
