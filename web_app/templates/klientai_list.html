@@ -9,6 +9,9 @@
             <th>Pavadinimas</th>
             <th>VAT</th>
             <th>Kontaktinis asmuo</th>
+            <th>COFACE</th>
+            <th>Mūsų limitas</th>
+            <th>Likutis</th>
             <th>Veiksmai</th>
         </tr>
     </thead>
@@ -22,6 +25,9 @@ $(document).ready(function() {
             { data: 'pavadinimas' },
             { data: 'vat_numeris' },
             { data: 'kontaktinis_asmuo' },
+            { data: 'coface_limitas' },
+            { data: 'musu_limitas' },
+            { data: 'likes_limitas' },
             { data: null, render: function (data, type, row) {
                 return '<a href="/klientai/' + row.id + '/edit">Edit</a>';
             }}
