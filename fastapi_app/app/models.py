@@ -82,3 +82,15 @@ class AuditLog(Base):
     details = Column(String)
 
     user = relationship("User")
+
+class Truck(Base):
+    __tablename__ = "trucks"
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    numeris = Column(String, nullable=False)
+    marke = Column(String)
+    pagaminimo_metai = Column(Integer)
+    tech_apziura = Column(String)
+    draudimas = Column(String)
+
+    tenant = relationship("Tenant")

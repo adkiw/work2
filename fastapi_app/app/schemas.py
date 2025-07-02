@@ -109,3 +109,20 @@ class AuditLog(AuditLogBase):
 
     class Config:
         orm_mode = True
+
+class TruckBase(BaseModel):
+    numeris: str
+    marke: Optional[str] = None
+    pagaminimo_metai: Optional[int] = None
+    tech_apziura: Optional[str] = None
+    draudimas: Optional[str] = None
+
+class TruckCreate(TruckBase):
+    pass
+
+class Truck(TruckBase):
+    id: int
+    tenant_id: UUID
+
+    class Config:
+        orm_mode = True
