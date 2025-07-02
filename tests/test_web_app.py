@@ -223,3 +223,35 @@ def test_settings_defaults(tmp_path):
     assert resp.status_code == 200
     data = resp.json()["data"]
     assert data == ["Van", "Box"]
+
+
+def test_login_and_register(tmp_path):
+    client = create_client(tmp_path)
+    reg_form = {
+        "username": "new@a.com",
+        "password": "pass",
+        "vardas": "A",
+        "pavarde": "B",
+        "pareigybe": "Mgr",
+        "imone": "A",
+    }
+    resp = client.post("/register", data=reg_form)
+    assert resp.status_code == 200
+    assert "Paraiška pateikta" in resp.text
+
+    resp = client.post("/login", data={"username": "new@a.com", "password": "pass"})
+    assert "Neteisingi" in resp.text
+
+    db_path = tmp_path / "app.db"
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute("UPDATE users SET aktyvus=1 WHERE username=?", ("new@a.com",))
+    conn.commit()
+    conn.close()
+
+    resp = client.post(
+        "/login",
+        data={"username": "new@a.com", "password": "pass"},
+        allow_redirects=False,
+    )
+    assert resp.status_code == 303
