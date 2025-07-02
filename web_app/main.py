@@ -261,7 +261,7 @@ def require_roles(*roles: Role):
         if not any(user_has_role(request, cursor, role) for role in roles):
             raise HTTPException(status_code=403, detail="Forbidden")
 
-    return Depends(wrapper)
+    return wrapper
 
 
 def get_db() -> Generator[tuple[sqlite3.Connection, sqlite3.Cursor], None, None]:
