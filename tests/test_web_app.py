@@ -104,3 +104,40 @@ def test_audit_log_records_actions(tmp_path):
     assert row["table_name"] == "priekabos"
     assert row["action"] == "insert"
     assert "details" in row
+
+
+def test_audit_multiple_modules(tmp_path):
+    client = create_client(tmp_path)
+
+    load_form = {
+        "cid": "0",
+        "klientas": "ACME",
+        "uzsakymo_numeris": "123",
+        "pakrovimo_data": "2023-01-01",
+        "iskrovimo_data": "2023-01-02",
+        "kilometrai": "10",
+        "frachtas": "20",
+        "busena": "Nesuplanuotas",
+        "imone": "A",
+    }
+    resp = client.post("/kroviniai/save", data=load_form, allow_redirects=False)
+    assert resp.status_code == 303
+
+    truck_form = {
+        "vid": "0",
+        "numeris": "AAA111",
+        "marke": "MAN",
+        "pagaminimo_metai": "2020",
+        "tech_apziura": "2023-01-01",
+        "vadybininkas": "John",
+        "vairuotojai": "A B",
+        "priekaba": "TR1",
+        "imone": "A",
+    }
+    resp = client.post("/vilkikai/save", data=truck_form, allow_redirects=False)
+    assert resp.status_code == 303
+
+    resp = client.get("/api/audit")
+    data = resp.json()["data"]
+    tables = {row["table_name"] for row in data}
+    assert {"kroviniai", "vilkikai"}.issubset(tables)
