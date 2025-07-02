@@ -1,6 +1,9 @@
 from uvicorn import run
-from .main import app
+
+# Import string notation is required for reload to work
+APP_IMPORT = "web_app.main:app"
 
 if __name__ == "__main__":
-    run(app, host="127.0.0.1", port=8000, reload=True)
+    # Pass the application as an import string so `reload` works
+    run(APP_IMPORT, host="127.0.0.1", port=8000, reload=True)
 
