@@ -125,3 +125,14 @@ class Trailer(Base):
 
     tenant = relationship("Tenant")
 
+
+class TrailerSpec(Base):
+    __tablename__ = "trailer_specs"
+    id = Column(Integer, primary_key=True)
+    tipas = Column(String, unique=True, nullable=False)
+    ilgis = Column(Integer)
+    plotis = Column(Integer)
+    aukstis = Column(Integer)
+    keliamoji_galia = Column(Integer)
+    talpa = Column(Integer)
+

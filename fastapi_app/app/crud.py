@@ -285,3 +285,35 @@ def get_trailers(db: Session, tenant_id: UUID) -> list[models.Trailer]:
         .all()
     )
 
+
+def create_trailer_spec(db: Session, data: schemas.TrailerSpecCreate) -> models.TrailerSpec:
+    spec = models.TrailerSpec(**data.dict())
+    db.add(spec)
+    db.commit()
+    db.refresh(spec)
+    return spec
+
+
+def update_trailer_spec(db: Session, spec_id: int, data: schemas.TrailerSpecCreate) -> models.TrailerSpec | None:
+    spec = db.query(models.TrailerSpec).filter(models.TrailerSpec.id == spec_id).first()
+    if not spec:
+        return None
+    for field, value in data.dict().items():
+        setattr(spec, field, value)
+    db.commit()
+    db.refresh(spec)
+    return spec
+
+
+def delete_trailer_spec(db: Session, spec_id: int) -> bool:
+    spec = db.query(models.TrailerSpec).filter(models.TrailerSpec.id == spec_id).first()
+    if not spec:
+        return False
+    db.delete(spec)
+    db.commit()
+    return True
+
+
+def get_trailer_specs(db: Session) -> list[models.TrailerSpec]:
+    return db.query(models.TrailerSpec).order_by(models.TrailerSpec.id.desc()).all()
+
