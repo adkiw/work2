@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Laukiantys naudotojai</h2>
+<table id="reg-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Vartotojas</th>
+            <th>Įmonė</th>
+            <th>Vardas</th>
+            <th>Pavardė</th>
+            <th>Pareigybė</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+</table>
+<h2>Aktyvūs naudotojai</h2>
+<table id="active-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>Vartotojas</th>
+            <th>Įmonė</th>
+            <th>Paskutinis prisijungimas</th>
+        </tr>
+    </thead>
+</table>
+<script>
+$(document).ready(function() {
+    $('#reg-table').DataTable({
+        ajax: '/api/registracijos',
+        order: [[0, 'asc']],
+        columns: [
+            { data: 'id' },
+            { data: 'username' },
+            { data: 'imone' },
+            { data: 'vardas' },
+            { data: 'pavarde' },
+            { data: 'pareigybe' },
+            { data: null, render: function(data, type, row) {
+                return '<a href="/registracijos/' + row.id + '/approve">Patvirtinti</a> '
+                     + '<a href="/registracijos/' + row.id + '/approve-admin">Admin</a> '
+                     + '<a href="/registracijos/' + row.id + '/delete">Šalinti</a>';
+            }}
+        ]
+    });
+    $('#active-table').DataTable({
+        ajax: '/api/aktyvus',
+        order: [[0, 'asc']],
+        columns: [
+            { data: 'username' },
+            { data: 'imone' },
+            { data: 'last_login' }
+        ]
+    });
+});
+</script>
+{% endblock %}
