@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Grupės</h2>
-<a href="/grupes/add">Pridėti naują</a>
+<div class="page-header">
+    <h2>Grupės</h2>
+    <a class="add-btn" href="/grupes/add">Pridėti grupę</a>
+</div>
 <table id="group-table" class="display" style="width:100%">
     <thead>
         <tr>
@@ -12,6 +14,13 @@
         </tr>
     </thead>
 </table>
+<div class="group-select">
+    <label>Pasirinkite grupę:
+        <select id="grupe-select">
+            <option value="">--</option>
+        </select>
+    </label>
+</div>
 <script>
 $(document).ready(function() {
     $('#group-table').DataTable({
@@ -25,6 +34,25 @@ $(document).ready(function() {
             }}
         ]
     });
+
+    async function loadDropdown() {
+        const resp = await fetch('/api/grupes');
+        const data = await resp.json();
+        const sel = $('#grupe-select');
+        data.data.forEach(g => sel.append(`<option value="${g.id}">${g.numeris}</option>`));
+    }
+    loadDropdown();
 });
 </script>
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.group-select {
+    margin-top: 10px;
+}
+</style>
 {% endblock %}
