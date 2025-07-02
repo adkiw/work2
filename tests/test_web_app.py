@@ -3,6 +3,8 @@ import os
 import sqlite3
 import datetime
 from fastapi.testclient import TestClient
+from modules import login, auth_utils
+from modules.roles import Role
 
 
 def login_default(client: TestClient):
@@ -304,6 +306,33 @@ def test_settings_defaults(tmp_path):
     assert data == ["Van", "Box"]
 
 
+def test_access_restrictions(tmp_path):
+    client = create_client(tmp_path, do_login=False)
+    db_path = tmp_path / "app.db"
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    pw = auth_utils.hash_password("pass")
+    c.execute(
+        "INSERT INTO users (username, password_hash, imone, aktyvus) VALUES (?,?,?,1)",
+        ("user@a.com", pw, "A"),
+    )
+    uid = c.lastrowid
+    login.assign_role(conn, c, uid, Role.USER)
+    conn.commit()
+    conn.close()
+
+    resp = client.post(
+        "/login",
+        data={"username": "user@a.com", "password": "pass"},
+        allow_redirects=False,
+    )
+    assert resp.status_code == 303
+
+    assert client.get("/settings").status_code == 403
+    assert client.get("/trailer-specs").status_code == 403
+    assert client.get("/trailer-types").status_code == 403
+
+
 def test_login_and_register(tmp_path):
     client = create_client(tmp_path, do_login=False)
     reg_form = {
@@ -424,6 +453,11 @@ def test_updates_basic(tmp_path):
     data = resp.json()["data"]
     assert len(data) == 1
     assert data[0]["vilkiko_numeris"] == "AAA111"
+
+    resp = client.get("/api/updates.csv")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "vilkiko_numeris" in resp.text.splitlines()[0]
 
 
 def test_klientai_limits(tmp_path):
