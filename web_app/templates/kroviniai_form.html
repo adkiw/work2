@@ -3,14 +3,118 @@
 <h2>{% if data.id %}Redaguoti krovinį{% else %}Naujas krovinys{% endif %}</h2>
 <form method="post" action="/kroviniai/save">
     <input type="hidden" name="cid" value="{{ data.id or 0 }}">
-    <label>Klientas: <input type="text" name="klientas" value="{{ data.klientas or '' }}"></label><br>
-    <label>Užsakymo nr.: <input type="text" name="uzsakymo_numeris" value="{{ data.uzsakymo_numeris or '' }}"></label><br>
-    <label>Pakrovimo data: <input type="date" name="pakrovimo_data" value="{{ data.pakrovimo_data or '' }}"></label><br>
-    <label>Iškrovimo data: <input type="date" name="iskrovimo_data" value="{{ data.iskrovimo_data or '' }}"></label><br>
-    <label>Kilometrai: <input type="number" name="kilometrai" value="{{ data.kilometrai or 0 }}"></label><br>
-    <label>Frachtas: <input type="number" step="0.01" name="frachtas" value="{{ data.frachtas or 0 }}"></label><br>
-    <label>Būsena: <input type="text" name="busena" value="{{ data.busena or 'Nesuplanuotas' }}"></label><br>
-    <label>Įmonė: <input type="text" name="imone" value="{{ data.imone or '' }}"></label><br>
-    <button type="submit">Išsaugoti</button>
+    <div class="form-grid">
+        <label>Klientas
+            <select name="klientas">
+                <option value=""></option>
+                {% for k in klientai %}
+                <option value="{{ k }}" {% if data.klientas == k %}selected{% endif %}>{{ k }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Vilkikas
+            <select name="vilkikas">
+                <option value=""></option>
+                {% for v in vilkikai %}
+                <option value="{{ v }}" {% if data.vilkikas == v %}selected{% endif %}>{{ v }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Priekaba
+            <input type="text" name="priekaba" value="{{ data.priekaba or '' }}">
+        </label>
+        <label>Užsakymo nr.
+            <input type="text" name="uzsakymo_numeris" value="{{ data.uzsakymo_numeris or '' }}">
+        </label>
+        <label>Sąskaitos būsena
+            <select name="saskaitos_busena">
+                <option value="Neapmokėta" {% if data.saskaitos_busena == 'Neapmokėta' %}selected{% endif %}>Neapmokėta</option>
+                <option value="Apmokėta" {% if data.saskaitos_busena == 'Apmokėta' %}selected{% endif %}>Apmokėta</option>
+            </select>
+        </label>
+        <label>Pakrovimo data
+            <input type="date" name="pakrovimo_data" value="{{ data.pakrovimo_data or '' }}">
+        </label>
+        <label>Iškrovimo data
+            <input type="date" name="iskrovimo_data" value="{{ data.iskrovimo_data or '' }}">
+        </label>
+        <label>Pakrovimo šalis
+            <select name="pakrovimo_salis">
+                {% for n,c in salys %}
+                <option value="{{ c }}" {% if data.pakrovimo_salis == c %}selected{% endif %}>{{ n }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Iškrovimo šalis
+            <select name="iskrovimo_salis">
+                {% for n,c in salys %}
+                <option value="{{ c }}" {% if data.iskrovimo_salis == c %}selected{% endif %}>{{ n }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Pakrovimo regionas
+            <input type="text" name="pakrovimo_regionas" value="{{ data.pakrovimo_regionas or '' }}">
+        </label>
+        <label>Iškrovimo regionas
+            <input type="text" name="iskrovimo_regionas" value="{{ data.iskrovimo_regionas or '' }}">
+        </label>
+        <label>Pakrovimo miestas
+            <input type="text" name="pakrovimo_miestas" value="{{ data.pakrovimo_miestas or '' }}">
+        </label>
+        <label>Iškrovimo miestas
+            <input type="text" name="iskrovimo_miestas" value="{{ data.iskrovimo_miestas or '' }}">
+        </label>
+        <label>Pakrovimo adresas
+            <input type="text" name="pakrovimo_adresas" value="{{ data.pakrovimo_adresas or '' }}">
+        </label>
+        <label>Iškrovimo adresas
+            <input type="text" name="iskrovimo_adresas" value="{{ data.iskrovimo_adresas or '' }}">
+        </label>
+        <label>Pakrovimo laikas nuo
+            <input type="time" name="pakrovimo_laikas_nuo" value="{{ data.pakrovimo_laikas_nuo or '' }}">
+        </label>
+        <label>Pakrovimo laikas iki
+            <input type="time" name="pakrovimo_laikas_iki" value="{{ data.pakrovimo_laikas_iki or '' }}">
+        </label>
+        <label>Iškrovimo laikas nuo
+            <input type="time" name="iskrovimo_laikas_nuo" value="{{ data.iskrovimo_laikas_nuo or '' }}">
+        </label>
+        <label>Iškrovimo laikas iki
+            <input type="time" name="iskrovimo_laikas_iki" value="{{ data.iskrovimo_laikas_iki or '' }}">
+        </label>
+        <label>Kilometrai
+            <input type="number" name="kilometrai" value="{{ data.kilometrai or 0 }}">
+        </label>
+        <label>Frachtas (€)
+            <input type="number" step="any" name="frachtas" value="{{ data.frachtas or 0 }}">
+        </label>
+        <label>Svoris (kg)
+            <input type="number" name="svoris" value="{{ data.svoris or 0 }}">
+        </label>
+        <label>Padėklų sk.
+            <input type="number" name="paleciu_skaicius" value="{{ data.paleciu_skaicius or 0 }}">
+        </label>
+        <label>Ekspedicijos vadybininkas
+            <select name="ekspedicijos_vadybininkas">
+                <option value=""></option>
+                {% for e in eksped_vadybininkai %}
+                <option value="{{ e }}" {% if data.ekspedicijos_vadybininkas == e %}selected{% endif %}>{{ e }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </div>
+    <button type="submit">💾 Išsaugoti</button>
+    <a href="/kroviniai">← Grįžti į sąrašą</a>
 </form>
+<style>
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.form-grid label {
+    display: flex;
+    flex-direction: column;
+}
+</style>
 {% endblock %}

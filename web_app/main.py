@@ -284,10 +284,29 @@ def kroviniai_list(request: Request):
 
 
 @app.get("/kroviniai/add", response_class=HTMLResponse)
-def kroviniai_add_form(request: Request):
-    return templates.TemplateResponse(
-        "kroviniai_form.html", {"request": request, "data": {}}
-    )
+def kroviniai_add_form(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    klientai = [r[0] for r in cursor.execute("SELECT pavadinimas FROM klientai").fetchall()]
+    vilkikai = [r[0] for r in cursor.execute("SELECT numeris FROM vilkikai").fetchall()]
+    eksped = [
+        f"{r[0]} {r[1]}"
+        for r in cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
+            ("Ekspedicijos vadybininkas",),
+        ).fetchall()
+    ]
+    context = {
+        "request": request,
+        "data": {},
+        "klientai": klientai,
+        "vilkikai": vilkikai,
+        "eksped_vadybininkai": eksped,
+        "salys": EU_COUNTRIES,
+    }
+    return templates.TemplateResponse("kroviniai_form.html", context)
 
 
 @app.get("/kroviniai/{cid}/edit", response_class=HTMLResponse)
@@ -304,9 +323,24 @@ def kroviniai_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(kroviniai)")]
     data = dict(zip(columns, row))
-    return templates.TemplateResponse(
-        "kroviniai_form.html", {"request": request, "data": data}
-    )
+    klientai = [r[0] for r in cursor.execute("SELECT pavadinimas FROM klientai").fetchall()]
+    vilkikai = [r[0] for r in cursor.execute("SELECT numeris FROM vilkikai").fetchall()]
+    eksped = [
+        f"{r[0]} {r[1]}"
+        for r in cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
+            ("Ekspedicijos vadybininkas",),
+        ).fetchall()
+    ]
+    context = {
+        "request": request,
+        "data": data,
+        "klientai": klientai,
+        "vilkikai": vilkikai,
+        "eksped_vadybininkai": eksped,
+        "salys": EU_COUNTRIES,
+    }
+    return templates.TemplateResponse("kroviniai_form.html", context)
 
 
 @app.post("/kroviniai/save")
@@ -314,45 +348,103 @@ def kroviniai_save(
     request: Request,
     cid: int = Form(0),
     klientas: str = Form(...),
+    vilkikas: str = Form(""),
+    priekaba: str = Form(""),
     uzsakymo_numeris: str = Form(...),
+    saskaitos_busena: str = Form("Neapmokėta"),
     pakrovimo_data: str = Form(...),
     iskrovimo_data: str = Form(...),
+    pakrovimo_salis: str = Form(""),
+    iskrovimo_salis: str = Form(""),
+    pakrovimo_regionas: str = Form(""),
+    iskrovimo_regionas: str = Form(""),
+    pakrovimo_miestas: str = Form(""),
+    iskrovimo_miestas: str = Form(""),
+    pakrovimo_adresas: str = Form(""),
+    iskrovimo_adresas: str = Form(""),
+    pakrovimo_laikas_nuo: str = Form(""),
+    pakrovimo_laikas_iki: str = Form(""),
+    iskrovimo_laikas_nuo: str = Form(""),
+    iskrovimo_laikas_iki: str = Form(""),
     kilometrai: int = Form(0),
     frachtas: float = Form(0.0),
+    svoris: int = Form(0),
+    paleciu_skaicius: int = Form(0),
+    ekspedicijos_vadybininkas: str = Form(""),
     busena: str = Form("Nesuplanuotas"),
     imone: str = Form(""),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    cols = [
+        "klientas",
+        "vilkikas",
+        "priekaba",
+        "uzsakymo_numeris",
+        "saskaitos_busena",
+        "pakrovimo_data",
+        "iskrovimo_data",
+        "pakrovimo_salis",
+        "iskrovimo_salis",
+        "pakrovimo_regionas",
+        "iskrovimo_regionas",
+        "pakrovimo_miestas",
+        "iskrovimo_miestas",
+        "pakrovimo_adresas",
+        "iskrovimo_adresas",
+        "pakrovimo_laikas_nuo",
+        "pakrovimo_laikas_iki",
+        "iskrovimo_laikas_nuo",
+        "iskrovimo_laikas_iki",
+        "kilometrai",
+        "frachtas",
+        "svoris",
+        "paleciu_skaicius",
+        "ekspedicijos_vadybininkas",
+        "busena",
+        "imone",
+    ]
+    vals = [
+        klientas,
+        vilkikas,
+        priekaba,
+        uzsakymo_numeris,
+        saskaitos_busena,
+        pakrovimo_data,
+        iskrovimo_data,
+        pakrovimo_salis,
+        iskrovimo_salis,
+        pakrovimo_regionas,
+        iskrovimo_regionas,
+        pakrovimo_miestas,
+        iskrovimo_miestas,
+        pakrovimo_adresas,
+        iskrovimo_adresas,
+        pakrovimo_laikas_nuo,
+        pakrovimo_laikas_iki,
+        iskrovimo_laikas_nuo,
+        iskrovimo_laikas_iki,
+        kilometrai,
+        frachtas,
+        svoris,
+        paleciu_skaicius,
+        ekspedicijos_vadybininkas,
+        busena,
+        imone,
+    ]
     if cid:
+        set_clause = ",".join([f"{c}=?" for c in cols])
         cursor.execute(
-            "UPDATE kroviniai SET klientas=?, uzsakymo_numeris=?, pakrovimo_data=?, iskrovimo_data=?, kilometrai=?, frachtas=?, busena=?, imone=? WHERE id=?",
-            (
-                klientas,
-                uzsakymo_numeris,
-                pakrovimo_data,
-                iskrovimo_data,
-                kilometrai,
-                frachtas,
-                busena,
-                imone,
-                cid,
-            ),
+            f"UPDATE kroviniai SET {set_clause} WHERE id=?",
+            vals + [cid],
         )
         action = "update"
     else:
+        placeholders = ",".join(["?"] * len(cols))
+        col_str = ",".join(cols)
         cursor.execute(
-            "INSERT INTO kroviniai (klientas, uzsakymo_numeris, pakrovimo_data, iskrovimo_data, kilometrai, frachtas, busena, imone) VALUES (?,?,?,?,?,?,?,?)",
-            (
-                klientas,
-                uzsakymo_numeris,
-                pakrovimo_data,
-                iskrovimo_data,
-                kilometrai,
-                frachtas,
-                busena,
-                imone,
-            ),
+            f"INSERT INTO kroviniai ({col_str}) VALUES ({placeholders})",
+            vals,
         )
         cid = cursor.lastrowid
         action = "insert"
