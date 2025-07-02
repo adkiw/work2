@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 import os
 
@@ -22,6 +23,24 @@ app = FastAPI()
 app.add_middleware(
     SessionMiddleware, secret_key=os.getenv("WEBAPP_SECRET", "devsecret")
 )
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    """Redirect anonymous users to the login page."""
+
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        if (
+            path.startswith("/static")
+            or path in {"/login", "/register", "/health"}
+        ):
+            return await call_next(request)
+        if not ensure_logged_in(request):
+            return RedirectResponse("/login")
+        return await call_next(request)
+
+
+app.add_middleware(AuthMiddleware)
 
 
 def ensure_logged_in(request: Request) -> bool:
