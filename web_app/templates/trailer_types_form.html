@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{% if data.id %}Redaguoti priekabos tipą{% else %}Naujas priekabos tipas{% endif %}</h2>
+<form method="post" action="/trailer-types/save">
+    <input type="hidden" name="tid" value="{{ data.id or 0 }}">
+    <label>Pavadinimas: <input type="text" name="reiksme" value="{{ data.reiksme or '' }}"></label><br>
+    <button type="submit">Išsaugoti</button>
+</form>
+{% endblock %}

@@ -828,6 +828,65 @@ def klientai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
     return {"data": data}
 
 
+# ---- Trailer types ----
+
+@app.get("/trailer-types", response_class=HTMLResponse)
+def trailer_types_list(request: Request):
+    return templates.TemplateResponse("trailer_types_list.html", {"request": request})
+
+
+@app.get("/trailer-types/add", response_class=HTMLResponse)
+def trailer_types_add_form(request: Request):
+    return templates.TemplateResponse("trailer_types_form.html", {"request": request, "data": {}})
+
+
+@app.get("/trailer-types/{tid}/edit", response_class=HTMLResponse)
+def trailer_types_edit_form(tid: int, request: Request, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    row = cursor.execute(
+        "SELECT id, reiksme FROM lookup WHERE kategorija='Priekabos tipas' AND id=?",
+        (tid,)
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    data = {"id": row[0], "reiksme": row[1]}
+    return templates.TemplateResponse("trailer_types_form.html", {"request": request, "data": data})
+
+
+@app.post("/trailer-types/save")
+def trailer_types_save(
+    tid: int = Form(0),
+    reiksme: str = Form(...),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    if tid:
+        cursor.execute(
+            "UPDATE lookup SET reiksme=? WHERE id=? AND kategorija='Priekabos tipas'",
+            (reiksme, tid),
+        )
+        action = "update"
+    else:
+        cursor.execute(
+            "INSERT INTO lookup (kategorija, reiksme) VALUES ('Priekabos tipas', ?)",
+            (reiksme,),
+        )
+        tid = cursor.lastrowid
+        action = "insert"
+    conn.commit()
+    log_action(conn, cursor, None, action, "lookup", tid)
+    return RedirectResponse("/trailer-types", status_code=303)
+
+
+@app.get("/api/trailer-types")
+def trailer_types_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT id, reiksme FROM lookup WHERE kategorija='Priekabos tipas'")
+    rows = cursor.fetchall()
+    data = [{"id": r[0], "reiksme": r[1]} for r in rows]
+    return {"data": data}
+
+
 # ---- Audit log ----
 
 @app.get("/audit", response_class=HTMLResponse)
