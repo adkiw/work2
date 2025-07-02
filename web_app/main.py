@@ -11,6 +11,8 @@ import sqlite3
 from typing import Generator
 from db import init_db
 from modules.audit import log_action, fetch_logs
+from modules.login import assign_role
+from modules.roles import Role
 
 import datetime
 import pandas as pd
@@ -1020,6 +1022,104 @@ async def settings_save(request: Request, imone: str = Form(""), db: tuple[sqlit
     conn.commit()
     log_action(conn, cursor, None, "update", "company_default_trailers", 0)
     return RedirectResponse("/settings", status_code=303)
+
+
+# ---- Registracijos ----
+
+@app.get("/registracijos", response_class=HTMLResponse)
+def registracijos_list(request: Request):
+    return templates.TemplateResponse("registracijos_list.html", {"request": request})
+
+
+@app.get("/api/registracijos")
+def registracijos_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    rows = cursor.execute(
+        "SELECT id, username, imone, vardas, pavarde, pareigybe FROM users WHERE aktyvus=0"
+    ).fetchall()
+    data = [
+        {
+            "id": r[0],
+            "username": r[1],
+            "imone": r[2],
+            "vardas": r[3],
+            "pavarde": r[4],
+            "pareigybe": r[5],
+        }
+        for r in rows
+    ]
+    return {"data": data}
+
+
+@app.get("/api/aktyvus")
+def aktyvus_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    rows = cursor.execute(
+        "SELECT username, imone, last_login FROM users WHERE aktyvus=1 ORDER BY imone, username"
+    ).fetchall()
+    data = [
+        {"username": r[0], "imone": r[1], "last_login": r[2] or ""} for r in rows
+    ]
+    return {"data": data}
+
+
+@app.get("/registracijos/{uid}/approve")
+def registracijos_approve(
+    uid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
+):
+    conn, cursor = db
+    row = cursor.execute(
+        "SELECT id, username, imone, vardas, pavarde, pareigybe FROM users WHERE id=? AND aktyvus=0",
+        (uid,),
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    cursor.execute("UPDATE users SET aktyvus=1 WHERE id=?", (uid,))
+    assign_role(conn, cursor, uid, Role.USER)
+    cursor.execute(
+        "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
+        (row[3], row[4], row[5], row[1], row[2]),
+    )
+    conn.commit()
+    log_action(conn, cursor, None, "approve", "users", uid)
+    log_action(conn, cursor, None, "create", "darbuotojai", cursor.lastrowid)
+    return RedirectResponse("/registracijos", status_code=303)
+
+
+@app.get("/registracijos/{uid}/approve-admin")
+def registracijos_approve_admin(
+    uid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
+):
+    conn, cursor = db
+    row = cursor.execute(
+        "SELECT id, username, imone, vardas, pavarde, pareigybe FROM users WHERE id=? AND aktyvus=0",
+        (uid,),
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    cursor.execute("UPDATE users SET aktyvus=1 WHERE id=?", (uid,))
+    assign_role(conn, cursor, uid, Role.COMPANY_ADMIN)
+    cursor.execute(
+        "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
+        (row[3], row[4], row[5], row[1], row[2]),
+    )
+    conn.commit()
+    log_action(conn, cursor, None, "approve_admin", "users", uid)
+    log_action(conn, cursor, None, "create_admin", "darbuotojai", cursor.lastrowid)
+    return RedirectResponse("/registracijos", status_code=303)
+
+
+@app.get("/registracijos/{uid}/delete")
+def registracijos_delete(
+    uid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
+):
+    conn, cursor = db
+    cursor.execute("DELETE FROM users WHERE id=? AND aktyvus=0", (uid,))
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Not found")
+    conn.commit()
+    log_action(conn, cursor, None, "delete", "users", uid)
+    return RedirectResponse("/registracijos", status_code=303)
 
 
 # ---- Audit log ----

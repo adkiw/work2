@@ -278,3 +278,39 @@ def test_trailer_specs_basic(tmp_path):
     data = resp.json()["data"]
     assert len(data) == 1
     assert data[0]["tipas"] == "Mega"
+
+
+def test_user_admin_approve(tmp_path):
+    client = create_client(tmp_path)
+    db_path = tmp_path / "app.db"
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO users (username, password_hash, imone, vardas, pavarde, pareigybe, aktyvus) VALUES (?,?,?,?,?,?,0)",
+        ("u@a.com", "x", "A", "User", "Test", "Mgr"),
+    )
+    uid = c.lastrowid
+    conn.commit()
+    conn.close()
+
+    resp = client.get("/api/registracijos")
+    data = resp.json()["data"]
+    assert len(data) == 1 and data[0]["username"] == "u@a.com"
+
+    resp = client.get(f"/registracijos/{uid}/approve", allow_redirects=False)
+    assert resp.status_code == 303
+
+    resp = client.get("/api/registracijos")
+    assert resp.json() == {"data": []}
+
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    row = c.execute("SELECT aktyvus FROM users WHERE id=?", (uid,)).fetchone()
+    assert row[0] == 1
+    row = c.execute("SELECT COUNT(*) FROM darbuotojai WHERE el_pastas=?", ("u@a.com",)).fetchone()
+    assert row[0] == 1
+    conn.close()
+
+    resp = client.get("/api/aktyvus")
+    data = resp.json()["data"]
+    assert any(r["username"] == "u@a.com" for r in data)
