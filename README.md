@@ -34,6 +34,9 @@ Besides the Streamlit UI, the repository now provides an alternative FastAPI bas
    uvicorn web_app.main:app --reload
    ```
    This starts a local server on http://127.0.0.1:8000 without Streamlit.
+   Windows users can instead execute `start_work2_server.bat`. The script
+   ensures required packages are installed each time before launching the
+   server.
 
 5. To enable dark mode in the Streamlit UI, open the sidebar in the running app and choose **Dark** in the Theme selector.
 
