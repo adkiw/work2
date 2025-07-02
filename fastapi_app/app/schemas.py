@@ -1,4 +1,5 @@
 from typing import List, Optional
+from datetime import datetime
 from uuid import UUID
 from pydantic import BaseModel, EmailStr
 
@@ -54,6 +55,26 @@ class Document(BaseModel):
     id: UUID
     tenant_id: UUID
     content: str
+
+    class Config:
+        orm_mode = True
+
+
+class AuditLogBase(BaseModel):
+    action: str
+    table_name: str
+    record_id: Optional[str] = None
+    details: Optional[dict] = None
+
+
+class AuditLogCreate(AuditLogBase):
+    pass
+
+
+class AuditLog(AuditLogBase):
+    id: int
+    user_id: Optional[UUID] = None
+    timestamp: datetime
 
     class Config:
         orm_mode = True

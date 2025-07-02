@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 
 from . import models, schemas, crud, auth, dependencies
 from .database import Base
+import json
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
@@ -196,3 +197,22 @@ def read_shared_data(
 
     docs = db.query(models.Document).filter(models.Document.tenant_id.in_(allowed_ids)).all()
     return docs
+
+
+@app.post('/audit', response_model=schemas.AuditLog)
+def create_audit_entry(
+    log: schemas.AuditLogCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    user_id = current_user.id if current_user else None
+    return crud.create_audit_log(db, user_id, log)
+
+
+@app.get('/audit', response_model=list[schemas.AuditLog])
+def read_audit_entries(
+    limit: int = 100,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    return crud.get_audit_logs(db, limit)
