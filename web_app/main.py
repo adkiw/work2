@@ -14,6 +14,7 @@ from modules.audit import log_action, fetch_logs
 from modules.login import assign_role, verify_user
 from modules.auth_utils import hash_password
 from modules.roles import Role
+from modules.constants import EU_COUNTRIES
 
 import datetime
 import pandas as pd
@@ -212,6 +213,27 @@ def ensure_columns(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
     conn.commit()
 
 
+def compute_limits(cursor: sqlite3.Cursor, vat: str, coface: float) -> tuple[float, float]:
+    """Return (musu_limitas, likes_limitas) for given VAT."""
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='kroviniai'")
+    if cursor.fetchone():
+        r = cursor.execute(
+            """
+            SELECT SUM(k.frachtas)
+            FROM kroviniai AS k
+            JOIN klientai AS cl ON k.klientas = cl.pavadinimas
+            WHERE cl.vat_numeris = ? AND k.saskaitos_busena != 'Apmokėta'
+            """,
+            (vat,),
+        ).fetchone()
+        unpaid = r[0] if r and r[0] is not None else 0.0
+    else:
+        unpaid = 0.0
+    musu = round(coface / 3.0, 2)
+    liks = round(max(musu - unpaid, 0.0), 2)
+    return musu, liks
+
+
 def get_db() -> Generator[tuple[sqlite3.Connection, sqlite3.Cursor], None, None]:
     conn, cursor = init_db()
     ensure_columns(conn, cursor)
@@ -246,26 +268,6 @@ def kroviniai_edit_form(
 ):
     conn, cursor = db
 
-    def compute_limits(vat: str, coface: float) -> tuple[float, float]:
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='kroviniai'"
-        )
-        if cursor.fetchone():
-            r = cursor.execute(
-                """
-                SELECT SUM(k.frachtas)
-                FROM kroviniai AS k
-                JOIN klientai AS cl ON k.klientas = cl.pavadinimas
-                WHERE cl.vat_numeris = ? AND k.saskaitos_busena != 'Apmokėta'
-                """,
-                (vat,),
-            ).fetchone()
-            unpaid = r[0] if r and r[0] is not None else 0.0
-        else:
-            unpaid = 0.0
-        musu = round(coface / 3.0, 2)
-        liks = round(max(musu - unpaid, 0.0), 2)
-        return musu, liks
 
     row = cursor.execute("SELECT * FROM kroviniai WHERE id=?", (cid,)).fetchone()
     if not row:
@@ -1041,7 +1043,8 @@ def klientai_list(request: Request):
 @app.get("/klientai/add", response_class=HTMLResponse)
 def klientai_add_form(request: Request):
     return templates.TemplateResponse(
-        "klientai_form.html", {"request": request, "data": {}}
+        "klientai_form.html",
+        {"request": request, "data": {}, "salys": EU_COUNTRIES},
     )
 
 
@@ -1058,7 +1061,8 @@ def klientai_edit_form(
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(klientai)")]
     data = dict(zip(columns, row))
     return templates.TemplateResponse(
-        "klientai_form.html", {"request": request, "data": data}
+        "klientai_form.html",
+        {"request": request, "data": data, "salys": EU_COUNTRIES},
     )
 
 
@@ -1070,21 +1074,35 @@ def klientai_save(
     kontaktinis_asmuo: str = Form(""),
     kontaktinis_el_pastas: str = Form(""),
     kontaktinis_tel: str = Form(""),
+    salis: str = Form(""),
+    regionas: str = Form(""),
+    miestas: str = Form(""),
+    adresas: str = Form(""),
+    saskaitos_asmuo: str = Form(""),
+    saskaitos_el_pastas: str = Form(""),
+    saskaitos_tel: str = Form(""),
     coface_limitas: float = Form(0.0),
     imone: str = Form(""),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
-    musu, liks = compute_limits(vat_numeris, coface_limitas)
+    musu, liks = compute_limits(cursor, vat_numeris, coface_limitas)
     if cid:
         cursor.execute(
-            "UPDATE klientai SET pavadinimas=?, vat_numeris=?, kontaktinis_asmuo=?, kontaktinis_el_pastas=?, kontaktinis_tel=?, coface_limitas=?, musu_limitas=?, likes_limitas=?, imone=? WHERE id=?",
+            "UPDATE klientai SET pavadinimas=?, vat_numeris=?, kontaktinis_asmuo=?, kontaktinis_el_pastas=?, kontaktinis_tel=?, salis=?, regionas=?, miestas=?, adresas=?, saskaitos_asmuo=?, saskaitos_el_pastas=?, saskaitos_tel=?, coface_limitas=?, musu_limitas=?, likes_limitas=?, imone=? WHERE id=?",
             (
                 pavadinimas,
                 vat_numeris,
                 kontaktinis_asmuo,
                 kontaktinis_el_pastas,
                 kontaktinis_tel,
+                salis,
+                regionas,
+                miestas,
+                adresas,
+                saskaitos_asmuo,
+                saskaitos_el_pastas,
+                saskaitos_tel,
                 coface_limitas,
                 musu,
                 liks,
@@ -1095,13 +1113,20 @@ def klientai_save(
         action = "update"
     else:
         cursor.execute(
-            "INSERT INTO klientai (pavadinimas, vat_numeris, kontaktinis_asmuo, kontaktinis_el_pastas, kontaktinis_tel, coface_limitas, musu_limitas, likes_limitas, imone) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO klientai (pavadinimas, vat_numeris, kontaktinis_asmuo, kontaktinis_el_pastas, kontaktinis_tel, salis, regionas, miestas, adresas, saskaitos_asmuo, saskaitos_el_pastas, saskaitos_tel, coface_limitas, musu_limitas, likes_limitas, imone) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 pavadinimas,
                 vat_numeris,
                 kontaktinis_asmuo,
                 kontaktinis_el_pastas,
                 kontaktinis_tel,
+                salis,
+                regionas,
+                miestas,
+                adresas,
+                saskaitos_asmuo,
+                saskaitos_el_pastas,
+                saskaitos_tel,
                 coface_limitas,
                 musu,
                 liks,
