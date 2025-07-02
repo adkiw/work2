@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Priekabų specifikacijos</h2>
+<a href="/trailer-specs/add">Pridėti naują</a>
+<table id="ts-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tipas</th>
+            <th>Ilgis</th>
+            <th>Plotis</th>
+            <th>Aukštis</th>
+            <th>Keliamoji galia</th>
+            <th>Talpa</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+</table>
+<script>
+$(document).ready(function() {
+    $('#ts-table').DataTable({
+        ajax: '/api/trailer-specs',
+        columns: [
+            { data: 'id' },
+            { data: 'tipas' },
+            { data: 'ilgis' },
+            { data: 'plotis' },
+            { data: 'aukstis' },
+            { data: 'keliamoji_galia' },
+            { data: 'talpa' },
+            { data: null, render: function (data, type, row) {
+                return '<a href="/trailer-specs/' + row.id + '/edit">Edit</a>';
+            }}
+        ]
+    });
+});
+</script>
+{% endblock %}

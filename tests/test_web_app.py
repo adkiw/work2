@@ -255,3 +255,26 @@ def test_login_and_register(tmp_path):
         allow_redirects=False,
     )
     assert resp.status_code == 303
+
+
+def test_trailer_specs_basic(tmp_path):
+    client = create_client(tmp_path)
+    resp = client.get("/api/trailer-specs")
+    assert resp.status_code == 200
+    assert resp.json() == {"data": []}
+
+    form = {
+        "sid": "0",
+        "tipas": "Mega",
+        "ilgis": "13.6",
+        "plotis": "2.5",
+        "aukstis": "3",
+        "keliamoji_galia": "24000",
+        "talpa": "90",
+    }
+    resp = client.post("/trailer-specs/save", data=form, allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get("/api/trailer-specs")
+    data = resp.json()["data"]
+    assert len(data) == 1
+    assert data[0]["tipas"] == "Mega"
