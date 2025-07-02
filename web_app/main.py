@@ -5,13 +5,13 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 import os
-import bcrypt
 
 import sqlite3
 from typing import Generator
 from db import init_db
 from modules.audit import log_action, fetch_logs
-from modules.login import assign_role
+from modules.login import assign_role, verify_user
+from modules.auth_utils import hash_password
 from modules.roles import Role
 
 import datetime
@@ -181,17 +181,6 @@ def ensure_columns(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
             if col not in existing:
                 cursor.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
     conn.commit()
-
-
-def verify_user(cursor: sqlite3.Cursor, username: str, password: str):
-    cursor.execute(
-        "SELECT id, password_hash, imone FROM users WHERE username=? AND aktyvus=1",
-        (username,),
-    )
-    row = cursor.fetchone()
-    if row and bcrypt.checkpw(password.encode(), row[1].encode()):
-        return row[0], row[2]
-    return None, None
 
 
 def get_db() -> Generator[tuple[sqlite3.Connection, sqlite3.Cursor], None, None]:
@@ -1479,15 +1468,8 @@ def login_submit(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
-    user_id, imone = verify_user(cursor, username, password)
+    user_id, imone = verify_user(conn, cursor, username, password)
     if user_id:
-        ts = (
-            datetime.datetime.utcnow()
-            .replace(second=0, microsecond=0)
-            .isoformat(timespec="minutes")
-        )
-        cursor.execute("UPDATE users SET last_login=? WHERE id=?", (ts, user_id))
-        conn.commit()
         request.session["user_id"] = user_id
         request.session["username"] = username
         request.session["imone"] = imone
@@ -1535,7 +1517,7 @@ def register_submit(
             },
             status_code=400,
         )
-    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    pw_hash = hash_password(password)
     cursor.execute(
         "INSERT INTO users (username, password_hash, imone, vardas, pavarde, pareigybe, aktyvus) VALUES (?,?,?,?,?,?,0)",
         (username, pw_hash, imone or None, vardas, pavarde, pareigybe),
