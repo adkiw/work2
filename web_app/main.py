@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 import sqlite3
 from typing import Generator
 from db import init_db
+from modules.audit import log_action
 
 app = FastAPI()
 
@@ -339,12 +340,16 @@ def priekabos_save(
             "UPDATE priekabos SET priekabu_tipas=?, numeris=?, marke=?, pagaminimo_metai=?, tech_apziura=?, draudimas=?, imone=? WHERE id=?",
             (priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas, imone, pid),
         )
+        action = "update"
     else:
         cursor.execute(
             "INSERT INTO priekabos (priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas, imone) VALUES (?,?,?,?,?,?,?)",
             (priekabu_tipas, numeris, marke, pagaminimo_metai, tech_apziura, draudimas, imone),
         )
+        pid = cursor.lastrowid
+        action = "insert"
     conn.commit()
+    log_action(conn, cursor, None, action, "priekabos", pid)
     return RedirectResponse("/priekabos", status_code=303)
 
 
@@ -402,12 +407,16 @@ def darbuotojai_save(
             "UPDATE darbuotojai SET vardas=?, pavarde=?, pareigybe=?, el_pastas=?, telefonas=?, grupe=?, imone=?, aktyvus=? WHERE id=?",
             (vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone, akt, did),
         )
+        action = "update"
     else:
         cursor.execute(
             "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone, aktyvus) VALUES (?,?,?,?,?,?,?,?)",
             (vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone, akt),
         )
+        did = cursor.lastrowid
+        action = "insert"
     conn.commit()
+    log_action(conn, cursor, None, action, "darbuotojai", did)
     return RedirectResponse("/darbuotojai", status_code=303)
 
 
@@ -572,7 +581,7 @@ def audit_list(request: Request):
 def audit_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
     conn, cursor = db
     cursor.execute(
-        """SELECT al.id, u.username as user, al.action, al.table_name, al.record_id, al.timestamp
+        """SELECT al.id, u.username as user, al.action, al.table_name, al.record_id, al.timestamp, al.details
            FROM audit_log al LEFT JOIN users u ON al.user_id = u.id
            ORDER BY al.timestamp DESC"""
     )
