@@ -81,3 +81,39 @@ def test_create_and_list_shipments():
     assert r2.status_code == 200
     data = r2.json()
     assert any(s["klientas"] == "ACME" for s in data)
+
+
+def test_update_and_delete_shipments():
+    user, tenant = setup_user()
+    login = client.post(
+        "/auth/login",
+        json={"email": user.email, "password": "pass", "tenant_id": str(tenant.id)},
+    )
+    token = login.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    shipment = {
+        "klientas": "ABC",
+        "uzsakymo_numeris": "2",
+        "pakrovimo_data": "2024-02-01",
+        "iskrovimo_data": "2024-02-02",
+        "kilometrai": 5,
+        "frachtas": 10,
+        "busena": "Nesuplanuotas",
+    }
+    r = client.post(f"/{tenant.id}/shipments", json=shipment, headers=headers)
+    sid = r.json()["id"]
+
+    update = shipment | {"klientas": "UPDATED"}
+    r2 = client.put(
+        f"/{tenant.id}/shipments/{sid}", json=update, headers=headers
+    )
+    assert r2.status_code == 200
+    assert r2.json()["klientas"] == "UPDATED"
+
+    r3 = client.delete(
+        f"/{tenant.id}/shipments/{sid}", headers=headers
+    )
+    assert r3.status_code == 204
+    r4 = client.get(f"/{tenant.id}/shipments", headers=headers)
+    assert all(s["id"] != sid for s in r4.json())
