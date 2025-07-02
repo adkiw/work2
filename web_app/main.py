@@ -522,8 +522,6 @@ def planavimas_api(
         "AND iskrovimo_data IS NOT NULL"
     )
     params = [start_date.isoformat(), end_date.isoformat()]
-    if grupe:
-        pass
     cursor.execute(query, params)
     rows = cursor.fetchall()
     columns = ["vilkikas", "salis", "regionas", "data", "pak_data"]
