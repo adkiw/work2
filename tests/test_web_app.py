@@ -141,3 +141,25 @@ def test_audit_multiple_modules(tmp_path):
     data = resp.json()["data"]
     tables = {row["table_name"] for row in data}
     assert {"kroviniai", "vilkikai"}.issubset(tables)
+
+def test_vairuotojai_basic(tmp_path):
+    client = create_client(tmp_path)
+    resp = client.get("/api/vairuotojai")
+    assert resp.status_code == 200
+    assert resp.json() == {"data": []}
+    form = {
+        "did": "0",
+        "vardas": "Jonas",
+        "pavarde": "Jonaitis",
+        "gimimo_metai": "1980-01-01",
+        "tautybe": "LT",
+        "kadencijos_pabaiga": "",
+        "atostogu_pabaiga": "",
+        "imone": "A",
+    }
+    resp = client.post("/vairuotojai/save", data=form, allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get("/api/vairuotojai")
+    data = resp.json()["data"]
+    assert len(data) == 1
+    assert data[0]["vardas"] == "Jonas"

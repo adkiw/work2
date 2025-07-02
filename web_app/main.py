@@ -46,6 +46,16 @@ EXPECTED_PRIEKABOS_COLUMNS = {
     "imone": "TEXT",
 }
 
+EXPECTED_VAIRUOTOJAI_COLUMNS = {
+    "vardas": "TEXT",
+    "pavarde": "TEXT",
+    "gimimo_metai": "TEXT",
+    "tautybe": "TEXT",
+    "kadencijos_pabaiga": "TEXT",
+    "atostogu_pabaiga": "TEXT",
+    "imone": "TEXT",
+}
+
 EXPECTED_DARBUOTOJAI_COLUMNS = {
     "vardas": "TEXT",
     "pavarde": "TEXT",
@@ -90,6 +100,7 @@ def ensure_columns(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
         "kroviniai": EXPECTED_KROVINIAI_COLUMNS,
         "vilkikai": EXPECTED_VILKIKAI_COLUMNS,
         "priekabos": EXPECTED_PRIEKABOS_COLUMNS,
+        "vairuotojai": EXPECTED_VAIRUOTOJAI_COLUMNS,
         "darbuotojai": EXPECTED_DARBUOTOJAI_COLUMNS,
         "grupes": EXPECTED_GRUPES_COLUMNS,
         "klientai": EXPECTED_KLIENTAI_COLUMNS,
@@ -366,6 +377,71 @@ def priekabos_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db
     cursor.execute("SELECT * FROM priekabos")
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(priekabos)")]
+    data = [dict(zip(columns, row)) for row in rows]
+    return {"data": data}
+
+
+# ---- Vairuotojai ----
+
+@app.get("/vairuotojai", response_class=HTMLResponse)
+def vairuotojai_list(request: Request):
+    return templates.TemplateResponse("vairuotojai_list.html", {"request": request})
+
+
+@app.get("/vairuotojai/add", response_class=HTMLResponse)
+def vairuotojai_add_form(request: Request):
+    return templates.TemplateResponse("vairuotojai_form.html", {"request": request, "data": {}})
+
+
+@app.get("/vairuotojai/{did}/edit", response_class=HTMLResponse)
+def vairuotojai_edit_form(did: int, request: Request, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    row = cursor.execute("SELECT * FROM vairuotojai WHERE id=?", (did,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vairuotojai)")]
+    data = dict(zip(columns, row))
+    return templates.TemplateResponse("vairuotojai_form.html", {"request": request, "data": data})
+
+
+@app.post("/vairuotojai/save")
+def vairuotojai_save(
+    request: Request,
+    did: int = Form(0),
+    vardas: str = Form(...),
+    pavarde: str = Form(""),
+    gimimo_metai: str = Form(""),
+    tautybe: str = Form(""),
+    kadencijos_pabaiga: str = Form(""),
+    atostogu_pabaiga: str = Form(""),
+    imone: str = Form(""),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    if did:
+        cursor.execute(
+            "UPDATE vairuotojai SET vardas=?, pavarde=?, gimimo_metai=?, tautybe=?, kadencijos_pabaiga=?, atostogu_pabaiga=?, imone=? WHERE id=?",
+            (vardas, pavarde, gimimo_metai, tautybe, kadencijos_pabaiga, atostogu_pabaiga, imone, did),
+        )
+        action = "update"
+    else:
+        cursor.execute(
+            "INSERT INTO vairuotojai (vardas, pavarde, gimimo_metai, tautybe, kadencijos_pabaiga, atostogu_pabaiga, imone) VALUES (?,?,?,?,?,?,?)",
+            (vardas, pavarde, gimimo_metai, tautybe, kadencijos_pabaiga, atostogu_pabaiga, imone),
+        )
+        did = cursor.lastrowid
+        action = "insert"
+    conn.commit()
+    log_action(conn, cursor, None, action, "vairuotojai", did)
+    return RedirectResponse("/vairuotojai", status_code=303)
+
+
+@app.get("/api/vairuotojai")
+def vairuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    conn, cursor = db
+    cursor.execute("SELECT * FROM vairuotojai")
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vairuotojai)")]
     data = [dict(zip(columns, row)) for row in rows]
     return {"data": data}
 

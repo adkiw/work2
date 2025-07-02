@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Vairuotojai</h2>
+<a href="/vairuotojai/add">Pridėti naują</a>
+<table id="drv-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Vardas</th>
+            <th>Pavardė</th>
+            <th>Tautybė</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+</table>
+<script>
+$(document).ready(function() {
+    $('#drv-table').DataTable({
+        ajax: '/api/vairuotojai',
+        columns: [
+            { data: 'id' },
+            { data: 'vardas' },
+            { data: 'pavarde' },
+            { data: 'tautybe' },
+            { data: null, render: function (data, type, row) {
+                return '<a href="/vairuotojai/' + row.id + '/edit">Edit</a>';
+            }}
+        ]
+    });
+});
+</script>
+{% endblock %}
