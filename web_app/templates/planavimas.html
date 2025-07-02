@@ -4,9 +4,14 @@
 <table id="plan-table" class="display" style="width:100%"></table>
 <script>
 $(document).ready(function() {
+    var $table = $('#plan-table');
     $.getJSON('/api/planavimas', function(resp) {
+        if (!resp.data || resp.data.length === 0) {
+            $table.replaceWith('<p>Šiuo laikotarpiu įrašų nėra</p>');
+            return;
+        }
         var cols = resp.columns.map(function(c) { return {data: c, title: c}; });
-        $('#plan-table').DataTable({
+        $table.DataTable({
             data: resp.data,
             columns: cols,
             ordering: false
