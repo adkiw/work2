@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form, HTTPException, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -1299,6 +1299,23 @@ def audit_api(
         df = df[df["table_name"] == table]
     data = df.to_dict(orient="records")
     return {"data": data}
+
+
+@app.get("/api/audit.csv")
+def audit_csv(
+    user: str | None = None,
+    table: str | None = None,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    df = fetch_logs(conn, cursor)
+    if user:
+        df = df[df["user"] == user]
+    if table:
+        df = df[df["table_name"] == table]
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=audit.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
 # ---- Updates ----

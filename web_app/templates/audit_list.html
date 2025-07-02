@@ -11,6 +11,7 @@
         <option value="">Visos</option>
     </select>
 </label>
+<button id="download-csv">Atsisiųsti CSV</button>
 <table id="audit-table" class="display" style="width:100%">
     <thead>
         <tr>
@@ -60,6 +61,16 @@ $(document).ready(function() {
 
     $('#user-filter, #table-filter').on('change', function() {
         table.ajax.reload();
+    });
+
+    $('#download-csv').on('click', function() {
+        const params = [];
+        const u = $('#user-filter').val();
+        const t = $('#table-filter').val();
+        if (u) params.push('user=' + encodeURIComponent(u));
+        if (t) params.push('table=' + encodeURIComponent(t));
+        const url = '/api/audit.csv' + (params.length ? '?' + params.join('&') : '');
+        window.location = url;
     });
 });
 </script>

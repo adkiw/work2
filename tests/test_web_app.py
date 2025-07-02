@@ -107,6 +107,11 @@ def test_audit_log_records_actions(tmp_path):
     assert row["action"] == "insert"
     assert "details" in row
 
+    resp = client.get("/api/audit.csv")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "table_name" in resp.text.splitlines()[0]
+
 
 def test_audit_multiple_modules(tmp_path):
     client = create_client(tmp_path)
