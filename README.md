@@ -31,7 +31,8 @@ Besides the Streamlit UI, the repository now provides an alternative FastAPI bas
 
    On Windows systems you can alternatively execute `start_work2_server.bat` to
    create the virtual environment (if missing), install dependencies and launch
-   the FastAPI interface automatically.
+   the FastAPI interface automatically. Linux users can run `start_work2_server.sh`
+   which performs the same steps using Bash.
 
 4. Alternatively you can run the FastAPI interface located in `web_app`:
    ```bash
