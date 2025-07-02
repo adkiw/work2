@@ -11,4 +11,4 @@ if [ ! -d venv ]; then
     fi
 fi
 
-./venv/bin/python -m uvicorn web_app.main:app --reload
+./venv/bin/python -m web_app
