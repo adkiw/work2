@@ -40,6 +40,12 @@ Besides the Streamlit UI, the repository now provides an alternative FastAPI bas
    ```
    This starts a local server on http://127.0.0.1:8000 without Streamlit.
 
+   The web application can also be executed directly as a module:
+   ```bash
+   python -m web_app
+   ```
+   which runs the same server using built-in defaults.
+
 5. To enable dark mode in the Streamlit UI, open the sidebar in the running app and choose **Dark** in the Theme selector.
 
 ## Naudojimas

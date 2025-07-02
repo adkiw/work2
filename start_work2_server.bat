@@ -10,5 +10,5 @@ if not exist venv (
     )
 )
 
-call venv\Scripts\python.exe -m uvicorn web_app.main:app --reload
+call venv\Scripts\python.exe -m web_app
 pause
