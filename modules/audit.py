@@ -2,7 +2,6 @@ import json
 from datetime import datetime
 
 import pandas as pd
-import streamlit as st
 
 
 def log_action(conn, c, user_id, action, table_name, record_id=None, details=None):
@@ -48,6 +47,8 @@ def fetch_logs(conn, c) -> pd.DataFrame:
 
 
 def show(conn, c):
+    import streamlit as st
+
     st.title("Audit log")
     df = fetch_logs(conn, c)
     if df.empty:
