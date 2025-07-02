@@ -577,6 +577,49 @@ def delete_trailer(
     return Response(status_code=204)
 
 
+@app.post("/trailer-specs", response_model=schemas.TrailerSpec)
+def create_trailer_spec(
+    spec: schemas.TrailerSpecCreate,
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    created = crud.create_trailer_spec(db, spec)
+    return created
+
+
+@app.get("/trailer-specs", response_model=list[schemas.TrailerSpec])
+def read_trailer_specs(
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    return crud.get_trailer_specs(db)
+
+
+@app.put("/trailer-specs/{spec_id}", response_model=schemas.TrailerSpec)
+def update_trailer_spec(
+    spec_id: int,
+    spec: schemas.TrailerSpecCreate,
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    updated = crud.update_trailer_spec(db, spec_id, spec)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return updated
+
+
+@app.delete("/trailer-specs/{spec_id}", status_code=204)
+def delete_trailer_spec(
+    spec_id: int,
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    ok = crud.delete_trailer_spec(db, spec_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return Response(status_code=204)
+
+
 @app.post("/audit", response_model=schemas.AuditLog)
 def create_audit_entry(
     log: schemas.AuditLogCreate,

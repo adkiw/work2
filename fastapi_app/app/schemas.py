@@ -167,3 +167,23 @@ class Trailer(TrailerBase):
     class Config:
         orm_mode = True
 
+
+class TrailerSpecBase(BaseModel):
+    tipas: str
+    ilgis: Optional[int] = None
+    plotis: Optional[int] = None
+    aukstis: Optional[int] = None
+    keliamoji_galia: Optional[int] = None
+    talpa: Optional[int] = None
+
+
+class TrailerSpecCreate(TrailerSpecBase):
+    pass
+
+
+class TrailerSpec(TrailerSpecBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
