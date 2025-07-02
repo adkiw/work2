@@ -1,6 +1,16 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Audit log</h2>
+<label>Naudotojas:
+    <select id="user-filter">
+        <option value="">Visi</option>
+    </select>
+</label>
+<label>Lentelė:
+    <select id="table-filter">
+        <option value="">Visos</option>
+    </select>
+</label>
 <table id="audit-table" class="display" style="width:100%">
     <thead>
         <tr>
@@ -16,8 +26,14 @@
 </table>
 <script>
 $(document).ready(function() {
-    $('#audit-table').DataTable({
-        ajax: '/api/audit',
+    const table = $('#audit-table').DataTable({
+        ajax: {
+            url: '/api/audit',
+            data: function(d) {
+                d.user = $('#user-filter').val();
+                d.table = $('#table-filter').val();
+            }
+        },
         order: [[5, 'desc']],
         columns: [
             { data: 'id' },
@@ -28,6 +44,22 @@ $(document).ready(function() {
             { data: 'timestamp' },
             { data: 'details' }
         ]
+    });
+
+    async function loadFilters() {
+        const resp = await fetch('/api/audit');
+        const data = await resp.json();
+        const users = [...new Set(data.data.map(r => r.user).filter(Boolean))];
+        const tables = [...new Set(data.data.map(r => r.table_name).filter(Boolean))];
+        const uSel = $('#user-filter');
+        const tSel = $('#table-filter');
+        users.forEach(u => uSel.append(`<option value="${u}">${u}</option>`));
+        tables.forEach(t => tSel.append(`<option value="${t}">${t}</option>`));
+    }
+    loadFilters();
+
+    $('#user-filter, #table-filter').on('change', function() {
+        table.ajax.reload();
     });
 });
 </script>

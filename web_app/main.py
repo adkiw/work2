@@ -23,6 +23,11 @@ app.add_middleware(
     SessionMiddleware, secret_key=os.getenv("WEBAPP_SECRET", "devsecret")
 )
 
+
+def ensure_logged_in(request: Request) -> bool:
+    """Return True if the current session is authenticated."""
+    return bool(request.session.get("user_id"))
+
 app.mount("/static", StaticFiles(directory="web_app/static"), name="static")
 templates = Jinja2Templates(directory="web_app/templates")
 
@@ -1275,13 +1280,23 @@ def registracijos_delete(
 
 @app.get("/audit", response_class=HTMLResponse)
 def audit_list(request: Request):
+    if not ensure_logged_in(request):
+        return RedirectResponse("/login")
     return templates.TemplateResponse("audit_list.html", {"request": request})
 
 
 @app.get("/api/audit")
-def audit_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def audit_api(
+    user: str | None = None,
+    table: str | None = None,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
     df = fetch_logs(conn, cursor)
+    if user:
+        df = df[df["user"] == user]
+    if table:
+        df = df[df["table_name"] == table]
     data = df.to_dict(orient="records")
     return {"data": data}
 
