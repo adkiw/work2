@@ -497,6 +497,63 @@ def get_groups(db: Session, tenant_id: UUID) -> list[models.Group]:
     )
 
 
+def create_employee(db: Session, tenant_id: UUID, data: schemas.EmployeeCreate) -> models.Employee:
+    emp = models.Employee(
+        tenant_id=tenant_id,
+        vardas=data.vardas,
+        pavarde=data.pavarde,
+        pareigybe=data.pareigybe,
+        el_pastas=data.el_pastas,
+        telefonas=data.telefonas,
+        grupe=data.grupe,
+        aktyvus=1 if data.aktyvus else 0,
+    )
+    db.add(emp)
+    db.commit()
+    db.refresh(emp)
+    return emp
+
+
+def update_employee(db: Session, tenant_id: UUID, emp_id: int, data: schemas.EmployeeCreate) -> models.Employee | None:
+    emp = (
+        db.query(models.Employee)
+        .filter(models.Employee.id == emp_id, models.Employee.tenant_id == tenant_id)
+        .first()
+    )
+    if not emp:
+        return None
+    for field, value in data.dict().items():
+        if field == "aktyvus":
+            setattr(emp, field, 1 if value else 0)
+        else:
+            setattr(emp, field, value)
+    db.commit()
+    db.refresh(emp)
+    return emp
+
+
+def delete_employee(db: Session, tenant_id: UUID, emp_id: int) -> bool:
+    emp = (
+        db.query(models.Employee)
+        .filter(models.Employee.id == emp_id, models.Employee.tenant_id == tenant_id)
+        .first()
+    )
+    if not emp:
+        return False
+    db.delete(emp)
+    db.commit()
+    return True
+
+
+def get_employees(db: Session, tenant_id: UUID) -> list[models.Employee]:
+    return (
+        db.query(models.Employee)
+        .filter(models.Employee.tenant_id == tenant_id)
+        .order_by(models.Employee.id.desc())
+        .all()
+    )
+
+
 def create_update(db: Session, tenant_id: UUID, data: schemas.UpdateCreate) -> models.UpdateEntry:
     entry = models.UpdateEntry(tenant_id=tenant_id, **data.dict())
     db.add(entry)

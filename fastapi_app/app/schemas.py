@@ -256,6 +256,28 @@ class Group(GroupBase):
         orm_mode = True
 
 
+class EmployeeBase(BaseModel):
+    vardas: str
+    pavarde: str
+    pareigybe: Optional[str] = None
+    el_pastas: Optional[str] = None
+    telefonas: Optional[str] = None
+    grupe: Optional[str] = None
+    aktyvus: Optional[bool] = True
+
+
+class EmployeeCreate(EmployeeBase):
+    pass
+
+
+class Employee(EmployeeBase):
+    id: int
+    tenant_id: UUID
+
+    class Config:
+        orm_mode = True
+
+
 class UpdateBase(BaseModel):
     vilkiko_numeris: str
     data: str

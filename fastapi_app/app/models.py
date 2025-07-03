@@ -195,6 +195,23 @@ class Group(Base):
     tenant = relationship("Tenant")
 
 
+class Employee(Base):
+    """Darbuotojo įrašas"""
+
+    __tablename__ = "employees"
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    vardas = Column(String, nullable=False)
+    pavarde = Column(String, nullable=False)
+    pareigybe = Column(String)
+    el_pastas = Column(String)
+    telefonas = Column(String)
+    grupe = Column(String)
+    aktyvus = Column(Integer, default=1)
+
+    tenant = relationship("Tenant")
+
+
 class UpdateEntry(Base):
     """Vilkikų darbo laiko įrašai"""
 
