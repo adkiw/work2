@@ -1804,6 +1804,22 @@ def aktyvus_api(
     return {"data": data}
 
 
+@app.get("/api/aktyvus.csv")
+def aktyvus_csv(
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
+):
+    """Aktyvių naudotojų sąrašas CSV formatu."""
+    conn, cursor = db
+    rows = cursor.execute(
+        "SELECT username, imone, last_login FROM users WHERE aktyvus=1 ORDER BY imone, username"
+    ).fetchall()
+    df = pd.DataFrame(rows, columns=["username", "imone", "last_login"])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=aktyvus.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 @app.get("/registracijos/{uid}/approve")
 def registracijos_approve(
     uid: int,

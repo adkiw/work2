@@ -491,3 +491,21 @@ def test_eu_countries(tmp_path):
     data = resp.json()["data"]
     assert any(c["code"] == "LT" for c in data)
 
+
+def test_active_users_csv(tmp_path):
+    client = create_client(tmp_path)
+    db_path = tmp_path / "app.db"
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO users (username, password_hash, aktyvus) VALUES (?,?,1)",
+        ("x@a.com", auth_utils.hash_password("x")),
+    )
+    conn.commit()
+    conn.close()
+
+    resp = client.get("/api/aktyvus.csv")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "username" in resp.text.splitlines()[0]
+
