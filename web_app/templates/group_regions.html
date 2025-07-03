@@ -25,27 +25,35 @@
 </form>
 <script>
 $(document).ready(function() {
-    const table = $('#region-table').DataTable({
-        ajax: {
-            url: '/api/group-regions',
-            data: function(d){ d.gid = $('#grupe-select').val(); }
-        },
-        columns: [
-            { data: 'id' },
-            { data: 'regiono_kodas' },
-            { data: null, render: function(data,type,row){
-                const gid = $('#grupe-select').val();
-                return `<a href="/group-regions/${row.id}/delete?gid=${gid}">Šalinti</a>`;
-            }}
-        ]
-    });
+    let table;
+    function initTable(){
+        table = $('#region-table').DataTable({
+            ajax: {
+                url: '/api/group-regions',
+                data: function(d){ d.gid = $('#grupe-select').val(); }
+            },
+            columns: [
+                { data: 'id' },
+                { data: 'regiono_kodas' },
+                { data: null, render: function(data,type,row){
+                    const gid = $('#grupe-select').val();
+                    return `<a href="/group-regions/${row.id}/delete?gid=${gid}">Šalinti</a>`;
+                }}
+            ]
+        });
+    }
     async function loadGroups(){
         const resp = await fetch('/api/grupes');
         const data = await resp.json();
         const sel = $('#grupe-select');
         sel.empty();
         data.data.forEach(g => sel.append(`<option value="${g.id}">${g.numeris}</option>`));
-        sel.trigger('change');
+        $('#grupe-id-input').val(sel.val());
+        if(!table){
+            initTable();
+        } else {
+            table.ajax.reload();
+        }
     }
     $('#grupe-select').on('change', function(){
         $('#grupe-id-input').val($(this).val());
