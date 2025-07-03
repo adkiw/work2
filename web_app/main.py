@@ -2274,6 +2274,32 @@ def registracijos_api(
     return {"data": data}
 
 
+@app.get("/api/registracijos.csv")
+def registracijos_csv(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
+):
+    """Laukiančių registracijų sąrašas CSV formatu."""
+    conn, cursor = db
+    if user_has_role(request, cursor, Role.ADMIN):
+        rows = cursor.execute(
+            "SELECT id, username, imone, vardas, pavarde, pareigybe, grupe FROM users WHERE aktyvus=0"
+        ).fetchall()
+    else:
+        rows = cursor.execute(
+            "SELECT id, username, imone, vardas, pavarde, pareigybe, grupe FROM users WHERE aktyvus=0 AND imone=?",
+            (request.session.get("imone"),),
+        ).fetchall()
+    df = pd.DataFrame(
+        rows,
+        columns=["id", "username", "imone", "vardas", "pavarde", "pareigybe", "grupe"],
+    )
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=registracijos.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 @app.get("/api/aktyvus")
 def aktyvus_api(
     request: Request,
