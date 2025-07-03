@@ -48,6 +48,19 @@ def verify_user(conn, c, username: str, password: str):
     return (None, None)
 
 
+def get_user_roles(c, user_id: int) -> list[str]:
+    """Grąžina vartotojui priskirtų rolių sąrašą."""
+    c.execute(
+        """
+        SELECT r.name FROM user_roles ur
+        JOIN roles r ON ur.role_id = r.id
+        WHERE ur.user_id = ?
+        """,
+        (user_id,),
+    )
+    return [row[0] for row in c.fetchall()]
+
+
 def has_role(conn, c, role: Role) -> bool:
     if "user_id" not in st.session_state:
         return False

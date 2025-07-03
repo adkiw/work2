@@ -11,7 +11,7 @@ import sqlite3
 from typing import Generator
 from db import init_db
 from modules.audit import log_action, fetch_logs
-from modules.login import assign_role, verify_user
+from modules.login import assign_role, verify_user, get_user_roles
 from modules.auth_utils import hash_password
 from modules.roles import Role
 from modules.constants import EU_COUNTRIES
@@ -41,6 +41,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         if not ensure_logged_in(request):
             return RedirectResponse("/login")
+        if "roles" not in request.session:
+            conn, cursor = init_db()
+            request.session["roles"] = get_user_roles(cursor, request.session.get("user_id"))
+            conn.close()
         return await call_next(request)
 
 
@@ -2856,6 +2860,7 @@ def login_submit(
         request.session["user_id"] = user_id
         request.session["username"] = username
         request.session["imone"] = imone
+        request.session["roles"] = get_user_roles(cursor, user_id)
         return RedirectResponse("/", status_code=303)
     return templates.TemplateResponse(
         "login.html",
