@@ -341,6 +341,7 @@ def init_db(db_path: str | None = None):
             vardas     TEXT,
             pavarde    TEXT,
             pareigybe  TEXT,
+            grupe      TEXT,
             aktyvus    INTEGER DEFAULT 0,
             last_login TEXT
         )
@@ -363,6 +364,9 @@ def init_db(db_path: str | None = None):
         conn.commit()
     if "pareigybe" not in existing_cols:
         c.execute("ALTER TABLE users ADD COLUMN pareigybe TEXT")
+        conn.commit()
+    if "grupe" not in existing_cols:
+        c.execute("ALTER TABLE users ADD COLUMN grupe TEXT")
         conn.commit()
     if "last_login" not in existing_cols:
         c.execute("ALTER TABLE users ADD COLUMN last_login TEXT")

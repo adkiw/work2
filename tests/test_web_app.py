@@ -399,8 +399,8 @@ def test_user_admin_approve(tmp_path):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     c.execute(
-        "INSERT INTO users (username, password_hash, imone, vardas, pavarde, pareigybe, aktyvus) VALUES (?,?,?,?,?,?,0)",
-        ("u@a.com", "x", "A", "User", "Test", "Mgr"),
+        "INSERT INTO users (username, password_hash, imone, vardas, pavarde, pareigybe, grupe, aktyvus) VALUES (?,?,?,?,?,?,?,0)",
+        ("u@a.com", "x", "A", "User", "Test", "Mgr", "G1"),
     )
     uid = c.lastrowid
     conn.commit()
