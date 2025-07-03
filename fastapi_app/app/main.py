@@ -856,6 +856,91 @@ def delete_group_api(
     return Response(status_code=204)
 
 
+@app.post("/{tenant_id}/employees", response_model=schemas.Employee)
+def create_employee_api(
+    tenant_id: str,
+    emp: schemas.EmployeeCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    created = crud.create_employee(db, UUID(tenant_id), emp)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="create",
+            table_name="employees",
+            record_id=str(created.id),
+            details=emp.dict(),
+        ),
+    )
+    return created
+
+
+@app.get("/{tenant_id}/employees", response_model=list[schemas.Employee])
+def read_employees_api(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return crud.get_employees(db, UUID(tenant_id))
+
+
+@app.put("/{tenant_id}/employees/{emp_id}", response_model=schemas.Employee)
+def update_employee_api(
+    tenant_id: str,
+    emp_id: int,
+    emp: schemas.EmployeeCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    updated = crud.update_employee(db, UUID(tenant_id), emp_id, emp)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="update",
+            table_name="employees",
+            record_id=str(emp_id),
+            details=emp.dict(),
+        ),
+    )
+    return updated
+
+
+@app.delete("/{tenant_id}/employees/{emp_id}", status_code=204)
+def delete_employee_api(
+    tenant_id: str,
+    emp_id: int,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    ok = crud.delete_employee(db, UUID(tenant_id), emp_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="delete",
+            table_name="employees",
+            record_id=str(emp_id),
+            details=None,
+        ),
+    )
+    return Response(status_code=204)
+
+
 @app.post("/{tenant_id}/updates", response_model=schemas.Update)
 def create_update_api(
     tenant_id: str,
