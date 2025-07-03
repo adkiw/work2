@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Priekabų priskyrimas</h2>
+<form method="post">
+    <label>Vilkikas:
+        <select name="vilkikas">
+        {% for num, cur in trucks %}
+            <option value="{{ num }}">{{ num }}</option>
+        {% endfor %}
+        </select>
+    </label>
+    <br>
+    <label>Priekaba:
+        <select name="priekaba">
+            <option value="">--nepriskirta--</option>
+            {% for num, assigned in trailers %}
+                {% if assigned %}
+                    <option value="{{ num }}">{{ num }} ({{ assigned }})</option>
+                {% else %}
+                    <option value="{{ num }}">{{ num }} (laisva)</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </label>
+    <br>
+    <button type="submit">Išsaugoti</button>
+</form>
+{% endblock %}

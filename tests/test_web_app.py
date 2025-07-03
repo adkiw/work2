@@ -533,7 +533,10 @@ def test_group_regions(tmp_path):
     db_path = tmp_path / "app.db"
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
-    c.execute("INSERT INTO grupes (numeris, pavadinimas, imone) VALUES (?,?,?)", ("TR1", "TR1", "A"))
+    c.execute(
+        "INSERT INTO grupes (numeris, pavadinimas, imone) VALUES (?,?,?)",
+        ("TR1", "TR1", "A"),
+    )
     gid = c.lastrowid
     conn.commit()
     conn.close()
@@ -562,3 +565,49 @@ def test_group_regions(tmp_path):
     assert resp.headers["content-type"].startswith("text/csv")
     assert "regiono_kodas" in resp.text.splitlines()[0]
 
+
+def test_trailer_swap(tmp_path):
+    client = create_client(tmp_path)
+    trailer1 = {
+        "pid": "0",
+        "priekabu_tipas": "Tipas",
+        "numeris": "TR1",
+        "marke": "X",
+        "pagaminimo_metai": "2020",
+        "tech_apziura": "2023-01-01",
+        "draudimas": "2023-01-01",
+        "imone": "A",
+    }
+    trailer2 = trailer1.copy()
+    trailer2["numeris"] = "TR2"
+    client.post("/priekabos/save", data=trailer1, allow_redirects=False)
+    client.post("/priekabos/save", data=trailer2, allow_redirects=False)
+
+    truck1 = {
+        "vid": "0",
+        "numeris": "AAA111",
+        "marke": "MAN",
+        "pagaminimo_metai": "2020",
+        "tech_apziura": "2023-01-01",
+        "vadybininkas": "",
+        "vairuotojai": "",
+        "priekaba": "TR1",
+        "imone": "A",
+    }
+    truck2 = truck1.copy()
+    truck2["numeris"] = "BBB222"
+    truck2["priekaba"] = ""
+    client.post("/vilkikai/save", data=truck1, allow_redirects=False)
+    client.post("/vilkikai/save", data=truck2, allow_redirects=False)
+
+    resp = client.post(
+        "/trailer-swap",
+        data={"vilkikas": "BBB222", "priekaba": "TR1"},
+        allow_redirects=False,
+    )
+    assert resp.status_code == 303
+
+    resp = client.get("/api/vilkikai")
+    data = {row["numeris"]: row for row in resp.json()["data"]}
+    assert data["AAA111"]["priekaba"] == ""
+    assert data["BBB222"]["priekaba"] == "TR1"
