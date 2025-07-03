@@ -36,10 +36,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        if (
-            path.startswith("/static")
-            or path in {"/login", "/register", "/health"}
-        ):
+        if path.startswith("/static") or path in {"/login", "/register", "/health"}:
             return await call_next(request)
         if not ensure_logged_in(request):
             return RedirectResponse("/login")
@@ -57,6 +54,7 @@ def ensure_logged_in(request: Request) -> bool:
     """Return True if the current session is authenticated."""
     return bool(request.session.get("user_id"))
 
+
 app.mount("/static", StaticFiles(directory="web_app/static"), name="static")
 templates = Jinja2Templates(directory="web_app/templates")
 
@@ -65,11 +63,7 @@ templates = Jinja2Templates(directory="web_app/templates")
 def eu_countries():
     """Grąžina Europos šalių sąrašą."""
     return {
-        "data": [
-            {"name": name, "code": code}
-            for name, code in EU_COUNTRIES
-            if name
-        ]
+        "data": [{"name": name, "code": code} for name, code in EU_COUNTRIES if name]
     }
 
 
@@ -242,9 +236,13 @@ def ensure_columns(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> None:
     conn.commit()
 
 
-def compute_limits(cursor: sqlite3.Cursor, vat: str, coface: float) -> tuple[float, float]:
+def compute_limits(
+    cursor: sqlite3.Cursor, vat: str, coface: float
+) -> tuple[float, float]:
     """Return (musu_limitas, likes_limitas) for given VAT."""
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='kroviniai'")
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='kroviniai'"
+    )
     if cursor.fetchone():
         r = cursor.execute(
             """
@@ -319,8 +317,12 @@ def kroviniai_add_form(
 ):
     conn, cursor = db
     if user_has_role(request, cursor, Role.ADMIN):
-        klientai = [r[0] for r in cursor.execute("SELECT pavadinimas FROM klientai").fetchall()]
-        vilkikai = [r[0] for r in cursor.execute("SELECT numeris FROM vilkikai").fetchall()]
+        klientai = [
+            r[0] for r in cursor.execute("SELECT pavadinimas FROM klientai").fetchall()
+        ]
+        vilkikai = [
+            r[0] for r in cursor.execute("SELECT numeris FROM vilkikai").fetchall()
+        ]
         eksped_rows = cursor.execute(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
             ("Ekspedicijos vadybininkas",),
@@ -366,15 +368,18 @@ def kroviniai_edit_form(
 ):
     conn, cursor = db
 
-
     row = cursor.execute("SELECT * FROM kroviniai WHERE id=?", (cid,)).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(kroviniai)")]
     data = dict(zip(columns, row))
     if user_has_role(request, cursor, Role.ADMIN):
-        klientai = [r[0] for r in cursor.execute("SELECT pavadinimas FROM klientai").fetchall()]
-        vilkikai = [r[0] for r in cursor.execute("SELECT numeris FROM vilkikai").fetchall()]
+        klientai = [
+            r[0] for r in cursor.execute("SELECT pavadinimas FROM klientai").fetchall()
+        ]
+        vilkikai = [
+            r[0] for r in cursor.execute("SELECT numeris FROM vilkikai").fetchall()
+        ]
         eksped_rows = cursor.execute(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
             ("Ekspedicijos vadybininkas",),
@@ -729,8 +734,12 @@ def vilkikai_add_form(
 ):
     conn, cursor = db
     if user_has_role(request, cursor, Role.ADMIN):
-        trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
-        vair_rows = cursor.execute("SELECT id, vardas, pavarde FROM vairuotojai").fetchall()
+        trailers = [
+            r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()
+        ]
+        vair_rows = cursor.execute(
+            "SELECT id, vardas, pavarde FROM vairuotojai"
+        ).fetchall()
         vadyb_rows = cursor.execute(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
             ("Transporto vadybininkas",),
@@ -752,7 +761,12 @@ def vilkikai_add_form(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=? AND imone=?",
             ("Transporto vadybininkas", imone),
         ).fetchall()
-    markes = [r[0] for r in cursor.execute("SELECT reiksme FROM lookup WHERE kategorija='Markė'").fetchall()]
+    markes = [
+        r[0]
+        for r in cursor.execute(
+            "SELECT reiksme FROM lookup WHERE kategorija='Markė'"
+        ).fetchall()
+    ]
     vairuotojai = [f"{r[1]} {r[2]}" for r in vair_rows]
     vadybininkai = [f"{r[0]} {r[1]}" for r in vadyb_rows]
     context = {
@@ -782,8 +796,12 @@ def vilkikai_edit_form(
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkikai)")]
     data = dict(zip(columns, row))
     if user_has_role(request, cursor, Role.ADMIN):
-        trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
-        vair_rows = cursor.execute("SELECT id, vardas, pavarde FROM vairuotojai").fetchall()
+        trailers = [
+            r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()
+        ]
+        vair_rows = cursor.execute(
+            "SELECT id, vardas, pavarde FROM vairuotojai"
+        ).fetchall()
         vadyb_rows = cursor.execute(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
             ("Transporto vadybininkas",),
@@ -805,7 +823,12 @@ def vilkikai_edit_form(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=? AND imone=?",
             ("Transporto vadybininkas", imone),
         ).fetchall()
-    markes = [r[0] for r in cursor.execute("SELECT reiksme FROM lookup WHERE kategorija='Markė'").fetchall()]
+    markes = [
+        r[0]
+        for r in cursor.execute(
+            "SELECT reiksme FROM lookup WHERE kategorija='Markė'"
+        ).fetchall()
+    ]
     vairuotojai = [f"{r[1]} {r[2]}" for r in vair_rows]
     vadybininkai = [f"{r[0]} {r[1]}" for r in vadyb_rows]
     drv1 = ""
@@ -932,7 +955,118 @@ def vilkikai_csv(
     df = pd.DataFrame(rows, columns=columns)
     csv_data = df.to_csv(index=False)
     headers = {"Content-Disposition": "attachment; filename=vilkikai.csv"}
-    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
+# ---- Priekabų priskyrimas ----
+
+
+@app.get("/trailer-swap", response_class=HTMLResponse)
+def trailer_swap_form(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    is_admin = user_has_role(request, cursor, Role.ADMIN)
+    if is_admin:
+        cursor.execute("SELECT numeris, priekaba FROM vilkikai ORDER BY numeris")
+    else:
+        cursor.execute(
+            "SELECT numeris, priekaba FROM vilkikai WHERE imone=? ORDER BY numeris",
+            (request.session.get("imone"),),
+        )
+    trucks = cursor.fetchall()
+    if is_admin:
+        cursor.execute("SELECT numeris FROM priekabos ORDER BY numeris")
+    else:
+        cursor.execute(
+            "SELECT numeris FROM priekabos WHERE imone=? ORDER BY numeris",
+            (request.session.get("imone"),),
+        )
+    trailers = [r[0] for r in cursor.fetchall()]
+    trailer_info: list[tuple[str, str | None]] = []
+    for num in trailers:
+        if is_admin:
+            cursor.execute(
+                "SELECT numeris FROM vilkikai WHERE priekaba=?",
+                (num,),
+            )
+        else:
+            cursor.execute(
+                "SELECT numeris FROM vilkikai WHERE priekaba=? AND imone=?",
+                (num, request.session.get("imone")),
+            )
+        row = cursor.fetchone()
+        assigned = row[0] if row and row[0] else None
+        trailer_info.append((num, assigned))
+    context = {
+        "request": request,
+        "trucks": trucks,
+        "trailers": trailer_info,
+    }
+    return templates.TemplateResponse("trailer_swap.html", context)
+
+
+@app.post("/trailer-swap")
+def trailer_swap(
+    request: Request,
+    vilkikas: str = Form(...),
+    priekaba: str = Form(""),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    is_admin = user_has_role(request, cursor, Role.ADMIN)
+    params = (vilkikas,) if is_admin else (vilkikas, request.session.get("imone"))
+    cursor.execute(
+        "SELECT id, priekaba FROM vilkikai WHERE numeris=?"
+        + ("" if is_admin else " AND imone=?"),
+        params,
+    )
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Vilkikas nerastas")
+    vid, cur_trailer = row[0], row[1] or ""
+    if priekaba:
+        params2 = (priekaba,) if is_admin else (priekaba, request.session.get("imone"))
+        cursor.execute(
+            "SELECT id, numeris FROM vilkikai WHERE priekaba=?"
+            + ("" if is_admin else " AND imone=?"),
+            params2,
+        )
+        other = cursor.fetchone()
+        other_id = other[0] if other else None
+        other_num = other[1] if other else None
+    else:
+        other_id = None
+        other_num = None
+
+    if other_id and other_num != vilkikas:
+        params3 = (
+            (cur_trailer or "", other_num)
+            if is_admin
+            else (cur_trailer or "", other_num, request.session.get("imone"))
+        )
+        cursor.execute(
+            "UPDATE vilkikai SET priekaba=? WHERE numeris=?"
+            + ("" if is_admin else " AND imone=?"),
+            params3,
+        )
+        log_action(
+            conn, cursor, request.session.get("user_id"), "update", "vilkikai", other_id
+        )
+
+    params4 = (
+        (priekaba or "", vilkikas)
+        if is_admin
+        else (priekaba or "", vilkikas, request.session.get("imone"))
+    )
+    cursor.execute(
+        "UPDATE vilkikai SET priekaba=? WHERE numeris=?"
+        + ("" if is_admin else " AND imone=?"),
+        params4,
+    )
+    conn.commit()
+    log_action(conn, cursor, request.session.get("user_id"), "update", "vilkikai", vid)
+    return RedirectResponse("/trailer-swap", status_code=303)
 
 
 # ---- Priekabos ----
@@ -1463,12 +1597,21 @@ def group_regions_delete(
     cursor.execute("DELETE FROM grupiu_regionai WHERE id=?", (rid,))
     conn.commit()
     if request:
-        log_action(conn, cursor, request.session.get("user_id"), "delete", "grupiu_regionai", rid)
+        log_action(
+            conn,
+            cursor,
+            request.session.get("user_id"),
+            "delete",
+            "grupiu_regionai",
+            rid,
+        )
     return RedirectResponse(f"/group-regions?gid={gid}", status_code=303)
 
 
 @app.get("/api/group-regions")
-def group_regions_api(gid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def group_regions_api(
+    gid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
+):
     conn, cursor = db
     cursor.execute(
         "SELECT id, regiono_kodas FROM grupiu_regionai WHERE grupe_id=? ORDER BY regiono_kodas",
@@ -1480,7 +1623,9 @@ def group_regions_api(gid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = 
 
 
 @app.get("/api/group-regions.csv")
-def group_regions_csv(gid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def group_regions_csv(
+    gid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
+):
     conn, cursor = db
     cursor.execute(
         "SELECT id, regiono_kodas FROM grupiu_regionai WHERE grupe_id=? ORDER BY regiono_kodas",
@@ -1748,7 +1893,9 @@ def trailer_types_api(
 ):
     conn, cursor = db
     if user_has_role(request, cursor, Role.ADMIN):
-        cursor.execute("SELECT id, reiksme FROM lookup WHERE kategorija='Priekabos tipas'")
+        cursor.execute(
+            "SELECT id, reiksme FROM lookup WHERE kategorija='Priekabos tipas'"
+        )
     else:
         imone = request.session.get("imone", "")
         cursor.execute(
@@ -1848,7 +1995,9 @@ def trailer_specs_save(
         sid = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, request.session.get("user_id"), action, "trailer_specs", sid)
+    log_action(
+        conn, cursor, request.session.get("user_id"), action, "trailer_specs", sid
+    )
     return RedirectResponse("/trailer-specs", status_code=303)
 
 
@@ -1936,7 +2085,14 @@ async def settings_save(
             (imone, val, pr),
         )
     conn.commit()
-    log_action(conn, cursor, request.session.get("user_id"), "update", "company_default_trailers", 0)
+    log_action(
+        conn,
+        cursor,
+        request.session.get("user_id"),
+        "update",
+        "company_default_trailers",
+        0,
+    )
     return RedirectResponse("/settings", status_code=303)
 
 
@@ -2106,7 +2262,14 @@ def registracijos_approve(
     )
     conn.commit()
     log_action(conn, cursor, request.session.get("user_id"), "approve", "users", uid)
-    log_action(conn, cursor, request.session.get("user_id"), "create", "darbuotojai", cursor.lastrowid)
+    log_action(
+        conn,
+        cursor,
+        request.session.get("user_id"),
+        "create",
+        "darbuotojai",
+        cursor.lastrowid,
+    )
     return RedirectResponse("/registracijos", status_code=303)
 
 
@@ -2130,8 +2293,17 @@ def registracijos_approve_admin(
         (row[3], row[4], row[5], row[1], row[6], row[2]),
     )
     conn.commit()
-    log_action(conn, cursor, request.session.get("user_id"), "approve_admin", "users", uid)
-    log_action(conn, cursor, request.session.get("user_id"), "create_admin", "darbuotojai", cursor.lastrowid)
+    log_action(
+        conn, cursor, request.session.get("user_id"), "approve_admin", "users", uid
+    )
+    log_action(
+        conn,
+        cursor,
+        request.session.get("user_id"),
+        "create_admin",
+        "darbuotojai",
+        cursor.lastrowid,
+    )
     return RedirectResponse("/registracijos", status_code=303)
 
 
@@ -2268,7 +2440,11 @@ def updates_save(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
-    now_str = datetime.datetime.now().replace(second=0, microsecond=0).isoformat(timespec="minutes")
+    now_str = (
+        datetime.datetime.now()
+        .replace(second=0, microsecond=0)
+        .isoformat(timespec="minutes")
+    )
     if uid:
         cursor.execute(
             "UPDATE vilkiku_darbo_laikai SET vilkiko_numeris=?, data=?, sa=?, darbo_laikas=?, likes_laikas=?, pakrovimo_statusas=?, pakrovimo_laikas=?, pakrovimo_data=?, iskrovimo_statusas=?, iskrovimo_laikas=?, iskrovimo_data=?, komentaras=?, created_at=? WHERE id=?",
@@ -2312,7 +2488,14 @@ def updates_save(
         uid = cursor.lastrowid
         action = "insert"
     conn.commit()
-    log_action(conn, cursor, request.session.get("user_id"), action, "vilkiku_darbo_laikai", uid)
+    log_action(
+        conn,
+        cursor,
+        request.session.get("user_id"),
+        action,
+        "vilkiku_darbo_laikai",
+        uid,
+    )
     return RedirectResponse("/updates", status_code=303)
 
 
@@ -2333,7 +2516,9 @@ def updates_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db))
     conn, cursor = db
     cursor.execute("SELECT * FROM vilkiku_darbo_laikai")
     rows = cursor.fetchall()
-    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")]
+    columns = [
+        col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")
+    ]
     df = pd.DataFrame(rows, columns=columns)
     csv_data = df.to_csv(index=False)
     headers = {"Content-Disposition": "attachment; filename=updates.csv"}
@@ -2412,7 +2597,14 @@ def register_submit(
         (username, pw_hash, imone or None, vardas, pavarde, pareigybe, grupe),
     )
     conn.commit()
-    log_action(conn, cursor, request.session.get("user_id"), "register", "users", cursor.lastrowid)
+    log_action(
+        conn,
+        cursor,
+        request.session.get("user_id"),
+        "register",
+        "users",
+        cursor.lastrowid,
+    )
     return templates.TemplateResponse(
         "register.html",
         {"request": request, "error": None, "msg": "Parai\u0161ka pateikta"},
@@ -2422,4 +2614,3 @@ def register_submit(
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
