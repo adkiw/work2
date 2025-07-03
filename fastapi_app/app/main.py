@@ -1058,6 +1058,47 @@ def groups_csv(
     return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
+@app.post("/{tenant_id}/groups/{group_id}/regions", response_model=schemas.GroupRegion)
+def add_group_region_api(
+    tenant_id: str,
+    group_id: int,
+    data: schemas.GroupRegionCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    region = crud.create_group_region(db, UUID(tenant_id), group_id, data.region_code)
+    return region
+
+
+@app.get("/{tenant_id}/groups/{group_id}/regions", response_model=list[schemas.GroupRegion])
+def list_group_regions_api(
+    tenant_id: str,
+    group_id: int,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return crud.get_group_regions(db, UUID(tenant_id), group_id)
+
+
+@app.delete("/{tenant_id}/group-regions/{region_id}", status_code=204)
+def delete_group_region_api(
+    tenant_id: str,
+    region_id: int,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    ok = crud.delete_group_region(db, UUID(tenant_id), region_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return Response(status_code=204)
+
+
 @app.post("/{tenant_id}/employees", response_model=schemas.Employee)
 def create_employee_api(
     tenant_id: str,
