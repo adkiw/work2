@@ -482,3 +482,12 @@ def test_klientai_limits(tmp_path):
     row = data[0]
     assert row["musu_limitas"] == 300
     assert row["likes_limitas"] == 300
+
+
+def test_eu_countries(tmp_path):
+    client = create_client(tmp_path)
+    resp = client.get("/api/eu-countries")
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert any(c["code"] == "LT" for c in data)
+

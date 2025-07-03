@@ -61,6 +61,18 @@ app.mount("/static", StaticFiles(directory="web_app/static"), name="static")
 templates = Jinja2Templates(directory="web_app/templates")
 
 
+@app.get("/api/eu-countries")
+def eu_countries():
+    """Grąžina Europos šalių sąrašą."""
+    return {
+        "data": [
+            {"name": name, "code": code}
+            for name, code in EU_COUNTRIES
+            if name
+        ]
+    }
+
+
 def table_csv_response(cursor: sqlite3.Cursor, table: str, filename: str) -> Response:
     """Sukurti CSV atsakymą visos lentelės duomenims."""
     cursor.execute(f"SELECT * FROM {table}")
