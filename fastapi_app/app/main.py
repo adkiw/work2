@@ -1600,3 +1600,9 @@ def read_roles_csv(db: Session = Depends(auth.get_db)):
     csv_data = df.to_csv(index=False)
     headers = {"Content-Disposition": "attachment; filename=roles.csv"}
     return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    """Paprasta sveikatos patikra."""
+    return {"status": "ok"}

@@ -81,6 +81,7 @@ defines this variable before starting the API; otherwise the application will
 fail to start.
 
 The API exposes endpoints for user creation and JWT-based login.
+You can quickly verify that the server is running by requesting the `/health` endpoint which returns `{"status": "ok"}`.
 
 ### Login rate limiting
 
