@@ -38,10 +38,17 @@ function loadTable(mgr){
             { data: 'id' },
             { data: 'vilkikas' },
             { data: 'pakrovimo_data' },
-            { data: 'iskrovimo_data' },
+            { data: 'sa' },
+            { data: 'darbo_laikas', render: function(d){ return formatTime(d); } },
+            { data: 'likes_laikas', render: function(d){ return formatTime(d); } },
+            { data: 'pakrovimo_data_plan' },
+            { data: 'pakrovimo_laikas', render: function(d){ return formatTime(d); } },
             { data: 'pakrovimo_statusas' },
+            { data: 'iskrovimo_data_plan' },
+            { data: 'iskrovimo_laikas', render: function(d){ return formatTime(d); } },
             { data: 'iskrovimo_statusas' },
-            { data: 'created_at', render: function(d){return relativeTime(d);} },
+            { data: 'komentaras' },
+            { data: 'created_at', render: function(d){ return relativeTime(d); } },
             { data: null, render: function(data, type, row){
                 return '<a href="/updates/ship/' + row.id + '">Edit</a>';
             }}
