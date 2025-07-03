@@ -1078,9 +1078,33 @@ def priekabos_list(request: Request):
 
 
 @app.get("/priekabos/add", response_class=HTMLResponse)
-def priekabos_add_form(request: Request):
+def priekabos_add_form(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    imone = request.session.get("imone", "")
+    cursor.execute(
+        "SELECT reiksme FROM company_settings WHERE imone=? AND kategorija='Priekabos tipas' ORDER BY reiksme",
+        (imone,),
+    )
+    rows = cursor.fetchall()
+    if rows:
+        tipai = [r[0] for r in rows]
+    else:
+        cursor.execute(
+            "SELECT reiksme FROM lookup WHERE kategorija='Priekabos tipas' ORDER BY reiksme"
+        )
+        tipai = [r[0] for r in cursor.fetchall()]
+    markes = [
+        r[0]
+        for r in cursor.execute(
+            "SELECT reiksme FROM lookup WHERE kategorija='Markė'"
+        ).fetchall()
+    ]
     return templates.TemplateResponse(
-        "priekabos_form.html", {"request": request, "data": {}}
+        "priekabos_form.html",
+        {"request": request, "data": {}, "tipai": tipai, "markes": markes},
     )
 
 
@@ -1096,8 +1120,33 @@ def priekabos_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(priekabos)")]
     data = dict(zip(columns, row))
+    imone = request.session.get("imone", "")
+    cursor.execute(
+        "SELECT reiksme FROM company_settings WHERE imone=? AND kategorija='Priekabos tipas' ORDER BY reiksme",
+        (imone,),
+    )
+    rows = cursor.fetchall()
+    if rows:
+        tipai = [r[0] for r in rows]
+    else:
+        cursor.execute(
+            "SELECT reiksme FROM lookup WHERE kategorija='Priekabos tipas' ORDER BY reiksme"
+        )
+        tipai = [r[0] for r in cursor.fetchall()]
+    markes = [
+        r[0]
+        for r in cursor.execute(
+            "SELECT reiksme FROM lookup WHERE kategorija='Markė'"
+        ).fetchall()
+    ]
     return templates.TemplateResponse(
-        "priekabos_form.html", {"request": request, "data": data}
+        "priekabos_form.html",
+        {
+            "request": request,
+            "data": data,
+            "tipai": tipai,
+            "markes": markes,
+        },
     )
 
 

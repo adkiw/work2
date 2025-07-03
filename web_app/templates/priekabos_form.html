@@ -5,13 +5,23 @@
     <input type="hidden" name="pid" value="{{ data.id or 0 }}">
     <div class="form-grid">
         <label>Tipas
-            <input type="text" name="priekabu_tipas" value="{{ data.priekabu_tipas or '' }}">
+            <select name="priekabu_tipas">
+                <option value=""></option>
+                {% for t in tipai %}
+                <option value="{{ t }}" {% if data.priekabu_tipas == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
         </label>
         <label>Numeris
             <input type="text" name="numeris" value="{{ data.numeris or '' }}">
         </label>
         <label>Markė
-            <input type="text" name="marke" value="{{ data.marke or '' }}">
+            <select name="marke">
+                <option value=""></option>
+                {% for m in markes %}
+                <option value="{{ m }}" {% if data.marke == m %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
         </label>
         <label>Pirmos reg. data
             <input type="text" name="pagaminimo_metai" value="{{ data.pagaminimo_metai or '' }}">
