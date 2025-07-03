@@ -1432,11 +1432,12 @@ def darbuotojai_add_form(
 ):
     conn, cursor = db
     grupes = [r[0] for r in cursor.execute("SELECT numeris FROM grupes").fetchall()]
+    data = {"imone": request.session.get("imone", "")}
     return templates.TemplateResponse(
         "darbuotojai_form.html",
         {
             "request": request,
-            "data": {},
+            "data": data,
             "roles": EMPLOYEE_ROLES,
             "grupes": grupes,
         },
