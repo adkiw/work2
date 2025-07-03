@@ -1705,8 +1705,13 @@ def group_regions_delete(
 
 @app.get("/api/group-regions")
 def group_regions_api(
-    gid: int, db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
+    gid: int | None = None,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
+    """Return regions for a group or an empty list if group is not specified."""
+    if gid is None:
+        return {"data": []}
+
     conn, cursor = db
     cursor.execute(
         "SELECT id, regiono_kodas FROM grupiu_regionai WHERE grupe_id=? ORDER BY regiono_kodas",
