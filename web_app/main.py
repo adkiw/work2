@@ -1736,6 +1736,25 @@ def default_trailer_types_api(
     return {"data": [r[0] for r in rows]}
 
 
+@app.get("/api/default-trailer-types.csv")
+def default_trailer_types_csv(
+    imone: str = "",
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN)),
+):
+    """Grąžina numatytuosius priekabų tipus CSV formatu."""
+    conn, cursor = db
+    cursor.execute(
+        "SELECT reiksme FROM company_default_trailers WHERE imone=? ORDER BY priority",
+        (imone,),
+    )
+    rows = cursor.fetchall()
+    df = pd.DataFrame(rows, columns=["reiksme"])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=default-trailer-types.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 @app.post("/settings/save")
 async def settings_save(
     request: Request,
