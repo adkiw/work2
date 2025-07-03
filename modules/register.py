@@ -12,6 +12,7 @@ def show(conn, c):
     vardas = st.text_input("Vardas", key="reg_vardas")
     pavarde = st.text_input("Pavardė", key="reg_pavarde")
     pareigybe = st.text_input("Pareigybė", key="reg_pareigybe")
+    grupe = st.text_input("Grupė", key="reg_grupe")
     imone = st.text_input("Įmonė", key="reg_imone")
 
     if st.button("Pateikti paraišką"):
@@ -23,7 +24,7 @@ def show(conn, c):
                 st.error("Toks vartotojas jau egzistuoja")
             else:
                 c.execute(
-                    "INSERT INTO users (username, password_hash, imone, vardas, pavarde, pareigybe, aktyvus) VALUES (?, ?, ?, ?, ?, ?, 0)",
+                    "INSERT INTO users (username, password_hash, imone, vardas, pavarde, pareigybe, grupe, aktyvus) VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
                     (
                         email,
                         hash_password(password),
@@ -31,6 +32,7 @@ def show(conn, c):
                         vardas,
                         pavarde,
                         pareigybe,
+                        grupe,
                     ),
                 )
                 conn.commit()
@@ -42,6 +44,7 @@ def show(conn, c):
                     "reg_vardas",
                     "reg_pavarde",
                     "reg_pareigybe",
+                    "reg_grupe",
                     "reg_imone",
                 ]:
                     st.session_state.pop(key, None)

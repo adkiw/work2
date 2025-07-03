@@ -36,12 +36,12 @@ def show(conn, c):
 
     if is_admin:
         df = pd.read_sql_query(
-            "SELECT id, username, imone, vardas, pavarde, pareigybe FROM users WHERE aktyvus = 0",
+            "SELECT id, username, imone, vardas, pavarde, pareigybe, grupe FROM users WHERE aktyvus = 0",
             conn,
         )
     elif is_comp_admin:
         df = pd.read_sql_query(
-            "SELECT id, username, imone, vardas, pavarde, pareigybe FROM users WHERE aktyvus = 0 AND imone = ?",
+            "SELECT id, username, imone, vardas, pavarde, pareigybe, grupe FROM users WHERE aktyvus = 0 AND imone = ?",
             conn,
             params=(st.session_state.get("imone"),),
         )
@@ -102,12 +102,13 @@ def show(conn, c):
                     log_action(conn, c, st.session_state.get('user_id'), 'approve', 'users', row['id'])
                     login.assign_role(conn, c, row['id'], Role.USER)
                     c.execute(
-                        "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
+                        "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, grupe, imone, aktyvus) VALUES (?,?,?,?,?,?,1)",
                         (
                             row.get('vardas'),
                             row.get('pavarde'),
                             row.get('pareigybe'),
                             row['username'],
+                            row.get('grupe'),
                             row.get('imone'),
                         ),
                     )
@@ -127,12 +128,13 @@ def show(conn, c):
                         log_action(conn, c, st.session_state.get('user_id'), 'approve_admin', 'users', row['id'])
                         login.assign_role(conn, c, row['id'], Role.COMPANY_ADMIN)
                         c.execute(
-                            "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, imone, aktyvus) VALUES (?,?,?,?,?,1)",
+                            "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, grupe, imone, aktyvus) VALUES (?,?,?,?,?,?,1)",
                             (
                                 row.get('vardas'),
                                 row.get('pavarde'),
                                 row.get('pareigybe'),
                                 row['username'],
+                                row.get('grupe'),
                                 row.get('imone'),
                             ),
                         )
@@ -150,12 +152,26 @@ def show(conn, c):
     st.subheader("Aktyvūs naudotojai")
     if is_admin:
         df_act = pd.read_sql_query(
-            "SELECT username, imone, last_login FROM users WHERE aktyvus = 1 ORDER BY imone, username",
+            """
+            SELECT u.username, u.imone, u.pareigybe, r.name as role, u.last_login
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON ur.role_id = r.id
+            WHERE u.aktyvus = 1
+            ORDER BY u.imone, u.username
+            """,
             conn,
         )
     else:
         df_act = pd.read_sql_query(
-            "SELECT username, imone, last_login FROM users WHERE aktyvus = 1 AND imone = ? ORDER BY username",
+            """
+            SELECT u.username, u.imone, u.pareigybe, r.name as role, u.last_login
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON ur.role_id = r.id
+            WHERE u.aktyvus = 1 AND u.imone = ?
+            ORDER BY u.username
+            """,
             conn,
             params=(st.session_state.get("imone"),),
         )
@@ -165,9 +181,13 @@ def show(conn, c):
     else:
         for comp, grp in df_act.groupby("imone"):
             st.write(f"**{comp or 'Be įmonės'}**")
-            display_df = grp[["username", "last_login"]].rename(columns={
-                "username": "Vartotojas",
-                "last_login": "Paskutinis prisijungimas",
-            })
+            display_df = grp[["username", "pareigybe", "role", "last_login"]].rename(
+                columns={
+                    "username": "Vartotojas",
+                    "pareigybe": "Pareigybė",
+                    "role": "Rolė",
+                    "last_login": "Paskutinis prisijungimas",
+                }
+            )
             st.table(display_df.fillna(""))
 
