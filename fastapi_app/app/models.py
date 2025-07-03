@@ -93,6 +93,7 @@ class Truck(Base):
     pagaminimo_metai = Column(Integer)
     tech_apziura = Column(String)
     draudimas = Column(String)
+    priekaba = Column(String)
 
     tenant = relationship("Tenant")
 

@@ -117,6 +117,7 @@ class TruckBase(BaseModel):
     pagaminimo_metai: Optional[int] = None
     tech_apziura: Optional[str] = None
     draudimas: Optional[str] = None
+    priekaba: Optional[str] = None
 
 class TruckCreate(TruckBase):
     pass
@@ -167,6 +168,11 @@ class Trailer(TrailerBase):
 
     class Config:
         orm_mode = True
+
+
+class TrailerSwap(BaseModel):
+    truck_number: str
+    trailer_number: Optional[str] = None
 
 
 class TrailerSpecBase(BaseModel):

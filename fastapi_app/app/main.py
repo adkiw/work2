@@ -721,6 +721,32 @@ def trailers_csv(
     return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
+@app.post("/{tenant_id}/trailer-swap", status_code=204)
+def trailer_swap(
+    tenant_id: str,
+    data: schemas.TrailerSwap,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    try:
+        crud.swap_trailer(db, UUID(tenant_id), data.truck_number, data.trailer_number)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="update",
+            table_name="trucks",
+            record_id=data.truck_number,
+            details={"priekaba": data.trailer_number},
+        ),
+    )
+    return Response(status_code=204)
+
+
 @app.post("/trailer-specs", response_model=schemas.TrailerSpec)
 def create_trailer_spec(
     spec: schemas.TrailerSpecCreate,
