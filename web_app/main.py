@@ -1966,6 +1966,36 @@ def trailer_types_save(
     return RedirectResponse("/trailer-types", status_code=303)
 
 
+@app.get("/trailer-types/{tid}/delete")
+def trailer_types_delete(
+    tid: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+    auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
+):
+    """Ištrina priekabos tipą."""
+    conn, cursor = db
+    is_admin = user_has_role(request, cursor, Role.ADMIN)
+    if is_admin:
+        cursor.execute(
+            "DELETE FROM lookup WHERE id=? AND kategorija='Priekabos tipas'",
+            (tid,),
+        )
+        table = "lookup"
+    else:
+        imone = request.session.get("imone", "")
+        cursor.execute(
+            "DELETE FROM company_settings WHERE id=? AND imone=? AND kategorija='Priekabos tipas'",
+            (tid, imone),
+        )
+        table = "company_settings"
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Not found")
+    conn.commit()
+    log_action(conn, cursor, request.session.get("user_id"), "delete", table, tid)
+    return RedirectResponse("/trailer-types", status_code=303)
+
+
 @app.get("/api/trailer-types")
 def trailer_types_api(
     request: Request,

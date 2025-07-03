@@ -714,3 +714,18 @@ def test_trailer_swap(tmp_path):
     data = {row["numeris"]: row for row in resp.json()["data"]}
     assert data["AAA111"]["priekaba"] == ""
     assert data["BBB222"]["priekaba"] == "TR1"
+
+
+def test_trailer_types_delete(tmp_path):
+    client = create_client(tmp_path)
+    form = {"tid": "0", "reiksme": "Specialus"}
+    resp = client.post("/trailer-types/save", data=form, allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get("/api/trailer-types")
+    data = resp.json()["data"]
+    assert len(data) == 1
+    tid = data[0]["id"]
+    resp = client.get(f"/trailer-types/{tid}/delete", allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get("/api/trailer-types")
+    assert resp.json() == {"data": []}
