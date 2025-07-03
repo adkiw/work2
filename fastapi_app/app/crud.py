@@ -599,3 +599,45 @@ def get_updates(db: Session, tenant_id: UUID) -> list[models.UpdateEntry]:
         .all()
     )
 
+
+def create_group_region(
+    db: Session, tenant_id: UUID, group_id: int, region_code: str
+) -> models.GroupRegion:
+    region = models.GroupRegion(
+        tenant_id=tenant_id, group_id=group_id, region_code=region_code
+    )
+    db.add(region)
+    db.commit()
+    db.refresh(region)
+    return region
+
+
+def get_group_regions(
+    db: Session, tenant_id: UUID, group_id: int
+) -> list[models.GroupRegion]:
+    return (
+        db.query(models.GroupRegion)
+        .filter(
+            models.GroupRegion.tenant_id == tenant_id,
+            models.GroupRegion.group_id == group_id,
+        )
+        .order_by(models.GroupRegion.id)
+        .all()
+    )
+
+
+def delete_group_region(db: Session, tenant_id: UUID, region_id: int) -> bool:
+    region = (
+        db.query(models.GroupRegion)
+        .filter(
+            models.GroupRegion.id == region_id,
+            models.GroupRegion.tenant_id == tenant_id,
+        )
+        .first()
+    )
+    if not region:
+        return False
+    db.delete(region)
+    db.commit()
+    return True
+

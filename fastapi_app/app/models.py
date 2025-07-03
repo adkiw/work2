@@ -196,6 +196,20 @@ class Group(Base):
     tenant = relationship("Tenant")
 
 
+class GroupRegion(Base):
+    """Regionai priskirti ekspedicijos ar transporto grupei"""
+
+    __tablename__ = "group_regions"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+    region_code = Column(String, nullable=False)
+
+    tenant = relationship("Tenant")
+    group = relationship("Group")
+
+
 class Employee(Base):
     """Darbuotojo įrašas"""
 
