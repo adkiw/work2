@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>{% if data.id %}Redaguoti įrašą{% else %}Naujas įrašas{% endif %}</h2>
+<h2>{% if data.id %}Redaguoti įrašą{% else %}Atnaujinti krovinį{% endif %}</h2>
 <form method="post" action="/updates/save">
     <input type="hidden" name="uid" value="{{ data.id or 0 }}">
-    <label>Vilkikas: <input type="text" name="vilkiko_numeris" value="{{ data.vilkiko_numeris or '' }}"></label><br>
-    <label>Data: <input type="date" name="data" value="{{ data.data or '' }}"></label><br>
+    <input type="hidden" name="vilkiko_numeris" value="{{ data.vilkiko_numeris }}">
+    <input type="hidden" name="data" value="{{ data.data }}">
+    <p>Vilkikas: <b>{{ data.vilkiko_numeris }}</b> | Data: <b>{{ data.data }}</b></p>
     <label>Darbo laikas: <input type="number" name="darbo_laikas" value="{{ data.darbo_laikas or 0 }}"></label><br>
     <label>Likusios valandos: <input type="number" name="likes_laikas" value="{{ data.likes_laikas or 0 }}"></label><br>
     <label>SA: <input type="text" name="sa" value="{{ data.sa or '' }}"></label><br>

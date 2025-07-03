@@ -17,6 +17,7 @@ from modules.roles import Role
 from modules.constants import EU_COUNTRIES
 
 import datetime
+from datetime import date
 import pandas as pd
 
 # Available employee roles for form select boxes
@@ -2514,8 +2515,20 @@ def audit_csv(
 
 
 @app.get("/updates", response_class=HTMLResponse)
-def updates_list(request: Request):
-    return templates.TemplateResponse("updates_list.html", {"request": request})
+def updates_list(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    """Rodo krovinius pagal pasirinktą transporto vadybininką."""
+    conn, cursor = db
+    cursor.execute(
+        "SELECT DISTINCT vadybininkas FROM vilkikai "
+        "WHERE vadybininkas IS NOT NULL AND vadybininkas != ''"
+    )
+    managers = [r[0] for r in cursor.fetchall()]
+    return templates.TemplateResponse(
+        "updates_list.html", {"request": request, "managers": managers}
+    )
 
 
 @app.get("/updates/add", response_class=HTMLResponse)
@@ -2523,6 +2536,81 @@ def updates_add_form(request: Request):
     return templates.TemplateResponse(
         "updates_form.html", {"request": request, "data": {}}
     )
+
+
+@app.get("/api/shipments")
+def shipments_by_manager(
+    manager: str,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    """Grąžina krovinius pasirinktam transporto vadybininkui."""
+    conn, cursor = db
+    today = date.today().isoformat()
+    rows = cursor.execute(
+        """
+        SELECT id, vilkikas, pakrovimo_data, iskrovimo_data
+        FROM kroviniai
+        WHERE transporto_vadybininkas=? AND date(pakrovimo_data) >= ?
+        ORDER BY pakrovimo_data
+        """,
+        (manager, today),
+    ).fetchall()
+
+    data = []
+    for sid, vilk, pkd, ikd in rows:
+        upd = cursor.execute(
+            """
+            SELECT id, sa, darbo_laikas, likes_laikas, pakrovimo_statusas,
+                   pakrovimo_laikas, pakrovimo_data, iskrovimo_statusas,
+                   iskrovimo_laikas, iskrovimo_data, komentaras, created_at
+            FROM vilkiku_darbo_laikai
+            WHERE vilkiko_numeris=? AND data=?
+            ORDER BY id DESC LIMIT 1
+            """,
+            (vilk, pkd),
+        ).fetchone()
+        if upd:
+            (
+                upd_id,
+                sa,
+                dl,
+                ll,
+                pk_st,
+                pk_laik,
+                pk_dat,
+                ik_st,
+                ik_laik,
+                ik_dat,
+                kom,
+                created,
+            ) = upd
+        else:
+            upd_id = 0
+            sa = dl = ll = pk_st = pk_laik = pk_dat = ""
+            ik_st = ik_laik = ik_dat = kom = ""
+            created = None
+        data.append(
+            {
+                "id": sid,
+                "vilkikas": vilk,
+                "pakrovimo_data": pkd,
+                "iskrovimo_data": ikd,
+                "update_id": upd_id,
+                "sa": sa,
+                "darbo_laikas": dl,
+                "likes_laikas": ll,
+                "pakrovimo_statusas": pk_st,
+                "pakrovimo_laikas": pk_laik,
+                "pakrovimo_data_plan": pk_dat,
+                "iskrovimo_statusas": ik_st,
+                "iskrovimo_laikas": ik_laik,
+                "iskrovimo_data_plan": ik_dat,
+                "komentaras": kom,
+                "created_at": created,
+            }
+        )
+
+    return {"data": data}
 
 
 @app.get("/updates/{uid}/edit", response_class=HTMLResponse)
@@ -2543,6 +2631,50 @@ def updates_edit_form(
     data = dict(zip(columns, row))
     return templates.TemplateResponse(
         "updates_form.html", {"request": request, "data": data}
+    )
+
+
+@app.get("/updates/ship/{sid}", response_class=HTMLResponse)
+def updates_edit_shipment(
+    sid: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    """Atnaujinimo forma konkrečiam krovinio įrašui."""
+    conn, cursor = db
+    ship_row = cursor.execute(
+        "SELECT * FROM kroviniai WHERE id=?",
+        (sid,),
+    ).fetchone()
+    if not ship_row:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    ship_cols = [col[1] for col in cursor.execute("PRAGMA table_info(kroviniai)")]
+    shipment = dict(zip(ship_cols, ship_row))
+
+    upd_row = cursor.execute(
+        """
+        SELECT * FROM vilkiku_darbo_laikai
+        WHERE vilkiko_numeris=? AND data=?
+        ORDER BY id DESC LIMIT 1
+        """,
+        (shipment["vilkikas"], shipment["pakrovimo_data"]),
+    ).fetchone()
+
+    if upd_row:
+        upd_cols = [
+            col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")
+        ]
+        data = dict(zip(upd_cols, upd_row))
+    else:
+        data = {
+            "vilkiko_numeris": shipment["vilkikas"],
+            "data": shipment["pakrovimo_data"],
+        }
+
+    return templates.TemplateResponse(
+        "updates_form.html",
+        {"request": request, "data": data, "shipment": shipment},
     )
 
 
