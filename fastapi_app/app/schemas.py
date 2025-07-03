@@ -39,6 +39,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: UUID
+    is_active: bool = True
 
     class Config:
         orm_mode = True

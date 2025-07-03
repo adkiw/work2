@@ -6,11 +6,12 @@ import json
 from datetime import datetime
 
 
-def create_user(db: Session, user: schemas.UserCreate) -> models.User:
+def create_user(db: Session, user: schemas.UserCreate, active: bool = True) -> models.User:
     db_user = models.User(
         email=user.email,
         hashed_password=auth.hash_password(user.password),
         full_name=user.full_name,
+        is_active=active,
     )
     db.add(db_user)
     db.commit()

@@ -129,6 +129,29 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(auth.get_db)):
     return crud.create_user(db, user)
 
 
+@app.post("/register", status_code=201)
+def register_user(
+    data: schemas.UserCreate,
+    tenant_id: UUID,
+    db: Session = Depends(auth.get_db),
+):
+    """Sukurti neaktyvų vartotoją ir priskirti jį tenantui."""
+    db_user = crud.get_user_by_email(db, data.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user = crud.create_user(db, data, active=False)
+    role = db.query(models.Role).filter(models.Role.name == "USER").first()
+    if not role:
+        role = models.Role(name="USER")
+        db.add(role)
+        db.commit()
+        db.refresh(role)
+    assoc = models.UserTenant(user_id=user.id, tenant_id=tenant_id, role_id=role.id)
+    db.add(assoc)
+    db.commit()
+    return {"user_id": str(user.id)}
+
+
 @app.get("/users/me", response_model=schemas.User)
 def read_current_user(current_user=Depends(auth.get_current_user)):
     return current_user
@@ -164,6 +187,28 @@ def assign_tenant_admin(
     db.add(assoc)
     db.commit()
     return {"status": "ok"}
+
+
+@app.get("/superadmin/pending-users", response_model=list[schemas.User])
+def list_pending_users(
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    return db.query(models.User).filter(models.User.is_active == False).all()
+
+
+@app.post("/superadmin/pending-users/{user_id}/approve", status_code=204)
+def approve_pending_user(
+    user_id: str,
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    user.is_active = True
+    db.commit()
+    return Response(status_code=204)
 
 
 @app.post("/{tenant_id}/users", response_model=schemas.User)

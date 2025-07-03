@@ -20,6 +20,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     full_name = Column(String)
+    is_active = Column(Boolean, nullable=False, default=True)
     tenants = relationship("UserTenant", back_populates="user")
 
 
