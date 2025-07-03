@@ -3,6 +3,7 @@
 <h2>{% if data.id %}Redaguoti krovinį{% else %}Naujas krovinys{% endif %}</h2>
 <form method="post" action="/kroviniai/save">
     <input type="hidden" name="cid" value="{{ data.id or 0 }}">
+    <input type="hidden" name="imone" value="{{ imone }}">
     <div class="form-grid">
         <label>Klientas
             <select name="klientas">
