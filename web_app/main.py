@@ -312,15 +312,34 @@ def kroviniai_add_form(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
-    klientai = [r[0] for r in cursor.execute("SELECT pavadinimas FROM klientai").fetchall()]
-    vilkikai = [r[0] for r in cursor.execute("SELECT numeris FROM vilkikai").fetchall()]
-    eksped = [
-        f"{r[0]} {r[1]}"
-        for r in cursor.execute(
+    if user_has_role(request, cursor, Role.ADMIN):
+        klientai = [r[0] for r in cursor.execute("SELECT pavadinimas FROM klientai").fetchall()]
+        vilkikai = [r[0] for r in cursor.execute("SELECT numeris FROM vilkikai").fetchall()]
+        eksped_rows = cursor.execute(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
             ("Ekspedicijos vadybininkas",),
         ).fetchall()
-    ]
+    else:
+        imone = request.session.get("imone", "")
+        klientai = [
+            r[0]
+            for r in cursor.execute(
+                "SELECT pavadinimas FROM klientai WHERE imone=?",
+                (imone,),
+            ).fetchall()
+        ]
+        vilkikai = [
+            r[0]
+            for r in cursor.execute(
+                "SELECT numeris FROM vilkikai WHERE imone=?",
+                (imone,),
+            ).fetchall()
+        ]
+        eksped_rows = cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=? AND imone=?",
+            ("Ekspedicijos vadybininkas", imone),
+        ).fetchall()
+    eksped = [f"{r[0]} {r[1]}" for r in eksped_rows]
     context = {
         "request": request,
         "data": {},
@@ -347,15 +366,34 @@ def kroviniai_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(kroviniai)")]
     data = dict(zip(columns, row))
-    klientai = [r[0] for r in cursor.execute("SELECT pavadinimas FROM klientai").fetchall()]
-    vilkikai = [r[0] for r in cursor.execute("SELECT numeris FROM vilkikai").fetchall()]
-    eksped = [
-        f"{r[0]} {r[1]}"
-        for r in cursor.execute(
+    if user_has_role(request, cursor, Role.ADMIN):
+        klientai = [r[0] for r in cursor.execute("SELECT pavadinimas FROM klientai").fetchall()]
+        vilkikai = [r[0] for r in cursor.execute("SELECT numeris FROM vilkikai").fetchall()]
+        eksped_rows = cursor.execute(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
             ("Ekspedicijos vadybininkas",),
         ).fetchall()
-    ]
+    else:
+        imone = request.session.get("imone", "")
+        klientai = [
+            r[0]
+            for r in cursor.execute(
+                "SELECT pavadinimas FROM klientai WHERE imone=?",
+                (imone,),
+            ).fetchall()
+        ]
+        vilkikai = [
+            r[0]
+            for r in cursor.execute(
+                "SELECT numeris FROM vilkikai WHERE imone=?",
+                (imone,),
+            ).fetchall()
+        ]
+        eksped_rows = cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=? AND imone=?",
+            ("Ekspedicijos vadybininkas", imone),
+        ).fetchall()
+    eksped = [f"{r[0]} {r[1]}" for r in eksped_rows]
     context = {
         "request": request,
         "data": data,
@@ -684,16 +722,33 @@ def vilkikai_add_form(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
-    trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
-    markes = [r[0] for r in cursor.execute("SELECT reiksme FROM lookup WHERE kategorija='Markė'").fetchall()]
-    vairuotojai = [f"{r[1]} {r[2]}" for r in cursor.execute("SELECT id, vardas, pavarde FROM vairuotojai").fetchall()]
-    vadybininkai = [
-        f"{r[0]} {r[1]}"
-        for r in cursor.execute(
+    if user_has_role(request, cursor, Role.ADMIN):
+        trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
+        vair_rows = cursor.execute("SELECT id, vardas, pavarde FROM vairuotojai").fetchall()
+        vadyb_rows = cursor.execute(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
             ("Transporto vadybininkas",),
         ).fetchall()
-    ]
+    else:
+        imone = request.session.get("imone", "")
+        trailers = [
+            r[0]
+            for r in cursor.execute(
+                "SELECT numeris FROM priekabos WHERE imone=?",
+                (imone,),
+            ).fetchall()
+        ]
+        vair_rows = cursor.execute(
+            "SELECT id, vardas, pavarde FROM vairuotojai WHERE imone=?",
+            (imone,),
+        ).fetchall()
+        vadyb_rows = cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=? AND imone=?",
+            ("Transporto vadybininkas", imone),
+        ).fetchall()
+    markes = [r[0] for r in cursor.execute("SELECT reiksme FROM lookup WHERE kategorija='Markė'").fetchall()]
+    vairuotojai = [f"{r[1]} {r[2]}" for r in vair_rows]
+    vadybininkai = [f"{r[0]} {r[1]}" for r in vadyb_rows]
     context = {
         "request": request,
         "data": {},
@@ -720,16 +775,33 @@ def vilkikai_edit_form(
         raise HTTPException(status_code=404, detail="Not found")
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkikai)")]
     data = dict(zip(columns, row))
-    trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
-    markes = [r[0] for r in cursor.execute("SELECT reiksme FROM lookup WHERE kategorija='Markė'").fetchall()]
-    vairuotojai = [f"{r[1]} {r[2]}" for r in cursor.execute("SELECT id, vardas, pavarde FROM vairuotojai").fetchall()]
-    vadybininkai = [
-        f"{r[0]} {r[1]}"
-        for r in cursor.execute(
+    if user_has_role(request, cursor, Role.ADMIN):
+        trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
+        vair_rows = cursor.execute("SELECT id, vardas, pavarde FROM vairuotojai").fetchall()
+        vadyb_rows = cursor.execute(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
             ("Transporto vadybininkas",),
         ).fetchall()
-    ]
+    else:
+        imone = request.session.get("imone", "")
+        trailers = [
+            r[0]
+            for r in cursor.execute(
+                "SELECT numeris FROM priekabos WHERE imone=?",
+                (imone,),
+            ).fetchall()
+        ]
+        vair_rows = cursor.execute(
+            "SELECT id, vardas, pavarde FROM vairuotojai WHERE imone=?",
+            (imone,),
+        ).fetchall()
+        vadyb_rows = cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=? AND imone=?",
+            ("Transporto vadybininkas", imone),
+        ).fetchall()
+    markes = [r[0] for r in cursor.execute("SELECT reiksme FROM lookup WHERE kategorija='Markė'").fetchall()]
+    vairuotojai = [f"{r[1]} {r[2]}" for r in vair_rows]
+    vadybininkai = [f"{r[0]} {r[1]}" for r in vadyb_rows]
     drv1 = ""
     drv2 = ""
     if data.get("vairuotojai"):
@@ -1344,9 +1416,10 @@ def klientai_list(request: Request):
 
 @app.get("/klientai/add", response_class=HTMLResponse)
 def klientai_add_form(request: Request):
+    data = {"imone": request.session.get("imone", "")}
     return templates.TemplateResponse(
         "klientai_form.html",
-        {"request": request, "data": {}, "salys": EU_COUNTRIES},
+        {"request": request, "data": data, "salys": EU_COUNTRIES},
     )
 
 
