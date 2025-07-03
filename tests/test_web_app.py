@@ -75,6 +75,55 @@ def test_kroviniai_csv(tmp_path):
     assert "uzsakymo_numeris" in resp.text.splitlines()[0]
 
 
+def test_kroviniai_busena(tmp_path):
+    client = create_client(tmp_path)
+    truck = {
+        "vid": "0",
+        "numeris": "AAA111",
+        "marke": "MAN",
+        "pagaminimo_metai": "2020",
+        "tech_apziura": "2023-01-01",
+        "vadybininkas": "",
+        "vairuotojai": "",
+        "priekaba": "",
+        "imone": "A",
+    }
+    client.post("/vilkikai/save", data=truck, allow_redirects=False)
+    upd = {
+        "uid": "0",
+        "vilkiko_numeris": "AAA111",
+        "data": "2023-01-01",
+        "darbo_laikas": "8",
+        "likes_laikas": "4",
+        "sa": "",
+        "pakrovimo_statusas": "Pakrauta",
+        "pakrovimo_laikas": "10:00",
+        "pakrovimo_data": "2023-01-01",
+        "iskrovimo_statusas": "",
+        "iskrovimo_laikas": "",
+        "iskrovimo_data": "",
+        "komentaras": "",
+    }
+    client.post("/updates/save", data=upd, allow_redirects=False)
+    load_form = {
+        "cid": "0",
+        "klientas": "ACME",
+        "uzsakymo_numeris": "99",
+        "pakrovimo_data": "2023-01-01",
+        "iskrovimo_data": "2023-01-02",
+        "kilometrai": "10",
+        "frachtas": "20",
+        "busena": "Nesuplanuotas",
+        "imone": "A",
+        "vilkikas": "AAA111",
+    }
+    client.post("/kroviniai/save", data=load_form, allow_redirects=False)
+    resp = client.get("/api/kroviniai")
+    assert resp.status_code == 200
+    data = resp.json()["data"][0]
+    assert data["busena"] == "Pakrauta"
+
+
 def test_vilkikai_basic(tmp_path):
     client = create_client(tmp_path)
     resp = client.get("/api/vilkikai")

@@ -261,6 +261,34 @@ def compute_limits(
     return musu, liks
 
 
+def compute_busena(cursor: sqlite3.Cursor, row: dict) -> str:
+    """Apskaičiuoti krovinio būseną pagal darbo laiko įrašus."""
+    if not row.get("vilkikas"):
+        return "Nesuplanuotas"
+    query = (
+        "SELECT pakrovimo_statusas, iskrovimo_statusas "
+        "FROM vilkiku_darbo_laikai WHERE vilkiko_numeris=? AND data=? "
+        "ORDER BY id DESC LIMIT 1"
+    )
+    r = cursor.execute(query, (row["vilkikas"], row["pakrovimo_data"])).fetchone()
+    if not r:
+        return "Suplanuotas"
+    pk_status, ik_status = r
+    if ik_status == "Iškrauta":
+        return "Iškrauta"
+    if ik_status == "Atvyko":
+        return "Atvyko į iškrovimą"
+    if ik_status == "Kita" and pk_status != "Pakrauta":
+        return "Kita (iškrovimas)"
+    if pk_status == "Pakrauta":
+        return "Pakrauta"
+    if pk_status == "Atvyko":
+        return "Atvyko į pakrovimą"
+    if pk_status == "Kita":
+        return "Kita (pakrovimas)"
+    return "Suplanuotas"
+
+
 def user_has_role(request: Request, cursor: sqlite3.Cursor, role: Role) -> bool:
     """Check if current session user has the given role."""
     user_id = request.session.get("user_id")
@@ -545,6 +573,8 @@ def kroviniai_api(
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(kroviniai)")]
     data = [dict(zip(columns, row)) for row in rows]
+    for d in data:
+        d["busena"] = compute_busena(cursor, d)
     return {"data": data}
 
 
@@ -563,7 +593,10 @@ def kroviniai_csv(
         )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(kroviniai)")]
-    df = pd.DataFrame(rows, columns=columns)
+    data = [dict(zip(columns, row)) for row in rows]
+    for d in data:
+        d["busena"] = compute_busena(cursor, d)
+    df = pd.DataFrame(data, columns=columns)
     csv_data = df.to_csv(index=False)
     headers = {"Content-Disposition": "attachment; filename=kroviniai.csv"}
     return Response(content=csv_data, media_type="text/csv", headers=headers)
