@@ -1589,8 +1589,8 @@ def group_regions_add(
 @app.get("/group-regions/{rid}/delete")
 def group_regions_delete(
     rid: int,
-    gid: int = 0,
     request: Request,
+    gid: int = 0,
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
@@ -2309,6 +2309,7 @@ def registracijos_approve_admin(
 @app.get("/registracijos/{uid}/delete")
 def registracijos_delete(
     uid: int,
+    request: Request,
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
     auth: None = Depends(require_roles(Role.ADMIN, Role.COMPANY_ADMIN)),
 ):
