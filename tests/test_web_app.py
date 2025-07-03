@@ -599,6 +599,10 @@ def test_eu_countries(tmp_path):
     data = resp.json()["data"]
     assert any(c["code"] == "LT" for c in data)
 
+    resp_csv = client.get("/api/eu-countries.csv")
+    assert resp_csv.status_code == 200
+    assert "code" in resp_csv.text.splitlines()[0]
+
 
 def test_active_users_csv(tmp_path):
     client = create_client(tmp_path)
