@@ -673,6 +673,13 @@ def test_group_regions(tmp_path):
     assert "regiono_kodas" in resp.text.splitlines()[0]
 
 
+def test_group_regions_empty_gid(tmp_path):
+    client = create_client(tmp_path)
+    resp = client.get("/api/group-regions")
+    assert resp.status_code == 200
+    assert resp.json() == {"data": []}
+
+
 def test_trailer_swap(tmp_path):
     client = create_client(tmp_path)
     trailer1 = {
