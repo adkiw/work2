@@ -67,6 +67,19 @@ def eu_countries():
     }
 
 
+@app.get("/api/eu-countries.csv")
+def eu_countries_csv():
+    """Grąžina Europos šalis CSV formatu."""
+    df = pd.DataFrame([
+        {"name": name, "code": code}
+        for name, code in EU_COUNTRIES
+        if name
+    ])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=eu-countries.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 def table_csv_response(cursor: sqlite3.Cursor, table: str, filename: str) -> Response:
     """Sukurti CSV atsakymą visos lentelės duomenims."""
     cursor.execute(f"SELECT * FROM {table}")

@@ -11,3 +11,9 @@ def test_eu_countries_endpoint():
     assert resp.status_code == 200
     data = resp.json()["data"]
     assert any(c["code"] == "LT" for c in data)
+
+
+def test_eu_countries_csv():
+    resp = client.get("/eu-countries.csv")
+    assert resp.status_code == 200
+    assert "code" in resp.text.splitlines()[0]
