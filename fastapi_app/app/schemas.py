@@ -237,3 +237,22 @@ class Client(ClientBase):
     class Config:
         orm_mode = True
 
+
+class GroupBase(BaseModel):
+    numeris: str
+    pavadinimas: Optional[str] = None
+    aprasymas: Optional[str] = None
+
+
+class GroupCreate(GroupBase):
+    pass
+
+
+class Group(GroupBase):
+    id: int
+    tenant_id: UUID
+
+    class Config:
+        orm_mode = True
+
+

@@ -181,3 +181,16 @@ class Client(Base):
 
     tenant = relationship("Tenant")
 
+
+class Group(Base):
+    """Darbuotojų ar transporto grupė"""
+
+    __tablename__ = "groups"
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    numeris = Column(String, nullable=False)
+    pavadinimas = Column(String)
+    aprasymas = Column(String)
+
+    tenant = relationship("Tenant")
+
