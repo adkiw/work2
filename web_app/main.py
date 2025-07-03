@@ -1820,6 +1820,25 @@ def aktyvus_csv(
     return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
+@app.get("/api/roles")
+def roles_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    """Grąžina galimų rolių sąrašą."""
+    conn, cursor = db
+    cursor.execute("SELECT name FROM roles ORDER BY name")
+    return {"data": [r[0] for r in cursor.fetchall()]}
+
+
+@app.get("/api/roles.csv")
+def roles_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+    """Rolių sąrašas CSV formatu."""
+    conn, cursor = db
+    cursor.execute("SELECT name FROM roles ORDER BY name")
+    df = pd.DataFrame(cursor.fetchall(), columns=["name"])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=roles.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 @app.get("/registracijos/{uid}/approve")
 def registracijos_approve(
     uid: int,
