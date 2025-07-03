@@ -509,3 +509,16 @@ def test_active_users_csv(tmp_path):
     assert resp.headers["content-type"].startswith("text/csv")
     assert "username" in resp.text.splitlines()[0]
 
+
+def test_roles_endpoints(tmp_path):
+    client = create_client(tmp_path)
+    resp = client.get("/api/roles")
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert "admin" in data
+
+    resp = client.get("/api/roles.csv")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "name" in resp.text.splitlines()[0]
+
