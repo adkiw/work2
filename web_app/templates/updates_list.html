@@ -1,7 +1,13 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Padėties atnaujinimai</h2>
-<a href="/updates/add">Pridėti naują</a>
+<label>Transporto vadybininkas:
+    <select id="manager-select">
+        {% for m in managers %}
+            <option value="{{ m }}">{{ m }}</option>
+        {% endfor %}
+    </select>
+</label>
 <table id="updates-table" class="display" style="width:100%">
     <thead>
         <tr>
@@ -24,28 +30,30 @@
     </thead>
 </table>
 <script>
-$(document).ready(function() {
+function loadTable(mgr){
     $('#updates-table').DataTable({
-        ajax: '/api/updates',
+        destroy: true,
+        ajax: '/api/shipments?manager=' + encodeURIComponent(mgr),
         columns: [
             { data: 'id' },
-            { data: 'vilkiko_numeris' },
-            { data: 'data' },
-            { data: 'sa' },
-            { data: 'darbo_laikas' },
-            { data: 'likes_laikas' },
+            { data: 'vilkikas' },
             { data: 'pakrovimo_data' },
-            { data: 'pakrovimo_laikas', render: function(d){return formatTime(d);} },
-            { data: 'pakrovimo_statusas' },
             { data: 'iskrovimo_data' },
-            { data: 'iskrovimo_laikas', render: function(d){return formatTime(d);} },
+            { data: 'pakrovimo_statusas' },
             { data: 'iskrovimo_statusas' },
-            { data: 'komentaras' },
             { data: 'created_at', render: function(d){return relativeTime(d);} },
-            { data: null, render: function(data, type, row) {
-                return '<a href="/updates/' + row.id + '/edit">Edit</a>';
+            { data: null, render: function(data, type, row){
+                return '<a href="/updates/ship/' + row.id + '">Edit</a>';
             }}
         ]
+    });
+}
+
+$(document).ready(function(){
+    var mgr = $('#manager-select').val();
+    loadTable(mgr);
+    $('#manager-select').on('change', function(){
+        loadTable(this.value);
     });
 });
 
