@@ -67,3 +67,26 @@ def test_group_region_crud():
     assert r4.status_code == 204
     r5 = client.get(f"/{tenant.id}/groups/{gid}/regions", headers=headers)
     assert r5.json() == []
+
+
+def test_group_regions_csv():
+    user, tenant = setup_user()
+    resp = client.post(
+        "/auth/login",
+        json={"email": user.email, "password": "pass", "tenant_id": str(tenant.id)},
+    )
+    token = resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    grp = client.post(f"/{tenant.id}/groups", json={"numeris": "G1"}, headers=headers)
+    gid = grp.json()["id"]
+    client.post(
+        f"/{tenant.id}/groups/{gid}/regions",
+        json={"region_code": "LT01"},
+        headers=headers,
+    )
+
+    r = client.get(f"/{tenant.id}/group-regions.csv", headers=headers)
+    assert r.status_code == 200
+    assert "region_code" in r.text.splitlines()[0]
+    assert "LT01" in r.text

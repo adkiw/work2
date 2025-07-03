@@ -626,6 +626,16 @@ def get_group_regions(
     )
 
 
+def get_all_group_regions(db: Session, tenant_id: UUID) -> list[models.GroupRegion]:
+    """Gauti visus įmonės priskirtus regionus."""
+    return (
+        db.query(models.GroupRegion)
+        .filter(models.GroupRegion.tenant_id == tenant_id)
+        .order_by(models.GroupRegion.id)
+        .all()
+    )
+
+
 def delete_group_region(db: Session, tenant_id: UUID, region_id: int) -> bool:
     region = (
         db.query(models.GroupRegion)

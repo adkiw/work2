@@ -1099,6 +1099,22 @@ def delete_group_region_api(
     return Response(status_code=204)
 
 
+@app.get("/{tenant_id}/group-regions.csv")
+def group_regions_csv(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    """Grupių regionų sąrašas CSV formatu."""
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    rows = crud.get_all_group_regions(db, UUID(tenant_id))
+    df = pd.DataFrame([schemas.GroupRegion.from_orm(r).dict() for r in rows])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=group-regions.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 @app.post("/{tenant_id}/employees", response_model=schemas.Employee)
 def create_employee_api(
     tenant_id: str,
