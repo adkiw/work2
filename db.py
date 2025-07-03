@@ -367,6 +367,9 @@ def init_db(db_path: str | None = None):
     if "last_login" not in existing_cols:
         c.execute("ALTER TABLE users ADD COLUMN last_login TEXT")
         conn.commit()
+    if "grupe" not in existing_cols:
+        c.execute("ALTER TABLE users ADD COLUMN grupe TEXT")
+        conn.commit()
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS roles (

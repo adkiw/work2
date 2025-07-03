@@ -22,15 +22,20 @@ def log_action(conn, c, user_id, action, table_name, record_id=None, details=Non
     conn.commit()
 
 
-def fetch_logs(conn, c) -> pd.DataFrame:
-    """Return audit log entries as a DataFrame."""
-    df = pd.read_sql_query(
-        """SELECT al.id, u.username as user, al.action, al.table_name, al.record_id,
-                  al.timestamp, al.details
-           FROM audit_log al LEFT JOIN users u ON al.user_id = u.id
-           ORDER BY al.timestamp DESC""",
-        conn,
+def fetch_logs(conn, c, company: str | None = None) -> pd.DataFrame:
+    """Return audit log entries as a DataFrame. If ``company`` is provided,
+    grąžina tik tos įmonės vartotojų veiksmus."""
+
+    query = (
+        "SELECT al.id, u.username as user, al.action, al.table_name, al.record_id,"
+        " al.timestamp, al.details FROM audit_log al LEFT JOIN users u ON al.user_id = u.id"
     )
+    params: list[str] = []
+    if company:
+        query += " WHERE u.imone = ?"
+        params.append(company)
+    query += " ORDER BY al.timestamp DESC"
+    df = pd.read_sql_query(query, conn, params=params)
 
     def parse_details(val: str) -> str:
         if not val:

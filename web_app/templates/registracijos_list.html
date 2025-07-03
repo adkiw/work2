@@ -10,6 +10,7 @@
             <th>Vardas</th>
             <th>Pavardė</th>
             <th>Pareigybė</th>
+            <th>Grupė</th>
             <th>Veiksmai</th>
         </tr>
     </thead>
@@ -19,6 +20,8 @@
     <thead>
         <tr>
             <th>Vartotojas</th>
+            <th>Pareigybė</th>
+            <th>Rolė</th>
             <th>Įmonė</th>
             <th>Paskutinis prisijungimas</th>
         </tr>
@@ -36,6 +39,7 @@ $(document).ready(function() {
             { data: 'vardas' },
             { data: 'pavarde' },
             { data: 'pareigybe' },
+            { data: 'grupe' },
             { data: null, render: function(data, type, row) {
                 return '<a href="/registracijos/' + row.id + '/approve">Patvirtinti</a> '
                      + '<a href="/registracijos/' + row.id + '/approve-admin">Admin</a> '
@@ -48,6 +52,8 @@ $(document).ready(function() {
         order: [[0, 'asc']],
         columns: [
             { data: 'username' },
+            { data: 'pareigybe' },
+            { data: 'role' },
             { data: 'imone' },
             { data: 'last_login' }
         ]
