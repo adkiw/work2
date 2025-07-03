@@ -11,6 +11,15 @@ EU_COUNTRIES = [
     ("Airija", "IE"), ("Didžioji Britanija", "GB"),
 ]
 
+# Employee role options used in the FastAPI web app
+EMPLOYEE_ROLES = [
+    "Ekspedicijos vadybininkas",
+    "Transporto vadybininkas",
+]
+
+# Nationality codes for driver forms
+DRIVER_NATIONALITIES = ["LT", "BY", "UA", "UZ", "IN", "NG", "PL"]
+
 
 def country_flag(code: str) -> str:
     """Return emoji flag for ISO country code."""
