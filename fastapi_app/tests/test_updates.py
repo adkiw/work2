@@ -79,3 +79,33 @@ def test_update_and_delete_updates():
 
     r3 = client.delete(f"/{tenant.id}/updates/{uid}", headers=headers)
     assert r3.status_code == 204
+
+
+def test_updates_range_and_csv():
+    user, tenant = setup_user()
+    resp = client.post(
+        "/auth/login",
+        json={"email": user.email, "password": "pass", "tenant_id": str(tenant.id)},
+    )
+    token = resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    in_range = {"vilkiko_numeris": "AAA111", "data": "2025-05-01"}
+    out_range = {"vilkiko_numeris": "AAA111", "data": "2025-06-01"}
+    client.post(f"/{tenant.id}/updates", json=in_range, headers=headers)
+    client.post(f"/{tenant.id}/updates", json=out_range, headers=headers)
+
+    r = client.get(
+        f"/{tenant.id}/updates-range?start=2025-05-01&end=2025-05-31",
+        headers=headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 1
+
+    r_csv = client.get(
+        f"/{tenant.id}/updates-range.csv?start=2025-05-01&end=2025-05-31",
+        headers=headers,
+    )
+    assert r_csv.status_code == 200
+    assert "attachment" in r_csv.headers.get("content-disposition", "")

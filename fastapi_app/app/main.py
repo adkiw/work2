@@ -1317,6 +1317,40 @@ def updates_csv(
     return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
+@app.get("/{tenant_id}/updates-range", response_model=list[schemas.Update])
+def updates_range_api(
+    tenant_id: str,
+    start: str,
+    end: str,
+    vilkikas: str | None = None,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    """Filtruotas darbo laiko įrašų sąrašas."""
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return crud.get_updates_range(db, UUID(tenant_id), start, end, vilkikas)
+
+
+@app.get("/{tenant_id}/updates-range.csv")
+def updates_range_csv(
+    tenant_id: str,
+    start: str,
+    end: str,
+    vilkikas: str | None = None,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    """Filtruoti darbo laiko įrašai CSV formatu."""
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    rows = crud.get_updates_range(db, UUID(tenant_id), start, end, vilkikas)
+    df = pd.DataFrame([schemas.Update.from_orm(r).dict() for r in rows])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=updates-range.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 @app.post("/audit", response_model=schemas.AuditLog)
 def create_audit_entry(
     log: schemas.AuditLogCreate,

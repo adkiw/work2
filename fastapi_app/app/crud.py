@@ -600,6 +600,25 @@ def get_updates(db: Session, tenant_id: UUID) -> list[models.UpdateEntry]:
     )
 
 
+def get_updates_range(
+    db: Session,
+    tenant_id: UUID,
+    start: str,
+    end: str,
+    vilkikas: str | None = None,
+) -> list[models.UpdateEntry]:
+    """Gauti darbo laiko įrašus nurodytam datų intervalui."""
+    query = (
+        db.query(models.UpdateEntry)
+        .filter(models.UpdateEntry.tenant_id == tenant_id)
+        .filter(models.UpdateEntry.data >= start)
+        .filter(models.UpdateEntry.data <= end)
+    )
+    if vilkikas:
+        query = query.filter(models.UpdateEntry.vilkiko_numeris == vilkikas)
+    return query.order_by(models.UpdateEntry.id.desc()).all()
+
+
 def create_group_region(
     db: Session, tenant_id: UUID, group_id: int, region_code: str
 ) -> models.GroupRegion:
