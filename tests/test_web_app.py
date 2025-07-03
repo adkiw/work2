@@ -305,6 +305,11 @@ def test_settings_defaults(tmp_path):
     data = resp.json()["data"]
     assert data == ["Van", "Box"]
 
+    resp = client.get("/api/default-trailer-types.csv?imone=A")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "reiksme" in resp.text.splitlines()[0]
+
 
 def test_access_restrictions(tmp_path):
     client = create_client(tmp_path, do_login=False)
