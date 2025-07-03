@@ -16,6 +16,7 @@ import pandas as pd
 from . import models, schemas, crud, auth, dependencies
 from .database import Base
 import json
+from modules.constants import EU_COUNTRIES
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
@@ -1075,3 +1076,11 @@ def read_audit_csv(
     csv_data = df.to_csv(index=False)
     headers = {"Content-Disposition": "attachment; filename=audit.csv"}
     return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
+@app.get("/eu-countries")
+def eu_countries_api():
+    """Grąžina Europos šalių sąrašą."""
+    return {
+        "data": [{"name": name, "code": code} for name, code in EU_COUNTRIES if name]
+    }
