@@ -194,3 +194,30 @@ class Group(Base):
 
     tenant = relationship("Tenant")
 
+
+class UpdateEntry(Base):
+    """Vilkikų darbo laiko įrašai"""
+
+    __tablename__ = "updates"
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    vilkiko_numeris = Column(String, nullable=False)
+    data = Column(String, nullable=False)
+    darbo_laikas = Column(Integer)
+    likes_laikas = Column(Integer)
+    pakrovimo_statusas = Column(String)
+    pakrovimo_laikas = Column(String)
+    pakrovimo_data = Column(String)
+    iskrovimo_statusas = Column(String)
+    iskrovimo_laikas = Column(String)
+    iskrovimo_data = Column(String)
+    komentaras = Column(String)
+    sa = Column(String)
+    created_at = Column(String)
+    ats_transporto_vadybininkas = Column(String)
+    ats_ekspedicijos_vadybininkas = Column(String)
+    trans_grupe = Column(String)
+    eksp_grupe = Column(String)
+
+    tenant = relationship("Tenant")
+

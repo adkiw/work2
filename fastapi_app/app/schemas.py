@@ -256,3 +256,35 @@ class Group(GroupBase):
         orm_mode = True
 
 
+class UpdateBase(BaseModel):
+    vilkiko_numeris: str
+    data: str
+    darbo_laikas: Optional[int] = None
+    likes_laikas: Optional[int] = None
+    pakrovimo_statusas: Optional[str] = None
+    pakrovimo_laikas: Optional[str] = None
+    pakrovimo_data: Optional[str] = None
+    iskrovimo_statusas: Optional[str] = None
+    iskrovimo_laikas: Optional[str] = None
+    iskrovimo_data: Optional[str] = None
+    komentaras: Optional[str] = None
+    sa: Optional[str] = None
+    created_at: Optional[str] = None
+    ats_transporto_vadybininkas: Optional[str] = None
+    ats_ekspedicijos_vadybininkas: Optional[str] = None
+    trans_grupe: Optional[str] = None
+    eksp_grupe: Optional[str] = None
+
+
+class UpdateCreate(UpdateBase):
+    pass
+
+
+class Update(UpdateBase):
+    id: int
+    tenant_id: UUID
+
+    class Config:
+        orm_mode = True
+
+

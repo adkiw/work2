@@ -856,6 +856,91 @@ def delete_group_api(
     return Response(status_code=204)
 
 
+@app.post("/{tenant_id}/updates", response_model=schemas.Update)
+def create_update_api(
+    tenant_id: str,
+    update: schemas.UpdateCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    created = crud.create_update(db, UUID(tenant_id), update)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="create",
+            table_name="updates",
+            record_id=str(created.id),
+            details=update.dict(),
+        ),
+    )
+    return created
+
+
+@app.get("/{tenant_id}/updates", response_model=list[schemas.Update])
+def read_updates_api(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return crud.get_updates(db, UUID(tenant_id))
+
+
+@app.put("/{tenant_id}/updates/{update_id}", response_model=schemas.Update)
+def update_update_api(
+    tenant_id: str,
+    update_id: int,
+    update: schemas.UpdateCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    updated = crud.update_update(db, UUID(tenant_id), update_id, update)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="update",
+            table_name="updates",
+            record_id=str(update_id),
+            details=update.dict(),
+        ),
+    )
+    return updated
+
+
+@app.delete("/{tenant_id}/updates/{update_id}", status_code=204)
+def delete_update_api(
+    tenant_id: str,
+    update_id: int,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    ok = crud.delete_update(db, UUID(tenant_id), update_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="delete",
+            table_name="updates",
+            record_id=str(update_id),
+            details=None,
+        ),
+    )
+    return Response(status_code=204)
+
+
 @app.post("/audit", response_model=schemas.AuditLog)
 def create_audit_entry(
     log: schemas.AuditLogCreate,

@@ -496,3 +496,48 @@ def get_groups(db: Session, tenant_id: UUID) -> list[models.Group]:
         .all()
     )
 
+
+def create_update(db: Session, tenant_id: UUID, data: schemas.UpdateCreate) -> models.UpdateEntry:
+    entry = models.UpdateEntry(tenant_id=tenant_id, **data.dict())
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
+def update_update(db: Session, tenant_id: UUID, update_id: int, data: schemas.UpdateCreate) -> models.UpdateEntry | None:
+    entry = (
+        db.query(models.UpdateEntry)
+        .filter(models.UpdateEntry.id == update_id, models.UpdateEntry.tenant_id == tenant_id)
+        .first()
+    )
+    if not entry:
+        return None
+    for field, value in data.dict().items():
+        setattr(entry, field, value)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
+def delete_update(db: Session, tenant_id: UUID, update_id: int) -> bool:
+    entry = (
+        db.query(models.UpdateEntry)
+        .filter(models.UpdateEntry.id == update_id, models.UpdateEntry.tenant_id == tenant_id)
+        .first()
+    )
+    if not entry:
+        return False
+    db.delete(entry)
+    db.commit()
+    return True
+
+
+def get_updates(db: Session, tenant_id: UUID) -> list[models.UpdateEntry]:
+    return (
+        db.query(models.UpdateEntry)
+        .filter(models.UpdateEntry.tenant_id == tenant_id)
+        .order_by(models.UpdateEntry.id.desc())
+        .all()
+    )
+
