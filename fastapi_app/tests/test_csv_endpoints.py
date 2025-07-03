@@ -79,6 +79,19 @@ def test_csv_exports():
         headers=headers,
     )
     client.post(f"/{tenant.id}/trailers", json={"numeris": "TR123"}, headers=headers)
+    client.post(f"/{tenant.id}/clients", json={"pavadinimas": "ACME"}, headers=headers)
+    client.post(f"/{tenant.id}/groups", json={"numeris": "G1"}, headers=headers)
+    client.post(f"/{tenant.id}/employees", json={"vardas": "E", "pavarde": "V"}, headers=headers)
+    client.post(
+        f"/{tenant.id}/updates",
+        json={"vilkiko_numeris": "AAA111", "data": "2023-01-01"},
+        headers=headers,
+    )
+
+    with TestingSessionLocal() as db:
+        db.add(models.TrailerSpec(tipas="Mega"))
+        db.add(models.TrailerType(name="Type1"))
+        db.commit()
 
     r1 = client.get(f"/{tenant.id}/shipments.csv", headers=headers)
     assert r1.status_code == 200
@@ -95,3 +108,27 @@ def test_csv_exports():
     r4 = client.get(f"/{tenant.id}/trailers.csv", headers=headers)
     assert r4.status_code == 200
     assert "numeris" in r4.text.splitlines()[0]
+
+    r5 = client.get(f"/{tenant.id}/clients.csv", headers=headers)
+    assert r5.status_code == 200
+    assert "pavadinimas" in r5.text.splitlines()[0]
+
+    r6 = client.get(f"/{tenant.id}/groups.csv", headers=headers)
+    assert r6.status_code == 200
+    assert "numeris" in r6.text.splitlines()[0]
+
+    r7 = client.get(f"/{tenant.id}/employees.csv", headers=headers)
+    assert r7.status_code == 200
+    assert "vardas" in r7.text.splitlines()[0]
+
+    r8 = client.get(f"/{tenant.id}/updates.csv", headers=headers)
+    assert r8.status_code == 200
+    assert "vilkiko_numeris" in r8.text.splitlines()[0]
+
+    r9 = client.get("/trailer-specs.csv", headers=headers)
+    assert r9.status_code == 200
+    assert "tipas" in r9.text.splitlines()[0]
+
+    r10 = client.get("/trailer-types.csv", headers=headers)
+    assert r10.status_code == 200
+    assert "name" in r10.text.splitlines()[0]
