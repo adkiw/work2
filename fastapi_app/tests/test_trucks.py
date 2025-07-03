@@ -76,3 +76,34 @@ def test_update_and_delete_truck():
 
     r3 = client.delete(f"/{tenant.id}/trucks/{tid}", headers=headers)
     assert r3.status_code == 204
+
+
+def test_trailer_swap():
+    user, tenant = setup_user()
+    login = client.post(
+        "/auth/login",
+        json={"email": user.email, "password": "pass", "tenant_id": str(tenant.id)},
+    )
+    token = login.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    client.post(f"/{tenant.id}/trailers", json={"numeris": "TR1"}, headers=headers)
+    client.post(f"/{tenant.id}/trailers", json={"numeris": "TR2"}, headers=headers)
+    client.post(f"/{tenant.id}/trucks", json={"numeris": "AA1"}, headers=headers)
+    client.post(
+        f"/{tenant.id}/trucks",
+        json={"numeris": "BB2", "priekaba": "TR1"},
+        headers=headers,
+    )
+
+    resp = client.post(
+        f"/{tenant.id}/trailer-swap",
+        json={"truck_number": "AA1", "trailer_number": "TR1"},
+        headers=headers,
+    )
+    assert resp.status_code == 204
+
+    data = client.get(f"/{tenant.id}/trucks", headers=headers).json()
+    trucks = {t["numeris"]: t for t in data}
+    assert trucks["AA1"]["priekaba"] == "TR1"
+    assert trucks["BB2"]["priekaba"] == ""

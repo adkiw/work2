@@ -138,6 +138,7 @@ def create_truck(db: Session, tenant_id: UUID, data: schemas.TruckCreate) -> mod
         pagaminimo_metai=data.pagaminimo_metai,
         tech_apziura=data.tech_apziura,
         draudimas=data.draudimas,
+        priekaba=data.priekaba,
     )
     db.add(truck)
     db.commit()
@@ -286,6 +287,37 @@ def get_trailers(db: Session, tenant_id: UUID) -> list[models.Trailer]:
         .order_by(models.Trailer.id.desc())
         .all()
     )
+
+
+def swap_trailer(
+    db: Session,
+    tenant_id: UUID,
+    truck_number: str,
+    trailer_number: str | None,
+) -> None:
+    """Priskirti priekabą vilkikui, sukeičiant jei priekaba jau priskirta kitam."""
+    truck = (
+        db.query(models.Truck)
+        .filter(models.Truck.tenant_id == tenant_id, models.Truck.numeris == truck_number)
+        .first()
+    )
+    if not truck:
+        raise ValueError("Truck not found")
+
+    current_trailer = truck.priekaba or ""
+
+    other_truck = None
+    if trailer_number:
+        other_truck = (
+            db.query(models.Truck)
+            .filter(models.Truck.tenant_id == tenant_id, models.Truck.priekaba == trailer_number)
+            .first()
+        )
+
+    if other_truck and other_truck.numeris != truck_number:
+        other_truck.priekaba = current_trailer or ""
+    truck.priekaba = trailer_number or ""
+    db.commit()
 
 
 def create_trailer_spec(db: Session, data: schemas.TrailerSpecCreate) -> models.TrailerSpec:
