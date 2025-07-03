@@ -75,6 +75,11 @@ class ShipmentBase(BaseModel):
     uzsakymo_numeris: Optional[str] = None
     pakrovimo_data: Optional[str] = None
     iskrovimo_data: Optional[str] = None
+    pakrovimo_salis: Optional[str] = None
+    pakrovimo_regionas: Optional[str] = None
+    iskrovimo_salis: Optional[str] = None
+    iskrovimo_regionas: Optional[str] = None
+    vilkikas: Optional[str] = None
     kilometrai: Optional[int] = 0
     frachtas: Optional[int] = 0
     busena: Optional[str] = None
