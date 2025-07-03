@@ -465,9 +465,18 @@ def kroviniai_save(
 
 
 @app.get("/api/kroviniai")
-def kroviniai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def kroviniai_api(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    cursor.execute("SELECT * FROM kroviniai")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM kroviniai")
+    else:
+        cursor.execute(
+            "SELECT * FROM kroviniai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(kroviniai)")]
     data = [dict(zip(columns, row)) for row in rows]
@@ -475,9 +484,18 @@ def kroviniai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db
 
 
 @app.get("/api/kroviniai.csv")
-def kroviniai_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def kroviniai_csv(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    cursor.execute("SELECT * FROM kroviniai")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM kroviniai")
+    else:
+        cursor.execute(
+            "SELECT * FROM kroviniai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(kroviniai)")]
     df = pd.DataFrame(rows, columns=columns)
@@ -496,6 +514,7 @@ def planavimas_page(request: Request):
 
 @app.get("/api/planavimas")
 def planavimas_api(
+    request: Request,
     grupe: str | None = None,
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
@@ -509,8 +528,15 @@ def planavimas_api(
     ]
     date_strs = [d.isoformat() for d in date_list]
 
+    is_admin = user_has_role(request, cursor, Role.ADMIN)
     # truck info
-    cursor.execute("SELECT numeris, priekaba, vadybininkas FROM vilkikai")
+    if is_admin:
+        cursor.execute("SELECT numeris, priekaba, vadybininkas FROM vilkikai")
+    else:
+        cursor.execute(
+            "SELECT numeris, priekaba, vadybininkas FROM vilkikai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     priekaba_map = {r[0]: (r[1] or "") for r in rows}
     vadybininkas_map = {r[0]: (r[2] or "") for r in rows}
@@ -522,6 +548,9 @@ def planavimas_api(
         "AND iskrovimo_data IS NOT NULL"
     )
     params = [start_date.isoformat(), end_date.isoformat()]
+    if not is_admin:
+        query += " AND imone=?"
+        params.append(request.session.get("imone"))
     cursor.execute(query, params)
     rows = cursor.fetchall()
     columns = ["vilkikas", "salis", "regionas", "data", "pak_data"]
@@ -773,9 +802,18 @@ def vilkikai_save(
 
 
 @app.get("/api/vilkikai")
-def vilkikai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def vilkikai_api(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    cursor.execute("SELECT * FROM vilkikai")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM vilkikai")
+    else:
+        cursor.execute(
+            "SELECT * FROM vilkikai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkikai)")]
     data = [dict(zip(columns, row)) for row in rows]
@@ -783,9 +821,18 @@ def vilkikai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
 
 
 @app.get("/api/vilkikai.csv")
-def vilkikai_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def vilkikai_csv(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    cursor.execute("SELECT * FROM vilkikai")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM vilkikai")
+    else:
+        cursor.execute(
+            "SELECT * FROM vilkikai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkikai)")]
     df = pd.DataFrame(rows, columns=columns)
@@ -876,9 +923,18 @@ def priekabos_save(
 
 
 @app.get("/api/priekabos")
-def priekabos_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def priekabos_api(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    cursor.execute("SELECT * FROM priekabos")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM priekabos")
+    else:
+        cursor.execute(
+            "SELECT * FROM priekabos WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(priekabos)")]
     data = [dict(zip(columns, row)) for row in rows]
@@ -886,9 +942,18 @@ def priekabos_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db
 
 
 @app.get("/api/priekabos.csv")
-def priekabos_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def priekabos_csv(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    cursor.execute("SELECT * FROM priekabos")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM priekabos")
+    else:
+        cursor.execute(
+            "SELECT * FROM priekabos WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(priekabos)")]
     df = pd.DataFrame(rows, columns=columns)
@@ -989,9 +1054,18 @@ def vairuotojai_save(
 
 
 @app.get("/api/vairuotojai")
-def vairuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def vairuotojai_api(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    cursor.execute("SELECT * FROM vairuotojai")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM vairuotojai")
+    else:
+        cursor.execute(
+            "SELECT * FROM vairuotojai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(vairuotojai)")]
     data = [dict(zip(columns, row)) for row in rows]
@@ -999,9 +1073,24 @@ def vairuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_
 
 
 @app.get("/api/vairuotojai.csv")
-def vairuotojai_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def vairuotojai_csv(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    return table_csv_response(cursor, "vairuotojai", "vairuotojai.csv")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM vairuotojai")
+    else:
+        cursor.execute(
+            "SELECT * FROM vairuotojai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vairuotojai)")]
+    df = pd.DataFrame(rows, columns=columns)
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=vairuotojai.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
 # ---- Darbuotojai ----
@@ -1089,9 +1178,18 @@ def darbuotojai_save(
 
 
 @app.get("/api/darbuotojai")
-def darbuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def darbuotojai_api(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    cursor.execute("SELECT * FROM darbuotojai")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM darbuotojai")
+    else:
+        cursor.execute(
+            "SELECT * FROM darbuotojai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(darbuotojai)")]
     data = [dict(zip(columns, row)) for row in rows]
@@ -1099,9 +1197,24 @@ def darbuotojai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_
 
 
 @app.get("/api/darbuotojai.csv")
-def darbuotojai_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def darbuotojai_csv(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    return table_csv_response(cursor, "darbuotojai", "darbuotojai.csv")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM darbuotojai")
+    else:
+        cursor.execute(
+            "SELECT * FROM darbuotojai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(darbuotojai)")]
+    df = pd.DataFrame(rows, columns=columns)
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=darbuotojai.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
 # ---- Grupes ----
@@ -1166,9 +1279,18 @@ def grupes_save(
 
 
 @app.get("/api/grupes")
-def grupes_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def grupes_api(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    cursor.execute("SELECT * FROM grupes")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM grupes")
+    else:
+        cursor.execute(
+            "SELECT * FROM grupes WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(grupes)")]
     data = [dict(zip(columns, row)) for row in rows]
@@ -1176,9 +1298,24 @@ def grupes_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
 
 
 @app.get("/api/grupes.csv")
-def grupes_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def grupes_csv(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    return table_csv_response(cursor, "grupes", "grupes.csv")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM grupes")
+    else:
+        cursor.execute(
+            "SELECT * FROM grupes WHERE imone=?",
+            (request.session.get("imone"),),
+        )
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(grupes)")]
+    df = pd.DataFrame(rows, columns=columns)
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=grupes.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
 # ---- Klientai ----
@@ -1295,9 +1432,18 @@ def klientai_save(
 
 
 @app.get("/api/klientai")
-def klientai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def klientai_api(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    cursor.execute("SELECT * FROM klientai")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM klientai")
+    else:
+        cursor.execute(
+            "SELECT * FROM klientai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
     rows = cursor.fetchall()
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(klientai)")]
     data = [dict(zip(columns, row)) for row in rows]
@@ -1305,9 +1451,24 @@ def klientai_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)
 
 
 @app.get("/api/klientai.csv")
-def klientai_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
+def klientai_csv(
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
     conn, cursor = db
-    return table_csv_response(cursor, "klientai", "klientai.csv")
+    if user_has_role(request, cursor, Role.ADMIN):
+        cursor.execute("SELECT * FROM klientai")
+    else:
+        cursor.execute(
+            "SELECT * FROM klientai WHERE imone=?",
+            (request.session.get("imone"),),
+        )
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(klientai)")]
+    df = pd.DataFrame(rows, columns=columns)
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=klientai.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
 # ---- Trailer types ----
