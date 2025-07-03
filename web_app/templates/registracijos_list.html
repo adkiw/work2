@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Laukiantys naudotojai</h2>
+<button id="reg-csv">CSV</button>
 <table id="reg-table" class="display" style="width:100%">
     <thead>
         <tr>
@@ -16,6 +17,7 @@
     </thead>
 </table>
 <h2>Aktyvūs naudotojai</h2>
+<button id="active-csv">CSV</button>
 <table id="active-table" class="display" style="width:100%">
     <thead>
         <tr>
@@ -57,6 +59,13 @@ $(document).ready(function() {
             { data: 'role' },
             { data: 'last_login' }
         ]
+    });
+
+    $('#reg-csv').on('click', function() {
+        window.location = '/api/registracijos.csv';
+    });
+    $('#active-csv').on('click', function() {
+        window.location = '/api/aktyvus.csv';
     });
 });
 </script>
