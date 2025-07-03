@@ -527,3 +527,38 @@ def test_roles_endpoints(tmp_path):
     assert resp.headers["content-type"].startswith("text/csv")
     assert "name" in resp.text.splitlines()[0]
 
+
+def test_group_regions(tmp_path):
+    client = create_client(tmp_path)
+    db_path = tmp_path / "app.db"
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute("INSERT INTO grupes (numeris, pavadinimas, imone) VALUES (?,?,?)", ("TR1", "TR1", "A"))
+    gid = c.lastrowid
+    conn.commit()
+    conn.close()
+
+    resp = client.get(f"/api/group-regions?gid={gid}")
+    assert resp.status_code == 200
+    assert resp.json() == {"data": []}
+
+    form = {"grupe_id": str(gid), "regionai": "FR10;DE20"}
+    resp = client.post("/group-regions/add", data=form, allow_redirects=False)
+    assert resp.status_code == 303
+
+    resp = client.get(f"/api/group-regions?gid={gid}")
+    data = resp.json()["data"]
+    assert len(data) == 2
+
+    rid = data[0]["id"]
+    resp = client.get(f"/group-regions/{rid}/delete?gid={gid}", allow_redirects=False)
+    assert resp.status_code == 303
+
+    resp = client.get(f"/api/group-regions?gid={gid}")
+    assert len(resp.json()["data"]) == 1
+
+    resp = client.get(f"/api/group-regions.csv?gid={gid}")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "regiono_kodas" in resp.text.splitlines()[0]
+

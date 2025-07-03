@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-header">
+    <h2>Grupių regionai</h2>
+</div>
+<div class="group-select">
+    <label>Grupė:
+        <select id="grupe-select"></select>
+    </label>
+</div>
+<table id="region-table" class="display" style="width:100%; margin-top:10px;">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Regiono kodas</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+</table>
+<form id="add-form" style="margin-top:10px;">
+    <input type="hidden" name="grupe_id" id="grupe-id-input">
+    <label>Nauji regionai (pvz. FR10;DE20)</label>
+    <textarea name="regionai" id="regionai" rows="2" style="width:100%;"></textarea>
+    <button type="submit">Pridėti</button>
+</form>
+<script>
+$(document).ready(function() {
+    const table = $('#region-table').DataTable({
+        ajax: {
+            url: '/api/group-regions',
+            data: function(d){ d.gid = $('#grupe-select').val(); }
+        },
+        columns: [
+            { data: 'id' },
+            { data: 'regiono_kodas' },
+            { data: null, render: function(data,type,row){
+                const gid = $('#grupe-select').val();
+                return `<a href="/group-regions/${row.id}/delete?gid=${gid}">Šalinti</a>`;
+            }}
+        ]
+    });
+    async function loadGroups(){
+        const resp = await fetch('/api/grupes');
+        const data = await resp.json();
+        const sel = $('#grupe-select');
+        sel.empty();
+        data.data.forEach(g => sel.append(`<option value="${g.id}">${g.numeris}</option>`));
+        sel.trigger('change');
+    }
+    $('#grupe-select').on('change', function(){
+        $('#grupe-id-input').val($(this).val());
+        table.ajax.reload();
+    });
+    $('#add-form').on('submit', async function(e){
+        e.preventDefault();
+        const formData = $(this).serialize();
+        const resp = await fetch('/group-regions/add', {method:'POST', body:formData});
+        if(resp.redirected){
+            table.ajax.reload();
+            $('#regionai').val('');
+        }
+    });
+    loadGroups();
+});
+</script>
+<style>
+.page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.group-select { margin-bottom:10px; }
+</style>
+{% endblock %}
