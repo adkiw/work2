@@ -231,7 +231,10 @@ def active_users_csv(
     """Aktyvių naudotojų sąrašas CSV formatu."""
     rows = db.query(models.User).filter(models.User.is_active == True).all()
     df = pd.DataFrame(
-        [{"id": str(u.id), "email": u.email, "full_name": u.full_name or ""} for u in rows]
+        [
+            {"id": str(u.id), "email": u.email, "full_name": u.full_name or ""}
+            for u in rows
+        ]
     )
     csv_data = df.to_csv(index=False)
     headers = {"Content-Disposition": "attachment; filename=active-users.csv"}
@@ -398,6 +401,23 @@ def delete_shipment(
         ),
     )
 
+
+@app.get("/{tenant_id}/shipments.csv")
+def shipments_csv(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    """Grąžina visus krovinio įrašus CSV formatu."""
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    rows = crud.get_shipments(db, UUID(tenant_id))
+    df = pd.DataFrame([schemas.Shipment.from_orm(r).dict() for r in rows])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=shipments.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 @app.post("/{tenant_id}/trucks", response_model=schemas.Truck)
 def create_truck(
     tenant_id: str,
@@ -420,6 +440,7 @@ def create_truck(
     )
     return created
 
+
 @app.get("/{tenant_id}/trucks", response_model=list[schemas.Truck])
 def read_trucks(
     tenant_id: str,
@@ -429,6 +450,7 @@ def read_trucks(
     if str(current_user.current_tenant_id) != tenant_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     return crud.get_trucks(db, UUID(tenant_id))
+
 
 @app.put("/{tenant_id}/trucks/{truck_id}", response_model=schemas.Truck)
 def update_truck(
@@ -455,6 +477,7 @@ def update_truck(
     )
     return updated
 
+
 @app.delete("/{tenant_id}/trucks/{truck_id}", status_code=204)
 def delete_truck(
     tenant_id: str,
@@ -478,6 +501,22 @@ def delete_truck(
         ),
     )
     return Response(status_code=204)
+
+
+@app.get("/{tenant_id}/trucks.csv")
+def trucks_csv(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    """Visų vilkikų sąrašas CSV formatu."""
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    rows = crud.get_trucks(db, UUID(tenant_id))
+    df = pd.DataFrame([schemas.Truck.from_orm(r).dict() for r in rows])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=trucks.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
 @app.post("/{tenant_id}/drivers", response_model=schemas.Driver)
@@ -565,6 +604,22 @@ def delete_driver(
     return Response(status_code=204)
 
 
+@app.get("/{tenant_id}/drivers.csv")
+def drivers_csv(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    """Vairuotojų sąrašas CSV formatu."""
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    rows = crud.get_drivers(db, UUID(tenant_id))
+    df = pd.DataFrame([schemas.Driver.from_orm(r).dict() for r in rows])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=drivers.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 @app.post("/{tenant_id}/trailers", response_model=schemas.Trailer)
 def create_trailer(
     tenant_id: str,
@@ -648,6 +703,22 @@ def delete_trailer(
         ),
     )
     return Response(status_code=204)
+
+
+@app.get("/{tenant_id}/trailers.csv")
+def trailers_csv(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    """Priekabų sąrašas CSV formatu."""
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    rows = crud.get_trailers(db, UUID(tenant_id))
+    df = pd.DataFrame([schemas.Trailer.from_orm(r).dict() for r in rows])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=trailers.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
 @app.post("/trailer-specs", response_model=schemas.TrailerSpec)
@@ -1125,7 +1196,6 @@ def read_audit_entries(
         table_name=table_name,
         action=action,
     )
-
 
 
 @app.get("/audit.csv")
