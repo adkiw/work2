@@ -1129,3 +1129,19 @@ def eu_countries_api():
     return {
         "data": [{"name": name, "code": code} for name, code in EU_COUNTRIES if name]
     }
+
+
+@app.get("/roles", response_model=list[schemas.Role])
+def read_roles(db: Session = Depends(auth.get_db)):
+    """Grąžina visų rolių sąrašą."""
+    return db.query(models.Role).order_by(models.Role.id).all()
+
+
+@app.get("/roles.csv")
+def read_roles_csv(db: Session = Depends(auth.get_db)):
+    """Rolių sąrašas CSV formatu."""
+    rows = db.query(models.Role).order_by(models.Role.id).all()
+    df = pd.DataFrame([{"id": r.id, "name": r.name} for r in rows])
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=roles.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
