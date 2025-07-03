@@ -257,6 +257,23 @@ class Group(GroupBase):
         orm_mode = True
 
 
+class GroupRegionBase(BaseModel):
+    region_code: str
+
+
+class GroupRegionCreate(GroupRegionBase):
+    pass
+
+
+class GroupRegion(GroupRegionBase):
+    id: int
+    group_id: int
+    tenant_id: UUID
+
+    class Config:
+        orm_mode = True
+
+
 class EmployeeBase(BaseModel):
     vardas: str
     pavarde: str
