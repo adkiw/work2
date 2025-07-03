@@ -211,6 +211,33 @@ def approve_pending_user(
     return Response(status_code=204)
 
 
+# ---- Aktyvių naudotojų sąrašas ----
+
+
+@app.get("/superadmin/active-users", response_model=list[schemas.User])
+def list_active_users(
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    """Grąžina visus aktyvius naudotojus."""
+    return db.query(models.User).filter(models.User.is_active == True).all()
+
+
+@app.get("/superadmin/active-users.csv")
+def active_users_csv(
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    """Aktyvių naudotojų sąrašas CSV formatu."""
+    rows = db.query(models.User).filter(models.User.is_active == True).all()
+    df = pd.DataFrame(
+        [{"id": str(u.id), "email": u.email, "full_name": u.full_name or ""} for u in rows]
+    )
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=active-users.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 @app.post("/{tenant_id}/users", response_model=schemas.User)
 def tenant_create_user(
     tenant_id: str,
