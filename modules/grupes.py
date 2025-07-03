@@ -10,15 +10,18 @@ from .audit import log_action
 def show(conn, c):
 
     # 1) Užtikrinti, kad egzistuotų lentelė „grupes“
-    c.execute("""
+    c.execute(
+        """
         CREATE TABLE IF NOT EXISTS grupes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            numeris TEXT UNIQUE,
+            numeris TEXT,
             pavadinimas TEXT,
             aprasymas TEXT,
-            imone TEXT
+            imone TEXT,
+            UNIQUE (numeris, imone)
         )
-    """)
+        """
+    )
     c.execute("PRAGMA table_info(grupes)")
     cols = [r[1] for r in c.fetchall()]
     if 'imone' not in cols:
