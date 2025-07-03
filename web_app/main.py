@@ -328,6 +328,7 @@ def kroviniai_add_form(
         "vilkikai": vilkikai,
         "eksped_vadybininkai": eksped,
         "salys": EU_COUNTRIES,
+        "imone": request.session.get("imone"),
     }
     return templates.TemplateResponse("kroviniai_form.html", context)
 
@@ -362,6 +363,7 @@ def kroviniai_edit_form(
         "vilkikai": vilkikai,
         "eksped_vadybininkai": eksped,
         "salys": EU_COUNTRIES,
+        "imone": request.session.get("imone"),
     }
     return templates.TemplateResponse("kroviniai_form.html", context)
 
@@ -399,6 +401,8 @@ def kroviniai_save(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    if not imone:
+        imone = request.session.get("imone")
     cols = [
         "klientas",
         "vilkikas",
