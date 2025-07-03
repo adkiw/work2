@@ -446,3 +446,53 @@ def get_clients(db: Session, tenant_id: UUID) -> list[models.Client]:
         .all()
     )
 
+
+def create_group(db: Session, tenant_id: UUID, data: schemas.GroupCreate) -> models.Group:
+    group = models.Group(
+        tenant_id=tenant_id,
+        numeris=data.numeris,
+        pavadinimas=data.pavadinimas,
+        aprasymas=data.aprasymas,
+    )
+    db.add(group)
+    db.commit()
+    db.refresh(group)
+    return group
+
+
+def update_group(db: Session, tenant_id: UUID, group_id: int, data: schemas.GroupCreate) -> models.Group | None:
+    group = (
+        db.query(models.Group)
+        .filter(models.Group.id == group_id, models.Group.tenant_id == tenant_id)
+        .first()
+    )
+    if not group:
+        return None
+    for field, value in data.dict().items():
+        setattr(group, field, value)
+    db.commit()
+    db.refresh(group)
+    return group
+
+
+def delete_group(db: Session, tenant_id: UUID, group_id: int) -> bool:
+    group = (
+        db.query(models.Group)
+        .filter(models.Group.id == group_id, models.Group.tenant_id == tenant_id)
+        .first()
+    )
+    if not group:
+        return False
+    db.delete(group)
+    db.commit()
+    return True
+
+
+def get_groups(db: Session, tenant_id: UUID) -> list[models.Group]:
+    return (
+        db.query(models.Group)
+        .filter(models.Group.tenant_id == tenant_id)
+        .order_by(models.Group.id.desc())
+        .all()
+    )
+

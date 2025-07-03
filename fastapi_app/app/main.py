@@ -771,6 +771,91 @@ def delete_client_api(
     return Response(status_code=204)
 
 
+@app.post("/{tenant_id}/groups", response_model=schemas.Group)
+def create_group_api(
+    tenant_id: str,
+    group: schemas.GroupCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    created = crud.create_group(db, UUID(tenant_id), group)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="create",
+            table_name="groups",
+            record_id=str(created.id),
+            details=group.dict(),
+        ),
+    )
+    return created
+
+
+@app.get("/{tenant_id}/groups", response_model=list[schemas.Group])
+def read_groups_api(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return crud.get_groups(db, UUID(tenant_id))
+
+
+@app.put("/{tenant_id}/groups/{group_id}", response_model=schemas.Group)
+def update_group_api(
+    tenant_id: str,
+    group_id: int,
+    group: schemas.GroupCreate,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    updated = crud.update_group(db, UUID(tenant_id), group_id, group)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="update",
+            table_name="groups",
+            record_id=str(group_id),
+            details=group.dict(),
+        ),
+    )
+    return updated
+
+
+@app.delete("/{tenant_id}/groups/{group_id}", status_code=204)
+def delete_group_api(
+    tenant_id: str,
+    group_id: int,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    ok = crud.delete_group(db, UUID(tenant_id), group_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    crud.create_audit_log(
+        db,
+        current_user.id,
+        schemas.AuditLogCreate(
+            action="delete",
+            table_name="groups",
+            record_id=str(group_id),
+            details=None,
+        ),
+    )
+    return Response(status_code=204)
+
+
 @app.post("/audit", response_model=schemas.AuditLog)
 def create_audit_entry(
     log: schemas.AuditLogCreate,
