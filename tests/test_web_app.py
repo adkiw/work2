@@ -467,6 +467,33 @@ def test_updates_basic(tmp_path):
     assert "vilkiko_numeris" in resp.text.splitlines()[0]
 
 
+def test_updates_range(tmp_path):
+    client = create_client(tmp_path)
+    form = {
+        "uid": "0",
+        "vilkiko_numeris": "AAA111",
+        "data": "2023-01-01",
+        "darbo_laikas": "8",
+        "likes_laikas": "4",
+        "sa": "SA",
+        "pakrovimo_statusas": "Pakrauta",
+        "pakrovimo_laikas": "10:00",
+        "pakrovimo_data": "2023-01-01",
+        "iskrovimo_statusas": "",
+        "iskrovimo_laikas": "",
+        "iskrovimo_data": "",
+        "komentaras": "t",
+    }
+    client.post("/updates/save", data=form, allow_redirects=False)
+    resp = client.get(
+        "/api/updates-range?start=2023-01-01&end=2023-01-02&vilkikas=AAA111"
+    )
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert len(data) == 1
+    assert data[0]["vilkiko_numeris"] == "AAA111"
+
+
 def test_klientai_limits(tmp_path):
     client = create_client(tmp_path)
     form = {

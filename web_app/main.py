@@ -2525,6 +2525,27 @@ def updates_csv(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db))
     return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
+@app.get("/api/updates-range")
+def updates_range(
+    start: str,
+    end: str,
+    vilkikas: str | None = None,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    """Grąžina darbo laiko įrašus pasirinktam intervalui."""
+    conn, cursor = db
+    query = "SELECT * FROM vilkiku_darbo_laikai WHERE date(data) BETWEEN ? AND ?"
+    params: list[str] = [start, end]
+    if vilkikas:
+        query += " AND vilkiko_numeris=?"
+        params.append(vilkikas)
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    columns = [col[1] for col in cursor.execute("PRAGMA table_info(vilkiku_darbo_laikai)")]
+    data = [dict(zip(columns, row)) for row in rows]
+    return {"data": data}
+
+
 # ---- Authentication ----
 
 
