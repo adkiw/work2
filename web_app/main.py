@@ -1590,21 +1590,20 @@ def group_regions_add(
 def group_regions_delete(
     rid: int,
     gid: int = 0,
-    request: Request | None = None,
+    request: Request,
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
     cursor.execute("DELETE FROM grupiu_regionai WHERE id=?", (rid,))
     conn.commit()
-    if request:
-        log_action(
-            conn,
-            cursor,
-            request.session.get("user_id"),
-            "delete",
-            "grupiu_regionai",
-            rid,
-        )
+    log_action(
+        conn,
+        cursor,
+        request.session.get("user_id"),
+        "delete",
+        "grupiu_regionai",
+        rid,
+    )
     return RedirectResponse(f"/group-regions?gid={gid}", status_code=303)
 
 
