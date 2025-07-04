@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Vartotojų rolės</h2>
+<table id="roles-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Vartotojas</th>
+            <th>Rolės</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for u in users %}
+        <tr>
+            <td>{{ u.id }}</td>
+            <td>{{ u.username }}</td>
+            <td>{{ u.roles|join(', ') }}</td>
+            <td><button class="edit-btn" data-id="{{ u.id }}">Keisti</button></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<script>
+$(document).ready(function() {
+    $('#roles-table').DataTable();
+    $('.edit-btn').on('click', async function() {
+        const uid = $(this).data('id');
+        const resp = await fetch('/api/user-roles/' + uid);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const current = data.roles.join(',');
+        const val = prompt('Rolės (kableliais atskirtos)', current);
+        if (val === null) return;
+        const roles = val.split(',').map(r => r.trim()).filter(r => r);
+        await fetch('/api/user-roles/' + uid, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roles })
+        });
+        location.reload();
+    });
+});
+</script>
+{% endblock %}

@@ -20,6 +20,7 @@ from .updates import router as updates_router
 from .health import router as health_router
 from .constants import router as constants_router
 from .roles import router as roles_router
+from .user_roles import router as user_roles_router
 
 router = APIRouter()
 for r in [
@@ -43,5 +44,6 @@ for r in [
     health_router,
     constants_router,
     roles_router,
+    user_roles_router,
 ]:
     router.include_router(r)
