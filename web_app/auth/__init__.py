@@ -123,4 +123,16 @@ def register_submit(
     )
 
 
+@router.get("/api/me")
+def current_user(request: Request):
+    """Grąžina prisijungusio vartotojo informaciją."""
+    if not ensure_logged_in(request):
+        raise HTTPException(status_code=401, detail="Nepatvirtintas vartotojas")
+    return {
+        "username": request.session.get("username"),
+        "imone": request.session.get("imone"),
+        "roles": request.session.get("roles", []),
+    }
+
+
 templates = Jinja2Templates(directory="web_app/templates")
