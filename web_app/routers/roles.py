@@ -17,7 +17,7 @@ def roles_list(request: Request, auth: None = Depends(require_roles(Role.ADMIN))
     return templates.TemplateResponse("roles_list.html", {"request": request})
 
 
-@router.get("/api/roles")
+@router.get("/api/roles-full")
 def roles_api(db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db)):
     """Grąžina rolių sąrašą JSON formatu."""
     conn, cursor = db
