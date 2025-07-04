@@ -16,6 +16,7 @@ from .registracijos import router as registracijos_router
 from .audit import router as audit_router
 from .updates import router as updates_router
 from .health import router as health_router
+from .constants import router as constants_router
 
 router = APIRouter()
 for r in [
@@ -35,5 +36,6 @@ for r in [
     audit_router,
     updates_router,
     health_router,
+    constants_router,
 ]:
     router.include_router(r)
