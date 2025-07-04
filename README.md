@@ -41,6 +41,7 @@ See [MIGRATION.md](MIGRATION.md) for a short summary of the migration progress.
    uvicorn web_app.main:app --reload
    ```
    This starts a local server on http://127.0.0.1:8000 without Streamlit.
+   After login the home page is available at `http://127.0.0.1:8000/`.
 
    The web application can also be executed directly as a module:
    ```bash
