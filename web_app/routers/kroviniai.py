@@ -24,25 +24,6 @@ import datetime
 from datetime import date
 import pandas as pd
 
-@router.get("/api/eu-countries")
-def eu_countries():
-    """Grąžina Europos šalių sąrašą."""
-    return {
-        "data": [{"name": name, "code": code} for name, code in EU_COUNTRIES if name]
-    }
-
-
-@router.get("/api/eu-countries.csv")
-def eu_countries_csv():
-    """Grąžina Europos šalis CSV formatu."""
-    df = pd.DataFrame([
-        {"name": name, "code": code}
-        for name, code in EU_COUNTRIES
-        if name
-    ])
-    csv_data = df.to_csv(index=False)
-    headers = {"Content-Disposition": "attachment; filename=eu-countries.csv"}
-    return Response(content=csv_data, media_type="text/csv", headers=headers)
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
