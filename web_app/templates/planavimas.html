@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>Planavimas</h2>
+{{ header_with_add('Planavimas') }}
 <label for="group-select">Ekspedicijos grupė:</label>
 <select id="group-select"></select>
 <table id="plan-table" class="display" style="width:100%"></table>

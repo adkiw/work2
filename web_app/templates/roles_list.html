@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>Rolės</h2>
+{{ header_with_add('Rolės') }}
 <table id="roles-table" class="display" style="width:100%">
     <thead>
         <tr>

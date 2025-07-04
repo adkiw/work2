@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>Sveiki atvykę</h2>
+{{ header_with_add('Sveiki atvykę') }}
 <p>Papildoma sąsaja be Streamlit.</p>
 {% endblock %}

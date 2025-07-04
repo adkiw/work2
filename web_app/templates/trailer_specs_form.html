@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>{% if data.id %}Redaguoti specifikaciją{% else %}Nauja specifikacija{% endif %}</h2>
+{% set form_title = 'Redaguoti specifikaciją' if data.id else 'Nauja specifikacija' %}
+{{ header_with_add(form_title) }}
 <form method="post" action="/trailer-specs/save">
     <input type="hidden" name="sid" value="{{ data.id or 0 }}">
     <div class="form-grid">

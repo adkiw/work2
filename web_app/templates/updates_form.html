@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>{% if data.id %}Redaguoti įrašą{% else %}Atnaujinti krovinį{% endif %}</h2>
+{% set form_title = 'Redaguoti įrašą' if data.id else 'Atnaujinti krovinį' %}
+{{ header_with_add(form_title) }}
 <form method="post" action="/updates/save">
     <input type="hidden" name="uid" value="{{ data.id or 0 }}">
     <input type="hidden" name="vilkiko_numeris" value="{{ data.vilkiko_numeris }}">

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>Padėties atnaujinimai</h2>
+{{ header_with_add('Padėties atnaujinimai') }}
 <label>Transporto vadybininkas:
     <select id="manager-select">
         {% for m in managers %}
