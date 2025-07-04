@@ -1,9 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<div class="page-header">
-    <h2>Darbuotojai</h2>
-    <a class="add-btn" href="/darbuotojai/add">Pridėti naują darbuotoją</a>
-</div>
+{{ header_with_add('Darbuotojai', '/darbuotojai/add', 'Pridėti naują darbuotoją') }}
 <table id="emp-table" class="display" style="width:100%">
     <thead>
         <tr>
