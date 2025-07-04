@@ -72,3 +72,22 @@ def test_register_and_approve():
     ok = client.post("/auth/login", json={"email": "new@example.com", "password": "pass", "tenant_id": str(tenant.id)})
     assert ok.status_code == 200
 
+
+def test_pending_users_csv():
+    sa_user, tenant = setup_superadmin()
+    login = client.post(
+        "/auth/login",
+        json={"email": sa_user.email, "password": "root", "tenant_id": str(tenant.id)},
+    )
+    assert login.status_code == 200
+    token = login.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    reg_data = {"email": "csv@example.com", "password": "pass", "full_name": "Csv"}
+    r = client.post("/register", json=reg_data, params={"tenant_id": str(tenant.id)})
+    assert r.status_code == 201
+
+    resp = client.get("/superadmin/pending-users.csv", headers=headers)
+    assert resp.status_code == 200
+    assert "email" in resp.text.splitlines()[0]
+    assert "csv@example.com" in resp.text
