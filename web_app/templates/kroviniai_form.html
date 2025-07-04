@@ -105,6 +105,14 @@
                 {% endfor %}
             </select>
         </label>
+        <label>Transporto vadybininkas
+            <select name="transporto_vadybininkas">
+                <option value=""></option>
+                {% for t in trans_vadybininkai %}
+                <option value="{{ t }}" {% if data.transporto_vadybininkas == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </label>
     </div>
     <button type="submit">💾 Išsaugoti</button>
     <a href="/kroviniai">← Grįžti į sąrašą</a>
