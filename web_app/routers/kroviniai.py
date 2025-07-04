@@ -51,6 +51,10 @@ def kroviniai_add_form(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
             ("Ekspedicijos vadybininkas",),
         ).fetchall()
+        trans_rows = cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
+            ("Transporto vadybininkas",),
+        ).fetchall()
     else:
         imone = request.session.get("imone", "")
         klientai = [
@@ -71,13 +75,19 @@ def kroviniai_add_form(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=? AND imone=?",
             ("Ekspedicijos vadybininkas", imone),
         ).fetchall()
+        trans_rows = cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=? AND imone=?",
+            ("Transporto vadybininkas", imone),
+        ).fetchall()
     eksped = [f"{r[0]} {r[1]}" for r in eksped_rows]
+    trans = [f"{r[0]} {r[1]}" for r in trans_rows]
     context = {
         "request": request,
         "data": {},
         "klientai": klientai,
         "vilkikai": vilkikai,
         "eksped_vadybininkai": eksped,
+        "trans_vadybininkai": trans,
         "salys": EU_COUNTRIES,
         "imone": request.session.get("imone"),
     }
@@ -128,13 +138,19 @@ def kroviniai_edit_form(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=? AND imone=?",
             ("Ekspedicijos vadybininkas", imone),
         ).fetchall()
+        trans_rows = cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=? AND imone=?",
+            ("Transporto vadybininkas", imone),
+        ).fetchall()
     eksped = [f"{r[0]} {r[1]}" for r in eksped_rows]
+    trans = [f"{r[0]} {r[1]}" for r in trans_rows]
     context = {
         "request": request,
         "data": data,
         "klientai": klientai,
         "vilkikai": vilkikai,
         "eksped_vadybininkai": eksped,
+        "trans_vadybininkai": trans,
         "salys": EU_COUNTRIES,
         "imone": request.session.get("imone"),
     }
@@ -169,6 +185,7 @@ def kroviniai_save(
     svoris: int = Form(0),
     paleciu_skaicius: int = Form(0),
     ekspedicijos_vadybininkas: str = Form(""),
+    transporto_vadybininkas: str = Form(""),
     busena: str = Form("Nesuplanuotas"),
     imone: str = Form(""),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
@@ -201,6 +218,7 @@ def kroviniai_save(
         "svoris",
         "paleciu_skaicius",
         "ekspedicijos_vadybininkas",
+        "transporto_vadybininkas",
         "busena",
         "imone",
     ]
@@ -229,6 +247,7 @@ def kroviniai_save(
         svoris,
         paleciu_skaicius,
         ekspedicijos_vadybininkas,
+        transporto_vadybininkas,
         busena,
         imone,
     ]
