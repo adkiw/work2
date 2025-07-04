@@ -118,6 +118,10 @@ def kroviniai_edit_form(
             "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
             ("Ekspedicijos vadybininkas",),
         ).fetchall()
+        trans_rows = cursor.execute(
+            "SELECT vardas, pavarde FROM darbuotojai WHERE pareigybe=?",
+            ("Transporto vadybininkas",),
+        ).fetchall()
     else:
         imone = request.session.get("imone", "")
         klientai = [
