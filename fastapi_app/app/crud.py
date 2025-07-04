@@ -3,7 +3,8 @@ from sqlalchemy import func
 from uuid import UUID
 from . import models, schemas, auth
 import json
-from datetime import datetime
+from datetime import datetime, date, timedelta
+import pandas as pd
 
 
 def create_user(db: Session, user: schemas.UserCreate, active: bool = True) -> models.User:
@@ -706,4 +707,46 @@ def delete_group_region(db: Session, tenant_id: UUID, region_id: int) -> bool:
     db.delete(region)
     db.commit()
     return True
+
+
+def compute_planning(db: Session, tenant_id: UUID) -> tuple[pd.DataFrame, list[str]]:
+    """Apskaičiuoja planavimo lentelę nurodytai įmonei."""
+    today = date.today()
+    start_date = today - timedelta(days=1)
+    end_date = today + timedelta(days=14)
+    date_list = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+    date_strs = [d.isoformat() for d in date_list]
+
+    shipments = (
+        db.query(models.Shipment)
+        .filter(models.Shipment.tenant_id == tenant_id)
+        .filter(models.Shipment.iskrovimo_data != None)
+        .filter(models.Shipment.iskrovimo_data >= start_date.isoformat())
+        .filter(models.Shipment.iskrovimo_data <= end_date.isoformat())
+        .all()
+    )
+
+    if not shipments:
+        empty = pd.DataFrame([], columns=["Vilkikas"] + date_strs)
+        return empty, date_strs
+
+    df = pd.DataFrame(
+        [
+            {
+                "vilkikas": s.vilkikas,
+                "salis": s.iskrovimo_salis or "",
+                "regionas": s.iskrovimo_regionas or "",
+                "data": s.iskrovimo_data,
+            }
+            for s in shipments
+        ]
+    )
+
+    df_last = df.loc[df.groupby("vilkikas")["data"].idxmax()].copy()
+    df_last["cell_val"] = df_last["salis"] + df_last["regionas"]
+    pivot_df = df_last.pivot(index="vilkikas", columns="data", values="cell_val")
+    pivot_df = pivot_df.reindex(columns=date_strs, fill_value="")
+    pivot_df.index.name = "Vilkikas"
+    pivot_df = pivot_df.fillna("")
+    return pivot_df, date_strs
 
