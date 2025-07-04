@@ -9,6 +9,8 @@
 5. Sukurta pagrindinė vartotojų administravimo funkcija (registracijų tvirtinimas ir aktyvių vartotojų sąrašas).
 6. Parengti testai FastAPI versijai (`tests/` ir `fastapi_app/tests/`).
 7. Pridėtas pagrindinis (`/`) maršrutas FastAPI sąsajoje.
+8. Sukurtas atskiras "trailer-swap" modulis priekabų priskyrimui vilkikams.
+9. "user_admin.py" funkcionalumas perkeltas į `registracijos` maršrutą.
 
 ## Numatomos užduotys
 
