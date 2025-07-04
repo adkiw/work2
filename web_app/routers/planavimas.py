@@ -403,5 +403,7 @@ def vilkikai_csv(
     df = pd.DataFrame(rows, columns=columns)
     csv_data = df.to_csv(index=False)
     headers = {"Content-Disposition": "attachment; filename=vilkikai.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
 
 
