@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>Priekabų priskyrimas</h2>
+{{ header_with_add('Priekabų priskyrimas', '', '') }}
 <form method="post">
     <label>Vilkikas:
         <select name="vilkikas">

@@ -1,0 +1,8 @@
+{% macro header_with_add(title, url=None, label=None) %}
+<div class="page-header">
+    <h2>{{ title }}</h2>
+    {% if url and label %}
+    <a class="add-btn" href="{{ url }}">{{ label }}</a>
+    {% endif %}
+</div>
+{% endmacro %}

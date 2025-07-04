@@ -1,9 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<div class="page-header">
-    <h2>Vairuotojų valdymas</h2>
-    <a class="add-btn" href="/vairuotojai/add">Pridėti vairuotoją</a>
-</div>
+{{ header_with_add('Vairuotojų valdymas', '/vairuotojai/add', 'Pridėti vairuotoją') }}
 <table id="drv-table" class="display" style="width:100%">
     <thead>
         <tr>

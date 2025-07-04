@@ -1,9 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<div class="page-header">
-    <h2>Grupės</h2>
-    <a class="add-btn" href="/grupes/add">Pridėti grupę</a>
-</div>
+{{ header_with_add('Grupės', '/grupes/add', 'Pridėti grupę') }}
 <table id="group-table" class="display" style="width:100%">
     <thead>
         <tr>

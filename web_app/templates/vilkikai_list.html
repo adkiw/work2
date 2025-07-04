@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>Vilkikai</h2>
-<a href="/vilkikai/add">Pridėti naują</a>
+{{ header_with_add('Vilkikai', '/vilkikai/add', 'Pridėti naują') }}
 <table id="truck-table" class="display" style="width:100%">
     <thead>
         <tr>

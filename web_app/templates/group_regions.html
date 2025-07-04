@@ -1,8 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<div class="page-header">
-    <h2>Grupių regionai</h2>
-</div>
+{{ header_with_add('Grupių regionai') }}
 <div class="group-select">
     <label>Grupė:
         <select id="grupe-select"></select>
