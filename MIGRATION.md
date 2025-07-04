@@ -8,6 +8,7 @@
 4. Sukurti API maršrutai duomenų eksportui į CSV formatą.
 5. Sukurta pagrindinė vartotojų administravimo funkcija (registracijų tvirtinimas ir aktyvių vartotojų sąrašas).
 6. Parengti testai FastAPI versijai (`tests/` ir `fastapi_app/tests/`).
+7. Pridėtas pagrindinis (`/`) maršrutas FastAPI sąsajoje.
 
 ## Numatomos užduotys
 

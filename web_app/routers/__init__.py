@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from .home import router as home_router
 from .kroviniai import router as kroviniai_router
 from .planavimas import router as planavimas_router
 from .vilkikai import router as vilkikai_router
@@ -22,6 +23,7 @@ from .roles import router as roles_router
 
 router = APIRouter()
 for r in [
+    home_router,
     kroviniai_router,
     planavimas_router,
     vilkikai_router,
