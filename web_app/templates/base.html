@@ -32,6 +32,8 @@
         {% if 'admin' in roles %} |
         <a href="/audit">Auditas</a> |
         <a href="/roles">Rolės</a>{% endif %}
+        {% if 'admin' in roles or 'company_admin' in roles %} |
+        <a href="/user-roles">Vartotojų rolės</a>{% endif %}
         {% if request.session.get('user_id') %} |
         Prisijungęs: {{ request.session.get('username') }} (<a href="/logout">Atsijungti</a>)
         {% else %} |
