@@ -197,6 +197,24 @@ def list_pending_users(
     return db.query(models.User).filter(models.User.is_active == False).all()
 
 
+@app.get("/superadmin/pending-users.csv")
+def pending_users_csv(
+    current_user=Depends(dependencies.requires_roles(["SUPERADMIN"])),
+    db: Session = Depends(auth.get_db),
+):
+    """Laukiančių naudotojų sąrašas CSV formatu."""
+    rows = db.query(models.User).filter(models.User.is_active == False).all()
+    df = pd.DataFrame(
+        [
+            {"id": str(u.id), "email": u.email, "full_name": u.full_name or ""}
+            for u in rows
+        ]
+    )
+    csv_data = df.to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=pending-users.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
+
+
 @app.post("/superadmin/pending-users/{user_id}/approve", status_code=204)
 def approve_pending_user(
     user_id: str,
