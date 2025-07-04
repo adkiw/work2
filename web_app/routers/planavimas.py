@@ -8,7 +8,13 @@ from modules.audit import log_action, fetch_logs
 from modules.login import assign_role
 from modules.roles import Role
 from modules.constants import EU_COUNTRIES, EMPLOYEE_ROLES, DRIVER_NATIONALITIES
-from ..utils import ensure_columns, compute_limits, compute_busena, table_csv_response, get_db
+from ..utils import (
+    ensure_columns,
+    compute_limits,
+    compute_busena,
+    table_csv_response,
+    get_db,
+)
 from ..auth import user_has_role, require_roles
 import datetime
 from datetime import date
@@ -20,29 +26,15 @@ templates = Jinja2Templates(directory="web_app/templates")
 # ---- Planavimas ----
 
 
-@router.get("/planavimas", response_class=HTMLResponse)
-def planavimas_page(request: Request):
-    return templates.TemplateResponse("planavimas.html", {"request": request})
-
-
-@router.get("/api/planavimas")
-def planavimas_api(
-    request: Request,
-    grupe: str | None = None,
-    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
-):
-    conn, cursor = db
+def _compute_planavimas(cursor, request: Request, grupe: str | None):
+    """Sukuria pivot lentelę planavimui."""
     today = datetime.date.today()
     start_date = today - datetime.timedelta(days=1)
     end_date = today + datetime.timedelta(days=14)
-    date_list = [
-        start_date + datetime.timedelta(days=i)
-        for i in range((end_date - start_date).days + 1)
-    ]
+    date_list = [start_date + datetime.timedelta(days=i) for i in range((end_date - start_date).days + 1)]
     date_strs = [d.isoformat() for d in date_list]
 
     is_admin = user_has_role(request, cursor, Role.ADMIN)
-    # truck info
     if is_admin:
         cursor.execute("SELECT numeris, priekaba, vadybininkas FROM vilkikai")
     else:
@@ -69,7 +61,8 @@ def planavimas_api(
     columns = ["vilkikas", "salis", "regionas", "data", "pak_data"]
     df = pd.DataFrame(rows, columns=columns)
     if df.empty:
-        return {"columns": ["Vilkikas"] + date_strs, "data": []}
+        empty = pd.DataFrame([], columns=["Vilkikas"] + date_strs)
+        return empty, date_strs
 
     df["salis"] = df["salis"].fillna("").astype(str)
     df["regionas"] = df["regionas"].fillna("").astype(str)
@@ -83,18 +76,16 @@ def planavimas_api(
         if r:
             gid = r[0]
             cursor.execute(
-                "SELECT regiono_kodas FROM grupiu_regionai WHERE grupe_id=?", (gid,)
+                "SELECT regiono_kodas FROM grupiu_regionai WHERE grupe_id=?",
+                (gid,),
             )
             regionai = [row[0] for row in cursor.fetchall()]
             if regionai:
-                df = df[
-                    df["vietos_kodas"].apply(
-                        lambda x: any(x.startswith(r) for r in regionai)
-                    )
-                ]
+                df = df[df["vietos_kodas"].apply(lambda x: any(x.startswith(r) for r in regionai))]
 
     if df.empty:
-        return {"columns": ["Vilkikas"] + date_strs, "data": []}
+        empty = pd.DataFrame([], columns=["Vilkikas"] + date_strs)
+        return empty, date_strs
 
     df_last = df.loc[df.groupby("vilkikas")["data"].idxmax()].copy()
 
@@ -132,9 +123,7 @@ def planavimas_api(
         ]
         return " ".join(parts)
 
-    df_last["cell_val"] = df_last.apply(
-        lambda r: make_cell(r["vilkikas"], r["data"], r["vietos_kodas"]), axis=1
-    )
+    df_last["cell_val"] = df_last.apply(lambda r: make_cell(r["vilkikas"], r["data"], r["vietos_kodas"]), axis=1)
     pivot_df = df_last.pivot(index="vilkikas", columns="data", values="cell_val")
     pivot_df = pivot_df.reindex(columns=date_strs, fill_value="")
     pivot_df = pivot_df.reindex(index=df_last["vilkikas"].unique(), fill_value="")
@@ -165,11 +154,35 @@ def planavimas_api(
     pivot_df.index = combined_index
     pivot_df.index.name = "Vilkikas"
     pivot_df = pivot_df.fillna("")
+    return pivot_df, date_strs
 
+
+@router.get("/planavimas", response_class=HTMLResponse)
+def planavimas_page(request: Request):
+    return templates.TemplateResponse("planavimas.html", {"request": request})
+
+
+@router.get("/api/planavimas")
+def planavimas_api(
+    request: Request,
+    grupe: str | None = None,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    pivot_df, date_strs = _compute_planavimas(cursor, request, grupe)
     result = pivot_df.reset_index().to_dict(orient="records")
     return {"columns": ["Vilkikas"] + date_strs, "data": result}
 
 
-
-
+@router.get("/api/planavimas.csv")
+def planavimas_csv(
+    request: Request,
+    grupe: str | None = None,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    pivot_df, date_strs = _compute_planavimas(cursor, request, grupe)
+    csv_data = pivot_df.reset_index().to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=planavimas.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
