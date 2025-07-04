@@ -4,6 +4,8 @@ This repository contains a Streamlit based application for logistics companies. 
 
 Besides the Streamlit UI, the repository now provides an alternative FastAPI based web interface located in the `web_app` directory. This interface relies on DataTables for an Excel-style look and can be started locally without Streamlit. Initially it only supported shipment management but now also includes trucks, trailers, employees, groups, clients, drivers, trailer type management and an audit log section and a simple login/registration system. Naujausioje versijoje taip pat galima atsisiųsti darbuotojų, grupių, klientų, vairuotojų bei priekabų specifikacijų, numatytų priekabų tipų ir laukiančių bei aktyvių naudotojų sąrašus CSV formatu.
 
+See [MIGRATION.md](MIGRATION.md) for a short summary of the migration progress.
+
 ## Setup
 
 1. Create and activate a Python virtual environment and install the
