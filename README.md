@@ -1,8 +1,8 @@
-# Streamlit Logistics Appsas
+# Logistics App
 
-This repository contains a Streamlit based application for logistics companies. The app manages shipments, vehicles and staff information in a single dashboard and stores all data in a local SQLite database.
+This repository contains a FastAPI based application for logistics companies. The app manages shipments, vehicles and staff information in a single dashboard and stores all data in a local SQLite database.
 
- Besides the Streamlit UI, the repository now provides an alternative FastAPI based web interface located in the `web_app` directory. This interface relies on DataTables for an Excel-style look and can be started locally without Streamlit. Initially it only supported shipment management but now also includes trucks, trailers, employees, groups, clients, drivers, trailer type management, trailer assignment and an audit log section with a simple login/registration system. Naujausioje versijoje taip pat galima atsisiųsti darbuotojų, grupių, klientų, vairuotojų bei priekabų specifikacijų, numatytų priekabų tipų, laukiančių registracijų ir aktyvių naudotojų sąrašus CSV formatu. Šablonuose naudojamas bendras Jinja makro `header_with_add`, kuris užtikrina vienodą antraštės ir "Pridėti" mygtuko išdėstymą.
+The web interface is located in the `web_app` directory and relies on DataTables for an Excel-style look. Initially it only supported shipment management but now also includes trucks, trailers, employees, groups, clients, drivers, trailer type management, trailer assignment and an audit log section with a simple login/registration system. Naujausioje versijoje taip pat galima atsisiųsti darbuotojų, grupių, klientų, vairuotojų bei priekabų specifikacijų, numatytų priekabų tipų, laukiančių registracijų ir aktyvių naudotojų sąrašus CSV formatu. Šablonuose naudojamas bendras Jinja makro `header_with_add`, kuris užtikrina vienodą antraštės ir "Pridėti" mygtuko išdėstymą.
 
 See [MIGRATION.md](MIGRATION.md) for a short summary of the migration progress.
 
@@ -25,22 +25,11 @@ See [MIGRATION.md](MIGRATION.md) for a short summary of the migration progress.
    `vilkikai` and `priekabos` tables by default. When run on an older database
    it will automatically add this column if it is missing.
 
-3. Start the application:
-   ```bash
-   streamlit run main.py
-   ```
-   The main page displays a horizontal menu for modules such as shipments, trucks, trailers, groups, drivers, clients, employees, planning and updates.
-
-   On Windows systems you can alternatively execute `start_work2_server.bat` to
-   create the virtual environment (if missing), install dependencies and launch
-   the FastAPI interface automatically. Linux users can run `start_work2_server.sh`
-   which performs the same steps using Bash.
-
-4. Alternatively you can run the FastAPI interface located in `web_app`:
+3. Start the FastAPI interface located in `web_app`:
    ```bash
    uvicorn web_app.main:app --reload
    ```
-   This starts a local server on http://127.0.0.1:8000 without Streamlit.
+   This starts a local server on http://127.0.0.1:8000.
    After login the home page is available at `http://127.0.0.1:8000/`.
 
    The web application can also be executed directly as a module:
@@ -48,8 +37,6 @@ See [MIGRATION.md](MIGRATION.md) for a short summary of the migration progress.
    python -m web_app
    ```
    which runs the same server using built-in defaults.
-
-5. To enable dark mode in the Streamlit UI, open the sidebar in the running app and choose **Dark** in the Theme selector.
 
 ## Naudojimas
 
