@@ -341,6 +341,41 @@ def test_planavimas_basic(tmp_path):
     assert today in data["columns"]
 
 
+def test_planavimas_csv(tmp_path):
+    client = create_client(tmp_path)
+    today = datetime.date.today().isoformat()
+    truck_form = {
+        "vid": "0",
+        "numeris": "AAA111",
+        "marke": "MAN",
+        "pagaminimo_metai": "2020",
+        "tech_apziura": "2023-01-01",
+        "vadybininkas": "John",
+        "vairuotojai": "",
+        "priekaba": "TR1",
+        "imone": "A",
+    }
+    client.post("/vilkikai/save", data=truck_form, allow_redirects=False)
+    load_form = {
+        "cid": "0",
+        "klientas": "ACME",
+        "uzsakymo_numeris": "1",
+        "pakrovimo_data": today,
+        "iskrovimo_data": today,
+        "kilometrai": "10",
+        "frachtas": "1",
+        "busena": "Nesuplanuotas",
+        "imone": "A",
+        "vilkikas": "AAA111",
+    }
+    client.post("/kroviniai/save", data=load_form, allow_redirects=False)
+    resp = client.get("/api/planavimas.csv")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    first_line = resp.text.splitlines()[0]
+    assert "Vilkikas" in first_line
+
+
 def test_settings_defaults(tmp_path):
     client = create_client(tmp_path)
     form = {
