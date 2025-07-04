@@ -18,6 +18,10 @@
 ## Numatomos užduotys
 
 1. Toliau tobulinti šablonus, kad vaizdas atitiktų Streamlit versiją.
-2. Perkelti likusius pagalbinius metodus iš `modules/utils.py`, jei jie dar naudojami.
+2. Pašalinti nebenaudojamus Streamlit modulius ir `main.py`.
 3. Sulyginti visų formų validaciją tarp Streamlit ir FastAPI versijų.
+
+## Papildomi darbai
+
+* Patikrinti ar visos funkcijos perkeltos į `web_app` turi atitinkamus testus.
 

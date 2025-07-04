@@ -49,12 +49,3 @@ def fetch_logs(conn, c, imone: str | None = None) -> pd.DataFrame:
     return df
 
 
-def show(conn, c, imone: str | None = None):
-    import streamlit as st
-
-    st.title("Audit log")
-    df = fetch_logs(conn, c, imone)
-    if df.empty:
-        st.info("Nėra įrašų")
-    else:
-        st.dataframe(df)
