@@ -23,13 +23,13 @@
         <a href="/klientai">Klientai</a> |
         <a href="/planavimas">Planavimas</a> |
         <a href="/trailer-types">Priekabų tipai</a>
-        {% if 'ADMIN' in roles %} |
+        {% if 'admin' in roles %} |
         <a href="/trailer-specs">Priekabų spec.</a> |
         <a href="/settings">Nustatymai</a>{% endif %}
-        {% if 'ADMIN' in roles or 'COMPANY_ADMIN' in roles %} |
+        {% if 'admin' in roles or 'company_admin' in roles %} |
         <a href="/registracijos">Registracijos</a>{% endif %} |
         <a href="/updates">Atnaujinimai</a>
-        {% if 'ADMIN' in roles %} |
+        {% if 'admin' in roles %} |
         <a href="/audit">Auditas</a> |
         <a href="/roles">Rolės</a>{% endif %}
         {% if request.session.get('user_id') %} |
