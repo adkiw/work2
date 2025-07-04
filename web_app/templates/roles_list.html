@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Rolės</h2>
+<table id="roles-table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Pavadinimas</th>
+        </tr>
+    </thead>
+</table>
+<script>
+$(document).ready(function() {
+    $('#roles-table').DataTable({
+        ajax: '/api/roles',
+        columns: [
+            { data: 'id' },
+            { data: 'name' }
+        ]
+    });
+});
+</script>
+{% endblock %}
