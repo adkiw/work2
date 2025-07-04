@@ -670,6 +670,16 @@ def test_roles_endpoints(tmp_path):
     assert "name" in resp.text.splitlines()[0]
 
 
+def test_roles_full_endpoint(tmp_path):
+    client = create_client(tmp_path)
+    resp = client.get("/api/roles-full")
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert isinstance(data, list) and len(data) > 0
+    first = data[0]
+    assert "id" in first and "name" in first
+
+
 def test_group_regions(tmp_path):
     client = create_client(tmp_path)
     db_path = tmp_path / "app.db"
