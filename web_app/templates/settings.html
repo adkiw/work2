@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>Numatytieji priekabų tipai</h2>
+{{ header_with_add('Numatytieji priekabų tipai') }}
 <form id="defaults-form" method="post" action="/settings/save">
     <label>Įmonė: <input type="text" id="imone-field" name="imone" value="A"></label>
     <div id="rows"></div>

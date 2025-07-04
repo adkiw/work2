@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>Audit log</h2>
+{{ header_with_add('Audit log') }}
 <label>Naudotojas:
     <select id="user-filter">
         <option value="">Visi</option>

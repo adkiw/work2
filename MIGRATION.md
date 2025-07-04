@@ -12,11 +12,11 @@
 8. Sukurtas atskiras "trailer-swap" modulis priekabų priskyrimui vilkikams.
 9. "user_admin.py" funkcionalumas perkeltas į `registracijos` maršrutą.
 10. Sukurtas bendras Jinja makro "header_with_add" antraštėms su "pridėti" nuoroda.
+11. "header_with_add" makro pritaikytas visuose šablonuose.
 
 ## Numatomos užduotys
 
 1. Toliau tobulinti šablonus, kad vaizdas atitiktų Streamlit versiją.
 2. Perkelti likusius pagalbinius metodus iš `modules/utils.py`, jei jie dar naudojami.
 3. Sulyginti visų formų validaciją tarp Streamlit ir FastAPI versijų.
-4. Pritaikyti naująjį "header_with_add" makro visuose šablonuose.
 

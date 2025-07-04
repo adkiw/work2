@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import header_with_add %}
 {% block content %}
-<h2>Registracija</h2>
+{{ header_with_add('Registracija') }}
 <form method="post">
     <label>El. paštas: <input type="text" name="username"></label><br>
     <label>Slaptažodis: <input type="password" name="password"></label><br>
