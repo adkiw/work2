@@ -1398,139 +1398,30 @@ def updates_range_csv(
 @app.get("/{tenant_id}/planning")
 def planning_api(
     tenant_id: str,
-    group: str | None = None,
     current_user=Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db),
 ):
     if str(current_user.current_tenant_id) != tenant_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    start_date = datetime.utcnow().date() - timedelta(days=1)
-    end_date = datetime.utcnow().date() + timedelta(days=14)
-    date_list = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
-    date_strs = [d.isoformat() for d in date_list]
+    df, cols = crud.compute_planning(db, UUID(tenant_id))
+    result = df.reset_index().to_dict(orient="records")
+    return {"columns": ["Vilkikas"] + cols, "data": result}
 
-    rows = (
-        db.query(models.Shipment)
-        .filter(models.Shipment.tenant_id == tenant_id)
-        .filter(models.Shipment.iskrovimo_data != None)
-        .all()
-    )
-    data = [
-        {
-            "vilkikas": r.vilkikas,
-            "salis": r.iskrovimo_salis or "",
-            "regionas": r.iskrovimo_regionas or "",
-            "data": r.iskrovimo_data,
-            "pak_data": r.pakrovimo_data,
-        }
-        for r in rows
-        if r.iskrovimo_data and start_date <= datetime.fromisoformat(r.iskrovimo_data).date() <= end_date
-    ]
-    df = pd.DataFrame(data, columns=["vilkikas", "salis", "regionas", "data", "pak_data"])
-    if df.empty:
-        return {"columns": ["Vilkikas"] + date_strs, "data": []}
 
-    df["salis"] = df["salis"].fillna("")
-    df["regionas"] = df["regionas"].fillna("")
-    df["vietos_kodas"] = df["salis"] + df["regionas"]
+@app.get("/{tenant_id}/planning.csv")
+def planning_csv(
+    tenant_id: str,
+    current_user=Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db),
+):
+    if str(current_user.current_tenant_id) != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    if group:
-        grp = (
-            db.query(models.Group)
-            .filter(models.Group.tenant_id == tenant_id, models.Group.numeris == group)
-            .first()
-        )
-        if grp:
-            regions = [
-                gr.region_code
-                for gr in db.query(models.GroupRegion)
-                .filter(models.GroupRegion.tenant_id == tenant_id, models.GroupRegion.group_id == grp.id)
-                .all()
-            ]
-            if regions:
-                df = df[df["vietos_kodas"].apply(lambda x: any(x.startswith(r) for r in regions))]
-
-    if df.empty:
-        return {"columns": ["Vilkikas"] + date_strs, "data": []}
-
-    df["data"] = pd.to_datetime(df["data"]).dt.date.astype(str)
-    df["pak_data"] = pd.to_datetime(df["pak_data"]).dt.date.astype(str)
-
-    df_last = df.loc[df.groupby("vilkikas")["data"].idxmax()].copy()
-
-    papildomi = {}
-    for _, row in df_last.iterrows():
-        upd = (
-            db.query(models.UpdateEntry)
-            .filter(
-                models.UpdateEntry.tenant_id == tenant_id,
-                models.UpdateEntry.vilkiko_numeris == row["vilkikas"],
-                models.UpdateEntry.data == row["pak_data"],
-            )
-            .order_by(models.UpdateEntry.id.desc())
-            .first()
-        )
-        if upd:
-            papildomi[(row["vilkikas"], row["data"])] = {
-                "ikr_laikas": upd.iskrovimo_laikas or "",
-                "bdl": upd.darbo_laikas or "",
-                "ldl": upd.likes_laikas or "",
-            }
-
-    def make_cell(vilk, iskr_data, vieta):
-        if not vieta:
-            return ""
-        info = papildomi.get((vilk, iskr_data), {})
-        return " ".join(
-            [
-                vieta,
-                info.get("ikr_laikas", "--") or "--",
-                str(info.get("bdl", "--")) or "--",
-                str(info.get("ldl", "--")) or "--",
-            ]
-        )
-
-    df_last["cell_val"] = df_last.apply(lambda r: make_cell(r["vilkikas"], r["data"], r["vietos_kodas"]), axis=1)
-    pivot_df = df_last.pivot(index="vilkikas", columns="data", values="cell_val")
-    pivot_df = pivot_df.reindex(columns=date_strs, fill_value="")
-    pivot_df = pivot_df.reindex(index=df_last["vilkikas"].unique(), fill_value="")
-
-    priek_map = {
-        t.numeris: t.priekaba or ""
-        for t in db.query(models.Truck).filter(models.Truck.tenant_id == tenant_id).all()
-    }
-    sa_map = {}
-    for v in pivot_df.index:
-        pak_d = df_last.loc[df_last["vilkikas"] == v, "pak_data"].values[0]
-        upd = (
-            db.query(models.UpdateEntry)
-            .filter(
-                models.UpdateEntry.tenant_id == tenant_id,
-                models.UpdateEntry.vilkiko_numeris == v,
-                models.UpdateEntry.data == pak_d,
-            )
-            .order_by(models.UpdateEntry.id.desc())
-            .first()
-        )
-        sa_map[v] = upd.sa if upd and upd.sa else ""
-
-    combined_index = []
-    for v in pivot_df.index:
-        label = v
-        priek = priek_map.get(v, "")
-        sa = sa_map.get(v, "")
-        if priek:
-            label += f"/{priek}"
-        if sa:
-            label += f" {sa}"
-        combined_index.append(label)
-
-    pivot_df.index = combined_index
-    pivot_df.index.name = "Vilkikas"
-    pivot_df = pivot_df.fillna("")
-    result = pivot_df.reset_index().to_dict(orient="records")
-    return {"columns": ["Vilkikas"] + date_strs, "data": result}
+    df, cols = crud.compute_planning(db, UUID(tenant_id))
+    csv_data = df.reset_index().to_csv(index=False)
+    headers = {"Content-Disposition": "attachment; filename=planning.csv"}
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
 @app.post("/audit", response_model=schemas.AuditLog)
