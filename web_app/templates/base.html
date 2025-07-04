@@ -29,7 +29,8 @@
         <a href="/registracijos">Registracijos</a>{% endif %} |
         <a href="/updates">Atnaujinimai</a>
         {% if 'ADMIN' in roles %} |
-        <a href="/audit">Auditas</a>{% endif %}
+        <a href="/audit">Auditas</a> |
+        <a href="/roles">Rolės</a>{% endif %}
         {% if request.session.get('user_id') %} |
         Prisijungęs: {{ request.session.get('username') }} (<a href="/logout">Atsijungti</a>)
         {% else %} |
