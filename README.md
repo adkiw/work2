@@ -3,7 +3,7 @@
 This repository contains a FastAPI based application for logistics companies. The app manages shipments, vehicles and staff information in a single dashboard and stores all data in a local SQLite database.
 
 The web interface is located in the `web_app` directory and relies on DataTables for an Excel-style look. Initially it only supported shipment management but now also includes trucks, trailers, employees, groups, clients, drivers, trailer type management, trailer assignment and an audit log section with a simple login/registration system. Naujausioje versijoje taip pat galima atsisiųsti darbuotojų, grupių, klientų, vairuotojų bei priekabų specifikacijų, numatytų priekabų tipų, laukiančių registracijų ir aktyvių naudotojų sąrašus CSV formatu. Šablonuose naudojamas bendras Jinja makro `header_with_add`, kuris užtikrina vienodą antraštės ir "Pridėti" mygtuko išdėstymą.
-Regionų priskyrimas vadybininkams dabar atliekamas darbuotojo redagavimo formoje. Pasirinkus grupę rodomi jos regionai su varnelėmis ir išsaugojus pažymėjimus atnaujinami priskyrimai.
+Regionų priskyrimas vadybininkams dabar atliekamas darbuotojo redagavimo formoje. Pasirinkus grupę rodomi jos regionai kaip paspaudžiami mygtukai, kurie pažymėti pažaliuoja. Išsaugojus atnaujinami priskyrimai.
 
 See [MIGRATION.md](MIGRATION.md) for a short summary of the migration progress.
 
