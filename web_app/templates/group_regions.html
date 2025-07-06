@@ -61,7 +61,7 @@ $(document).ready(function() {
                         }
                         updateField();
                     });
-                    layer.bindTooltip(code);
+                    layer.bindTooltip(code, {permanent: true, direction:'center', className:'region-label'});
                 },
                 style:{color:'#3388ff',weight:1,fillOpacity:0.4}
             }).addTo(map);
