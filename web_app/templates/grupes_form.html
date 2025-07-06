@@ -15,9 +15,7 @@
         <label class="full-width">Aprašymas
             <textarea name="aprasymas">{{ data.aprasymas or '' }}</textarea>
         </label>
-        <label class="full-width">Įmonė
-            <input type="text" name="imone" value="{{ data.imone or '' }}">
-        </label>
+        <input type="hidden" name="imone" value="{{ data.imone or '' }}">
     </div>
     <button type="submit">💾 Išsaugoti grupę</button>
     <a href="/grupes">← Atšaukti</a>

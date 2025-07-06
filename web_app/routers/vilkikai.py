@@ -23,6 +23,7 @@ def vilkikai_add_form(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    imone = request.session.get("imone", "")
     if user_has_role(request, cursor, Role.ADMIN):
         trailers = [r[0] for r in cursor.execute("SELECT numeris FROM priekabos").fetchall()]
         vair_rows = cursor.execute("SELECT id, vardas, pavarde FROM vairuotojai").fetchall()
@@ -48,7 +49,7 @@ def vilkikai_add_form(
     vadybininkai = [f"{r[0]} {r[1]}" for r in vadyb_rows]
     context = {
         "request": request,
-        "data": {},
+        "data": {"imone": imone},
         "trailers": trailers,
         "markes": markes,
         "vairuotojai": vairuotojai,
@@ -142,6 +143,8 @@ def vilkikai_save(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    if not user_has_role(request, cursor, Role.ADMIN):
+        imone = request.session.get("imone")
     drivers = ", ".join(filter(None, [vairuotojas1, vairuotojas2]))
     if vid:
         cursor.execute(

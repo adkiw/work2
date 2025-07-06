@@ -52,7 +52,12 @@ def priekabos_add_form(
     ]
     return templates.TemplateResponse(
         "priekabos_form.html",
-        {"request": request, "data": {}, "tipai": tipai, "markes": markes},
+        {
+            "request": request,
+            "data": {"imone": imone},
+            "tipai": tipai,
+            "markes": markes,
+        },
     )
 
 
@@ -112,6 +117,8 @@ def priekabos_save(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    if not user_has_role(request, cursor, Role.ADMIN):
+        imone = request.session.get("imone")
     if pid:
         cursor.execute(
             "UPDATE priekabos SET priekabu_tipas=?, numeris=?, marke=?, pagaminimo_metai=?, tech_apziura=?, draudimas=?, imone=? WHERE id=?",
