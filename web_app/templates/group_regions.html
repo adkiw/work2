@@ -12,6 +12,7 @@
         <tr>
             <th>ID</th>
             <th>Regiono kodas</th>
+            <th>Kitos grupės</th>
             <th>Veiksmai</th>
         </tr>
     </thead>
@@ -34,6 +35,7 @@ $(document).ready(function() {
             columns: [
                 { data: 'id' },
                 { data: 'regiono_kodas' },
+                { data: 'kitos_grupes', defaultContent: '' },
                 { data: null, render: function(data,type,row){
                     const gid = $('#grupe-select').val();
                     return `<a href="/group-regions/${row.id}/delete?gid=${gid}">Šalinti</a>`;
@@ -61,7 +63,11 @@ $(document).ready(function() {
     $('#add-form').on('submit', async function(e){
         e.preventDefault();
         const formData = $(this).serialize();
-        const resp = await fetch('/group-regions/add', {method:'POST', body:formData});
+        const resp = await fetch('/group-regions/add', {
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:formData
+        });
         if(resp.redirected){
             table.ajax.reload();
             $('#regionai').val('');
