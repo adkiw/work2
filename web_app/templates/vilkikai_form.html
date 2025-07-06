@@ -61,9 +61,7 @@
                 {% endfor %}
             </select>
         </label>
-        <label class="full-width">Įmonė
-            <input type="text" name="imone" value="{{ data.imone or '' }}">
-        </label>
+        <input type="hidden" name="imone" value="{{ data.imone or '' }}">
     </div>
     <button type="submit">💾 Išsaugoti vilkiką</button>
     <a href="/vilkikai">← Grįžti į sąrašą</a>

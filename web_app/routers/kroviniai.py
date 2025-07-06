@@ -195,7 +195,7 @@ def kroviniai_save(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
-    if not imone:
+    if not user_has_role(request, cursor, Role.ADMIN):
         imone = request.session.get("imone")
     cols = [
         "klientas",

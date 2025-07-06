@@ -27,8 +27,9 @@ def grupes_list(request: Request):
 
 @router.get("/grupes/add", response_class=HTMLResponse)
 def grupes_add_form(request: Request):
+    imone = request.session.get("imone", "")
     return templates.TemplateResponse(
-        "grupes_form.html", {"request": request, "data": {}}
+        "grupes_form.html", {"request": request, "data": {"imone": imone}}
     )
 
 
@@ -39,6 +40,8 @@ def grupes_edit_form(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    if not user_has_role(request, cursor, Role.ADMIN):
+        imone = request.session.get("imone")
     row = cursor.execute("SELECT * FROM grupes WHERE id=?", (gid,)).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Not found")
@@ -60,6 +63,8 @@ def grupes_save(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    if not user_has_role(request, cursor, Role.ADMIN):
+        imone = request.session.get("imone")
     if gid:
         cursor.execute(
             "UPDATE grupes SET numeris=?, pavadinimas=?, aprasymas=?, imone=? WHERE id=?",

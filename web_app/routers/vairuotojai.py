@@ -27,11 +27,12 @@ def vairuotojai_list(request: Request):
 
 @router.get("/vairuotojai/add", response_class=HTMLResponse)
 def vairuotojai_add_form(request: Request):
+    imone = request.session.get("imone", "")
     return templates.TemplateResponse(
         "vairuotojai_form.html",
         {
             "request": request,
-            "data": {},
+            "data": {"imone": imone},
             "tautybes": DRIVER_NATIONALITIES,
         },
     )
@@ -73,6 +74,8 @@ def vairuotojai_save(
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
+    if not user_has_role(request, cursor, Role.ADMIN):
+        imone = request.session.get("imone")
     if did:
         cursor.execute(
             "UPDATE vairuotojai SET vardas=?, pavarde=?, gimimo_metai=?, tautybe=?, kadencijos_pabaiga=?, atostogu_pabaiga=?, imone=? WHERE id=?",
