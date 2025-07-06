@@ -8,7 +8,13 @@ from modules.audit import log_action, fetch_logs
 from modules.login import assign_role
 from modules.roles import Role
 from modules.constants import EU_COUNTRIES, EMPLOYEE_ROLES, DRIVER_NATIONALITIES
-from ..utils import ensure_columns, compute_limits, compute_busena, table_csv_response, get_db
+from ..utils import (
+    ensure_columns,
+    compute_limits,
+    compute_busena,
+    table_csv_response,
+    get_db,
+)
 from ..auth import user_has_role, require_roles
 import datetime
 from datetime import date
@@ -94,7 +100,14 @@ def group_regions_api(
         (gid_int,),
     )
     rows = cursor.fetchall()
-    data = [{"id": r[0], "regiono_kodas": r[1]} for r in rows]
+    data = []
+    for rid, code in rows:
+        cursor.execute(
+            "SELECT g.numeris FROM grupiu_regionai gr JOIN grupes g ON gr.grupe_id=g.id WHERE gr.regiono_kodas=? AND gr.grupe_id!=?",
+            (code, gid_int),
+        )
+        others = "; ".join([r[0] for r in cursor.fetchall()])
+        data.append({"id": rid, "regiono_kodas": code, "kitos_grupes": others})
     return {"data": data}
 
 
@@ -108,9 +121,15 @@ def group_regions_csv(
         (gid,),
     )
     rows = cursor.fetchall()
-    df = pd.DataFrame(rows, columns=["id", "regiono_kodas"])
+    data = []
+    for rid, code in rows:
+        cursor.execute(
+            "SELECT g.numeris FROM grupiu_regionai gr JOIN grupes g ON gr.grupe_id=g.id WHERE gr.regiono_kodas=? AND gr.grupe_id!=?",
+            (code, gid),
+        )
+        others = "; ".join([r[0] for r in cursor.fetchall()])
+        data.append((rid, code, others))
+    df = pd.DataFrame(data, columns=["id", "regiono_kodas", "kitos_grupes"])
     csv_data = df.to_csv(index=False)
     headers = {"Content-Disposition": "attachment; filename=group-regions.csv"}
     return Response(content=csv_data, media_type="text/csv", headers=headers)
-
-

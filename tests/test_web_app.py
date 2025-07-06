@@ -704,6 +704,7 @@ def test_group_regions(tmp_path):
     resp = client.get(f"/api/group-regions?gid={gid}")
     data = resp.json()["data"]
     assert len(data) == 2
+    assert all("kitos_grupes" in r for r in data)
 
     rid = data[0]["id"]
     resp = client.get(f"/group-regions/{rid}/delete?gid={gid}", allow_redirects=False)
@@ -715,7 +716,9 @@ def test_group_regions(tmp_path):
     resp = client.get(f"/api/group-regions.csv?gid={gid}")
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/csv")
-    assert "regiono_kodas" in resp.text.splitlines()[0]
+    header = resp.text.splitlines()[0]
+    assert "regiono_kodas" in header
+    assert "kitos_grupes" in header
 
 
 def test_group_regions_empty_gid(tmp_path):
