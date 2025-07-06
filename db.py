@@ -4,6 +4,168 @@ import os
 from modules.auth_utils import hash_password
 from modules.roles import Role
 
+# Default expedition group definitions
+def _range_codes(prefix: str, start: int, end: int, width: int = 2) -> list[str]:
+    """Helper to generate codes like FR01..FR99."""
+    return [f"{prefix}{i:0{width}}" for i in range(start, end + 1)]
+
+
+DEFAULT_EXP_GROUPS: dict[str, list[str]] = {
+    "1": [
+        "FR02",
+        "FR08",
+        "FR10",
+        "FR21",
+        "FR27",
+        "FR28",
+        "FR45",
+        "FR51",
+        "FR54",
+        "FR55",
+        "FR57",
+        "FR59",
+        "FR60",
+        "FR62",
+        "FR67",
+        "FR68",
+        "FR70",
+        "FR75",
+        "FR76",
+        "FR77",
+        "FR78",
+        "FR80",
+        "FR88",
+        "FR89",
+        "FR90",
+        "FR91",
+        "FR92",
+        "FR93",
+        "FR94",
+        "FR95",
+        "FR52",
+        *_range_codes("BE", 1, 99),
+        *_range_codes("NL", 1, 99),
+        *(f"LU{i}" for i in range(1, 11)),
+    ],
+    "2": [
+        *_range_codes("IT", 0, 99),
+        *_range_codes("SL", 1, 99),
+        "FR13",
+        "FR83",
+        "FR06",
+        "FR04",
+        "FR05",
+        "FR84",
+        *_range_codes("CH", 1, 99),
+    ],
+    "3": [
+        "FR50",
+        "FR14",
+        "FR61",
+        "FR72",
+        "FR53",
+        "FR35",
+        "FR22",
+        "FR29",
+        "FR56",
+        "FR44",
+        "FR49",
+        "FR85",
+        "FR79",
+        "FR17",
+        "FR41",
+        "FR37",
+        "FR36",
+        "FR18",
+        "FR86",
+        "FR16",
+        "FR87",
+        "FR24",
+        "FR19",
+        "FR46",
+        "FR15",
+        "FR12",
+        "FR48",
+        "FR58",
+        "FR71",
+        "FR03",
+        "FR63",
+        "FR23",
+        *_range_codes("GB", 1, 99),
+        "FR25",
+        "FR39",
+        "FR01",
+        "FR69",
+        "FR42",
+        "FR74",
+        "FR73",
+        "FR38",
+        "FR26",
+        "FR07",
+        "FR30",
+        "FR43",
+    ],
+    "4": [
+        *_range_codes("ES", 0, 99),
+        "FR40",
+        "FR64",
+        "FR65",
+        "FR09",
+        "FR11",
+        "FR66",
+        "FR34",
+        "FR33",
+        "FR47",
+        "FR32",
+        "FR82",
+        "FR31",
+        "FR81",
+    ],
+    "5": [
+        *_range_codes("DE", 1, 98),
+        *_range_codes("AT", 10, 99),
+        *_range_codes("CZ", 10, 99),
+        *_range_codes("PL", 1, 99),
+        *_range_codes("HU", 1, 99),
+        *_range_codes("SO", 1, 99),
+        *_range_codes("SL", 1, 99),
+        *_range_codes("DK", 1, 99),
+        *(f"SK{i}" for i in range(1, 11)),
+    ],
+}
+
+
+def _setup_default_exp_groups(conn: sqlite3.Connection, c: sqlite3.Cursor) -> None:
+    """Insert default expedition groups and regions if they are missing."""
+    for num, codes in DEFAULT_EXP_GROUPS.items():
+        c.execute(
+            "SELECT id FROM grupes WHERE numeris=? AND imone IS NULL",
+            (num,),
+        )
+        row = c.fetchone()
+        if row:
+            gid = row[0]
+        else:
+            c.execute(
+                "INSERT INTO grupes (numeris, pavadinimas, aprasymas, imone) "
+                "VALUES (?,?,?,NULL)",
+                (num, "", ""),
+            )
+            gid = c.lastrowid
+
+        for code in codes:
+            code = code.upper()
+            c.execute(
+                "SELECT 1 FROM grupiu_regionai WHERE grupe_id=? AND regiono_kodas=?",
+                (gid, code),
+            )
+            if not c.fetchone():
+                c.execute(
+                    "INSERT INTO grupiu_regionai (grupe_id, regiono_kodas) VALUES (?,?)",
+                    (gid, code),
+                )
+    conn.commit()
+
 def init_db(db_path: str | None = None):
     """
     Inicializuoja SQLite duomenų bazę:
@@ -280,6 +442,9 @@ def init_db(db_path: str | None = None):
             FOREIGN KEY (grupe_id) REFERENCES grupes(id)
         )
     """)
+
+    # Insert default expedition groups and their regions
+    _setup_default_exp_groups(conn, c)
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS vairuotojai (
