@@ -7,6 +7,7 @@ from db import init_db
 from modules.audit import log_action, fetch_logs
 from modules.login import assign_role
 from modules.roles import Role
+import re
 from modules.constants import EU_COUNTRIES, EMPLOYEE_ROLES, DRIVER_NATIONALITIES
 from ..utils import (
     ensure_columns,
@@ -35,12 +36,17 @@ def group_regions_page(request: Request):
 def group_regions_add(
     request: Request,
     grupe_id: int = Form(...),
-    regionai: str = Form(""),
+    regionai: str | list[str] = Form(""),
     vadybininkas_id: str = Form(""),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
-    codes = [r.strip().upper() for r in regionai.split(";") if r.strip()]
+    if isinstance(regionai, list):
+        region_str = ";".join(regionai)
+    else:
+        region_str = regionai
+    sep_codes = re.split(r"[;,\s]+", region_str)
+    codes = [r.strip().upper() for r in sep_codes if r.strip()]
     vid = int(vadybininkas_id) if str(vadybininkas_id).strip() else None
     for code in codes:
         cursor.execute(
@@ -86,8 +92,6 @@ def group_regions_delete(
     return RedirectResponse(f"/group-regions?gid={gid}", status_code=303)
 
 
-
-
 @router.get("/api/group-regions")
 def group_regions_api(
     gid: str | None = None,
@@ -114,7 +118,15 @@ def group_regions_api(
         cursor.execute("SELECT vardas, pavarde FROM darbuotojai WHERE id=?", (vid,))
         row = cursor.fetchone()
         vname = f"{row[0]} {row[1]}" if row else ""
-        data.append({"id": rid, "regiono_kodas": code, "kitos_grupes": others, "vadybininkas_id": vid, "vadybininkas": vname})
+        data.append(
+            {
+                "id": rid,
+                "regiono_kodas": code,
+                "kitos_grupes": others,
+                "vadybininkas_id": vid,
+                "vadybininkas": vname,
+            }
+        )
     return {"data": data}
 
 
@@ -136,7 +148,9 @@ def group_regions_csv(
         )
         others = "; ".join([r[0] for r in cursor.fetchall()])
         data.append((rid, code, vid, others))
-    df = pd.DataFrame(data, columns=["id", "regiono_kodas", "vadybininkas_id", "kitos_grupes"])
+    df = pd.DataFrame(
+        data, columns=["id", "regiono_kodas", "vadybininkas_id", "kitos_grupes"]
+    )
     csv_data = df.to_csv(index=False)
     headers = {"Content-Disposition": "attachment; filename=group-regions.csv"}
     return Response(content=csv_data, media_type="text/csv", headers=headers)
