@@ -28,7 +28,8 @@ $(document).ready(function() {
             { data: 'numeris' },
             { data: 'pavadinimas' },
             { data: null, render: function (data, type, row) {
-                return '<a href="/grupes/' + row.id + '/edit">Edit</a>';
+                return '<a href="/grupes/' + row.id + '/edit">Edit</a> '
+                     + '<a href="/grupes/' + row.id + '/delete">Šalinti</a>';
             }}
         ]
     });

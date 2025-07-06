@@ -785,3 +785,32 @@ def test_trailer_types_delete(tmp_path):
     assert resp.status_code == 303
     resp = client.get("/api/trailer-types")
     assert resp.json() == {"data": []}
+
+
+def test_grupes_delete(tmp_path):
+    client = create_client(tmp_path)
+    form = {
+        "gid": "0",
+        "numeris": "GR1",
+        "pavadinimas": "GR1",
+        "aprasymas": "",
+        "imone": "A",
+    }
+    resp = client.post("/grupes/save", data=form, allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get("/api/grupes")
+    data = resp.json()["data"]
+    assert len(data) == 1
+    gid = data[0]["id"]
+    resp = client.post(
+        "/group-regions/add",
+        data={"grupe_id": str(gid), "regionai": "LT"},
+        allow_redirects=False,
+    )
+    assert resp.status_code == 303
+    resp = client.get(f"/grupes/{gid}/delete", allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get("/api/grupes")
+    assert resp.json() == {"data": []}
+    resp = client.get(f"/api/group-regions?gid={gid}")
+    assert resp.json() == {"data": []}
