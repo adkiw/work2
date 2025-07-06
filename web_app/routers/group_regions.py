@@ -36,10 +36,12 @@ def group_regions_add(
     request: Request,
     grupe_id: int = Form(...),
     regionai: str = Form(""),
+    vadybininkas_id: str = Form(""),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
     codes = [r.strip().upper() for r in regionai.split(";") if r.strip()]
+    vid = int(vadybininkas_id) if str(vadybininkas_id).strip() else None
     for code in codes:
         cursor.execute(
             "SELECT 1 FROM grupiu_regionai WHERE grupe_id=? AND regiono_kodas=?",
@@ -48,8 +50,8 @@ def group_regions_add(
         if cursor.fetchone():
             continue
         cursor.execute(
-            "INSERT INTO grupiu_regionai (grupe_id, regiono_kodas) VALUES (?,?)",
-            (grupe_id, code),
+            "INSERT INTO grupiu_regionai (grupe_id, regiono_kodas, vadybininkas_id) VALUES (?,?,?)",
+            (grupe_id, code, vid),
         )
         conn.commit()
         log_action(
@@ -84,6 +86,25 @@ def group_regions_delete(
     return RedirectResponse(f"/group-regions?gid={gid}", status_code=303)
 
 
+@router.post("/group-regions/{rid}/assign")
+def group_regions_assign(
+    rid: int,
+    request: Request,
+    vadybininkas_id: str = Form(""),
+    gid: int = Form(0),
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    vid = int(vadybininkas_id) if str(vadybininkas_id).strip() else None
+    cursor.execute(
+        "UPDATE grupiu_regionai SET vadybininkas_id=? WHERE id=?",
+        (vid, rid),
+    )
+    conn.commit()
+    log_action(conn, cursor, request.session.get("user_id"), "update", "grupiu_regionai", rid)
+    return RedirectResponse(f"/group-regions?gid={gid}", status_code=303)
+
+
 @router.get("/api/group-regions")
 def group_regions_api(
     gid: str | None = None,
@@ -96,18 +117,21 @@ def group_regions_api(
 
     conn, cursor = db
     cursor.execute(
-        "SELECT id, regiono_kodas FROM grupiu_regionai WHERE grupe_id=? ORDER BY regiono_kodas",
+        "SELECT id, regiono_kodas, vadybininkas_id FROM grupiu_regionai WHERE grupe_id=? ORDER BY regiono_kodas",
         (gid_int,),
     )
     rows = cursor.fetchall()
     data = []
-    for rid, code in rows:
+    for rid, code, vid in rows:
         cursor.execute(
             "SELECT g.numeris FROM grupiu_regionai gr JOIN grupes g ON gr.grupe_id=g.id WHERE gr.regiono_kodas=? AND gr.grupe_id!=?",
             (code, gid_int),
         )
         others = "; ".join([r[0] for r in cursor.fetchall()])
-        data.append({"id": rid, "regiono_kodas": code, "kitos_grupes": others})
+        cursor.execute("SELECT vardas, pavarde FROM darbuotojai WHERE id=?", (vid,))
+        row = cursor.fetchone()
+        vname = f"{row[0]} {row[1]}" if row else ""
+        data.append({"id": rid, "regiono_kodas": code, "kitos_grupes": others, "vadybininkas_id": vid, "vadybininkas": vname})
     return {"data": data}
 
 
@@ -117,19 +141,19 @@ def group_regions_csv(
 ):
     conn, cursor = db
     cursor.execute(
-        "SELECT id, regiono_kodas FROM grupiu_regionai WHERE grupe_id=? ORDER BY regiono_kodas",
+        "SELECT id, regiono_kodas, vadybininkas_id FROM grupiu_regionai WHERE grupe_id=? ORDER BY regiono_kodas",
         (gid,),
     )
     rows = cursor.fetchall()
     data = []
-    for rid, code in rows:
+    for rid, code, vid in rows:
         cursor.execute(
             "SELECT g.numeris FROM grupiu_regionai gr JOIN grupes g ON gr.grupe_id=g.id WHERE gr.regiono_kodas=? AND gr.grupe_id!=?",
             (code, gid),
         )
         others = "; ".join([r[0] for r in cursor.fetchall()])
-        data.append((rid, code, others))
-    df = pd.DataFrame(data, columns=["id", "regiono_kodas", "kitos_grupes"])
+        data.append((rid, code, vid, others))
+    df = pd.DataFrame(data, columns=["id", "regiono_kodas", "vadybininkas_id", "kitos_grupes"])
     csv_data = df.to_csv(index=False)
     headers = {"Content-Disposition": "attachment; filename=group-regions.csv"}
     return Response(content=csv_data, media_type="text/csv", headers=headers)

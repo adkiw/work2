@@ -161,7 +161,7 @@ def _setup_default_exp_groups(conn: sqlite3.Connection, c: sqlite3.Cursor) -> No
             )
             if not c.fetchone():
                 c.execute(
-                    "INSERT INTO grupiu_regionai (grupe_id, regiono_kodas) VALUES (?,?)",
+                    "INSERT INTO grupiu_regionai (grupe_id, regiono_kodas, vadybininkas_id) VALUES (?,?,NULL)",
                     (gid, code),
                 )
     conn.commit()
@@ -439,9 +439,15 @@ def init_db(db_path: str | None = None):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             grupe_id      INTEGER NOT NULL,
             regiono_kodas TEXT NOT NULL,
+            vadybininkas_id INTEGER,
             FOREIGN KEY (grupe_id) REFERENCES grupes(id)
         )
     """)
+    c.execute("PRAGMA table_info(grupiu_regionai)")
+    cols = [row[1] for row in c.fetchall()]
+    if "vadybininkas_id" not in cols:
+        c.execute("ALTER TABLE grupiu_regionai ADD COLUMN vadybininkas_id INTEGER")
+        conn.commit()
 
     # Insert default expedition groups and their regions
     _setup_default_exp_groups(conn, c)

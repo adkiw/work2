@@ -97,6 +97,7 @@ EXPECTED_GRUPES_COLUMNS = {
 EXPECTED_GRUPIU_REGIONAI_COLUMNS = {
     "grupe_id": "INTEGER",
     "regiono_kodas": "TEXT",
+    "vadybininkas_id": "INTEGER",
 }
 
 EXPECTED_VILKIKU_DARBOLAikai_COLUMNS = {

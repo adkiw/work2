@@ -719,6 +719,7 @@ def test_group_regions(tmp_path):
     header = resp.text.splitlines()[0]
     assert "regiono_kodas" in header
     assert "kitos_grupes" in header
+    assert "vadybininkas_id" in header
 
 
 def test_group_regions_empty_gid(tmp_path):
@@ -726,6 +727,34 @@ def test_group_regions_empty_gid(tmp_path):
     resp = client.get("/api/group-regions")
     assert resp.status_code == 200
     assert resp.json() == {"data": []}
+
+
+def test_group_region_assign_vadybininkas(tmp_path):
+    client = create_client(tmp_path)
+    db_path = tmp_path / "app.db"
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO grupes (numeris, pavadinimas, imone) VALUES (?,?,?)",
+        ("TR1", "TR1", "A"),
+    )
+    gid = c.lastrowid
+    c.execute(
+        "INSERT INTO darbuotojai (vardas, pavarde, pareigybe, el_pastas, telefonas, grupe, imone) VALUES (?,?,?,?,?,?,?)",
+        ("Jonas", "Jonaitis", "Transporto vadybininkas", "j@a.com", "", "TR1", "A"),
+    )
+    emp_id = c.lastrowid
+    conn.commit()
+    conn.close()
+
+    client.post("/group-regions/add", data={"grupe_id": str(gid), "regionai": "LT01"}, allow_redirects=False)
+    rid = client.get(f"/api/group-regions?gid={gid}").json()["data"][0]["id"]
+
+    resp = client.post(f"/group-regions/{rid}/assign", data={"vadybininkas_id": str(emp_id), "gid": str(gid)}, allow_redirects=False)
+    assert resp.status_code == 303
+
+    data = client.get(f"/api/group-regions?gid={gid}").json()["data"][0]
+    assert data["vadybininkas_id"] == emp_id
 
 
 def test_trailer_swap(tmp_path):
