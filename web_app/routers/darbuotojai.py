@@ -59,7 +59,7 @@ def darbuotojai_edit_form(
     grupes = [r[0] for r in cursor.execute("SELECT numeris FROM grupes").fetchall()]
 
     group = None
-    regions: list[str] = []
+    group_regions: list[dict] = []
     if data.get("grupe"):
         group_row = cursor.execute(
             "SELECT id, numeris, pavadinimas FROM grupes WHERE numeris=?",
@@ -69,10 +69,13 @@ def darbuotojai_edit_form(
             gid, numeris, pavadinimas = group_row
             group = {"id": gid, "numeris": numeris, "pavadinimas": pavadinimas}
             cursor.execute(
-                "SELECT regiono_kodas FROM grupiu_regionai WHERE grupe_id=?",
+                "SELECT id, regiono_kodas, vadybininkas_id FROM grupiu_regionai WHERE grupe_id=?",
                 (gid,),
             )
-            regions = [r[0] for r in cursor.fetchall()]
+            group_regions = [
+                {"id": r[0], "regiono_kodas": r[1], "checked": r[2] == did}
+                for r in cursor.fetchall()
+            ]
 
     return templates.TemplateResponse(
         "darbuotojai_form.html",
@@ -82,7 +85,7 @@ def darbuotojai_edit_form(
             "roles": EMPLOYEE_ROLES,
             "grupes": grupes,
             "group": group,
-            "regions": regions,
+            "group_regions": group_regions,
         },
     )
 
@@ -99,6 +102,7 @@ def darbuotojai_save(
     grupe: str = Form(""),
     imone: str = Form(""),
     aktyvus: str = Form(None),
+    region_ids: list[int] = Form([]),
     db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
 ):
     conn, cursor = db
@@ -120,6 +124,19 @@ def darbuotojai_save(
         action = "insert"
     conn.commit()
     log_action(conn, cursor, request.session.get("user_id"), action, "darbuotojai", did)
+
+    # update region assignments
+    cursor.execute(
+        "UPDATE grupiu_regionai SET vadybininkas_id=NULL WHERE vadybininkas_id=?",
+        (did,),
+    )
+    for rid in region_ids:
+        cursor.execute(
+            "UPDATE grupiu_regionai SET vadybininkas_id=? WHERE id=?",
+            (did, rid),
+        )
+    conn.commit()
+
     return RedirectResponse("/darbuotojai", status_code=303)
 
 

@@ -747,10 +747,26 @@ def test_group_region_assign_vadybininkas(tmp_path):
     conn.commit()
     conn.close()
 
-    client.post("/group-regions/add", data={"grupe_id": str(gid), "regionai": "LT01"}, allow_redirects=False)
+    client.post(
+        "/group-regions/add",
+        data={"grupe_id": str(gid), "regionai": "LT01"},
+        allow_redirects=False,
+    )
     rid = client.get(f"/api/group-regions?gid={gid}").json()["data"][0]["id"]
 
-    resp = client.post(f"/group-regions/{rid}/assign", data={"vadybininkas_id": str(emp_id), "gid": str(gid)}, allow_redirects=False)
+    form = {
+        "did": str(emp_id),
+        "vardas": "Jonas",
+        "pavarde": "Jonaitis",
+        "pareigybe": "Transporto vadybininkas",
+        "el_pastas": "j@a.com",
+        "telefonas": "",
+        "grupe": "TR1",
+        "imone": "A",
+        "aktyvus": "on",
+        "region_ids": str(rid),
+    }
+    resp = client.post("/darbuotojai/save", data=form, allow_redirects=False)
     assert resp.status_code == 303
 
     data = client.get(f"/api/group-regions?gid={gid}").json()["data"][0]
