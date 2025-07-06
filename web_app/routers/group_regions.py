@@ -86,23 +86,6 @@ def group_regions_delete(
     return RedirectResponse(f"/group-regions?gid={gid}", status_code=303)
 
 
-@router.post("/group-regions/{rid}/assign")
-def group_regions_assign(
-    rid: int,
-    request: Request,
-    vadybininkas_id: str = Form(""),
-    gid: int = Form(0),
-    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
-):
-    conn, cursor = db
-    vid = int(vadybininkas_id) if str(vadybininkas_id).strip() else None
-    cursor.execute(
-        "UPDATE grupiu_regionai SET vadybininkas_id=? WHERE id=?",
-        (vid, rid),
-    )
-    conn.commit()
-    log_action(conn, cursor, request.session.get("user_id"), "update", "grupiu_regionai", rid)
-    return RedirectResponse(f"/group-regions?gid={gid}", status_code=303)
 
 
 @router.get("/api/group-regions")

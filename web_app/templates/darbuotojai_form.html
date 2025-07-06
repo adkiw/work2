@@ -37,8 +37,15 @@
     </div>
     {% if group %}
     <p>Darbuotojo grupė: {{ group.pavadinimas or group.numeris }}</p>
-        {% if regions %}
-        <p>Regionai: {{ regions | join(', ') }}</p>
+        {% if group_regions %}
+        <div style="margin-bottom:10px;">
+            {% for r in group_regions %}
+            <label style="margin-right:10px;">
+                <input type="checkbox" name="region_ids" value="{{ r.id }}" {% if r.checked %}checked{% endif %}>
+                {{ r.regiono_kodas }}
+            </label>
+            {% endfor %}
+        </div>
         {% endif %}
     {% endif %}
     <label>Aktyvus darbuotojas

@@ -22,15 +22,11 @@
     <input type="hidden" name="grupe_id" id="grupe-id-input">
     <label>Nauji regionai (pvz. FR10;DE20)</label>
     <textarea name="regionai" id="regionai" rows="2" style="width:100%;"></textarea>
-    <label>Vadybininkas
-        <select name="vadybininkas_id" id="vadybininkas-select"></select>
-    </label>
     <button type="submit">Pridėti</button>
 </form>
 <script>
 $(document).ready(function() {
     let table;
-    let employees = [];
     function initTable(){
         table = $('#region-table').DataTable({
             ajax: {
@@ -41,29 +37,13 @@ $(document).ready(function() {
                 { data: 'id' },
                 { data: 'regiono_kodas' },
                 { data: 'kitos_grupes', defaultContent: '' },
-                { data: null, render: function(data,type,row){
-                    let options = '<option value="">--</option>';
-                    employees.forEach(e => {
-                        const sel = e.id === row.vadybininkas_id ? 'selected' : '';
-                        options += `<option value="${e.id}" ${sel}>${e.vardas} ${e.pavarde}</option>`;
-                    });
-                    return `<select class="vadyb-select" data-rid="${row.id}">${options}</select>`;
-                }},
+                { data: 'vadybininkas', defaultContent: '' },
                 { data: null, render: function(data,type,row){
                     const gid = $('#grupe-select').val();
                     return `<a href="/group-regions/${row.id}/delete?gid=${gid}">Šalinti</a>`;
                 }}
             ]
         });
-    }
-    async function loadEmployees(){
-        const resp = await fetch('/api/darbuotojai');
-        const data = await resp.json();
-        employees = data.data;
-        const sel = $('#vadybininkas-select');
-        sel.empty();
-        sel.append('<option value="">--</option>');
-        employees.forEach(e => sel.append(`<option value="${e.id}">${e.vardas} ${e.pavarde}</option>`));
     }
     async function loadGroups(){
         const resp = await fetch('/api/grupes');
@@ -95,16 +75,7 @@ $(document).ready(function() {
             $('#regionai').val('');
         }
     });
-    loadEmployees().then(loadGroups);
-
-    $(document).on('change', '.vadyb-select', async function(){
-        const rid = $(this).data('rid');
-        const gid = $('#grupe-select').val();
-        const vid = $(this).val();
-        const body = `vadybininkas_id=${vid}&gid=${gid}`;
-        await fetch(`/group-regions/${rid}/assign`, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
-        table.ajax.reload(null,false);
-    });
+    loadGroups();
 });
 </script>
 <style>
