@@ -118,3 +118,19 @@ def grupes_csv(
     return Response(content=csv_data, media_type="text/csv", headers=headers)
 
 
+@router.get("/grupes/{gid}/delete")
+def grupes_delete(
+    gid: int,
+    request: Request,
+    db: tuple[sqlite3.Connection, sqlite3.Cursor] = Depends(get_db),
+):
+    conn, cursor = db
+    cursor.execute("DELETE FROM grupiu_regionai WHERE grupe_id=?", (gid,))
+    cursor.execute("DELETE FROM grupes WHERE id=?", (gid,))
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Not found")
+    conn.commit()
+    log_action(conn, cursor, request.session.get("user_id"), "delete", "grupes", gid)
+    return RedirectResponse("/grupes", status_code=303)
+
+
