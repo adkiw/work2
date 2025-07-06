@@ -42,13 +42,15 @@ $(document).ready(function() {
     function updateField(){
         $('#regionai').val(Array.from(selected).join(';'));
     }
-    fetch('/static/nuts_regions.geojson')
-        .then(r => r.json())
-        .then(data => {
-            L.geoJSON(data, {
-                onEachFeature: function(feature, layer){
-                    const code = feature.properties.NUTS_ID || feature.properties.id;
-                    if(!code) return;
+        fetch('/static/nuts_regions.geojson')
+            .then(r => r.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    onEachFeature: function(feature, layer){
+                        const code = feature.properties.NUTS_ID ||
+                                     feature.properties.PCODE ||
+                                     feature.properties.id;
+                        if(!code) return;
                     layer.on('click', function(){
                         if(selected.has(code)){
                             selected.delete(code);
