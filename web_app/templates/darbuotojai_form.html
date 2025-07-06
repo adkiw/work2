@@ -38,11 +38,11 @@
     {% if group %}
     <p>Darbuotojo grupė: {{ group.pavadinimas or group.numeris }}</p>
         {% if group_regions %}
-        <div style="margin-bottom:10px;">
+        <div class="region-container" style="margin-bottom:10px;">
             {% for r in group_regions %}
-            <label style="margin-right:10px;">
+            <label class="region-choice" style="margin-right:10px;">
                 <input type="checkbox" name="region_ids" value="{{ r.id }}" {% if r.checked %}checked{% endif %}>
-                {{ r.regiono_kodas }}
+                <span>{{ r.regiono_kodas }}</span>
             </label>
             {% endfor %}
         </div>
@@ -63,6 +63,23 @@
 .form-grid label {
     display: flex;
     flex-direction: column;
+}
+
+.region-choice input[type=checkbox] {
+    display: none;
+}
+
+.region-choice span {
+    display: inline-block;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #f0f0f0;
+    cursor: pointer;
+}
+
+.region-choice input[type=checkbox]:checked + span {
+    background: #c8f7c5;
 }
 </style>
 {% endblock %}
