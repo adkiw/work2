@@ -1112,7 +1112,13 @@ def add_group_region_api(
 ):
     if str(current_user.current_tenant_id) != tenant_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-    region = crud.create_group_region(db, UUID(tenant_id), group_id, data.region_code)
+    region = crud.create_group_region(
+        db,
+        UUID(tenant_id),
+        group_id,
+        data.region_code,
+        data.vadybininkas_id,
+    )
     return region
 
 

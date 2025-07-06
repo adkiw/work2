@@ -14,6 +14,7 @@
 10. Sukurtas bendras Jinja makro "header_with_add" antraštėms su "pridėti" nuoroda.
 11. "header_with_add" makro pritaikytas visuose šablonuose.
 12. Pridėtas stiliaus failas "style.css" ir bazinis šablonas atnaujintas jį naudoti.
+13. `group_regions` lentelė papildyta `vadybininkas_id` stulpeliu atsakingam darbuotojui nurodyti.
 
 ## Numatomos užduotys
 
