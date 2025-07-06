@@ -36,17 +36,27 @@ def setup_user():
             db.commit()
             db.refresh(role)
         tenant = models.Tenant(name="t_gr")
-        user = models.User(email="gr@example.com", hashed_password=hash_password("pass"), full_name="GroupRegion")
+        user = models.User(
+            email="gr@example.com",
+            hashed_password=hash_password("pass"),
+            full_name="GroupRegion",
+        )
         assoc = models.UserTenant(user_id=user.id, tenant_id=tenant.id, role_id=role.id)
-        db.add_all([tenant, user, assoc])
+        employee = models.Employee(
+            tenant_id=tenant.id,
+            vardas="Jonas",
+            pavarde="Jonaitis",
+        )
+        db.add_all([tenant, user, assoc, employee])
         db.commit()
         db.refresh(user)
         db.refresh(tenant)
-        return user, tenant
+        db.refresh(employee)
+        return user, tenant, employee
 
 
 def test_group_region_crud():
-    user, tenant = setup_user()
+    user, tenant, emp = setup_user()
     resp = client.post("/auth/login", json={"email": user.email, "password": "pass", "tenant_id": str(tenant.id)})
     token = resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -55,13 +65,18 @@ def test_group_region_crud():
     r = client.post(f"/{tenant.id}/groups", json=data, headers=headers)
     gid = r.json()["id"]
 
-    reg_data = {"region_code": "LT01"}
-    r2 = client.post(f"/{tenant.id}/groups/{gid}/regions", json=reg_data, headers=headers)
+    reg_data = {"region_code": "LT01", "vadybininkas_id": emp.id}
+    r2 = client.post(
+        f"/{tenant.id}/groups/{gid}/regions",
+        json=reg_data,
+        headers=headers,
+    )
     assert r2.status_code == 200
     rid = r2.json()["id"]
+    assert r2.json()["vadybininkas_id"] == emp.id
 
     r3 = client.get(f"/{tenant.id}/groups/{gid}/regions", headers=headers)
-    assert any(reg["id"] == rid for reg in r3.json())
+    assert any(reg["id"] == rid and reg["vadybininkas_id"] == emp.id for reg in r3.json())
 
     r4 = client.delete(f"/{tenant.id}/group-regions/{rid}", headers=headers)
     assert r4.status_code == 204
@@ -70,7 +85,7 @@ def test_group_region_crud():
 
 
 def test_group_regions_csv():
-    user, tenant = setup_user()
+    user, tenant, emp = setup_user()
     resp = client.post(
         "/auth/login",
         json={"email": user.email, "password": "pass", "tenant_id": str(tenant.id)},
@@ -82,11 +97,13 @@ def test_group_regions_csv():
     gid = grp.json()["id"]
     client.post(
         f"/{tenant.id}/groups/{gid}/regions",
-        json={"region_code": "LT01"},
+        json={"region_code": "LT01", "vadybininkas_id": emp.id},
         headers=headers,
     )
 
     r = client.get(f"/{tenant.id}/group-regions.csv", headers=headers)
     assert r.status_code == 200
-    assert "region_code" in r.text.splitlines()[0]
+    header = r.text.splitlines()[0]
+    assert "region_code" in header
+    assert "vadybininkas_id" in header
     assert "LT01" in r.text

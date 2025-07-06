@@ -270,6 +270,7 @@ class Group(GroupBase):
 
 class GroupRegionBase(BaseModel):
     region_code: str
+    vadybininkas_id: Optional[int] = None
 
 
 class GroupRegionCreate(GroupRegionBase):

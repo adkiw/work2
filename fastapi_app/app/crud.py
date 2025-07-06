@@ -658,10 +658,17 @@ def get_updates_range(
 
 
 def create_group_region(
-    db: Session, tenant_id: UUID, group_id: int, region_code: str
+    db: Session,
+    tenant_id: UUID,
+    group_id: int,
+    region_code: str,
+    vadybininkas_id: int | None = None,
 ) -> models.GroupRegion:
     region = models.GroupRegion(
-        tenant_id=tenant_id, group_id=group_id, region_code=region_code
+        tenant_id=tenant_id,
+        group_id=group_id,
+        region_code=region_code,
+        vadybininkas_id=vadybininkas_id,
     )
     db.add(region)
     db.commit()

@@ -211,9 +211,11 @@ class GroupRegion(Base):
     tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
     region_code = Column(String, nullable=False)
+    vadybininkas_id = Column(Integer, ForeignKey("employees.id"))
 
     tenant = relationship("Tenant")
     group = relationship("Group")
+    vadybininkas = relationship("Employee")
 
 
 class Employee(Base):
