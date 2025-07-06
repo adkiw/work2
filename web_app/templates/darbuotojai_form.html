@@ -35,6 +35,12 @@
             </select>
         </label>
     </div>
+    {% if group %}
+    <p>Darbuotojo grupė: {{ group.pavadinimas or group.numeris }}</p>
+        {% if regions %}
+        <p>Regionai: {{ regions | join(', ') }}</p>
+        {% endif %}
+    {% endif %}
     <label>Aktyvus darbuotojas
         <input type="checkbox" name="aktyvus" {% if data.aktyvus == 0 %}{% else %}checked{% endif %}>
     </label>

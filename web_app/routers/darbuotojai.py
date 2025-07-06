@@ -57,6 +57,23 @@ def darbuotojai_edit_form(
     columns = [col[1] for col in cursor.execute("PRAGMA table_info(darbuotojai)")]
     data = dict(zip(columns, row))
     grupes = [r[0] for r in cursor.execute("SELECT numeris FROM grupes").fetchall()]
+
+    group = None
+    regions: list[str] = []
+    if data.get("grupe"):
+        group_row = cursor.execute(
+            "SELECT id, numeris, pavadinimas FROM grupes WHERE numeris=?",
+            (data["grupe"],),
+        ).fetchone()
+        if group_row:
+            gid, numeris, pavadinimas = group_row
+            group = {"id": gid, "numeris": numeris, "pavadinimas": pavadinimas}
+            cursor.execute(
+                "SELECT regiono_kodas FROM grupiu_regionai WHERE grupe_id=?",
+                (gid,),
+            )
+            regions = [r[0] for r in cursor.fetchall()]
+
     return templates.TemplateResponse(
         "darbuotojai_form.html",
         {
@@ -64,6 +81,8 @@ def darbuotojai_edit_form(
             "data": data,
             "roles": EMPLOYEE_ROLES,
             "grupes": grupes,
+            "group": group,
+            "regions": regions,
         },
     )
 
