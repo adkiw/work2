@@ -37,9 +37,6 @@ $(document).ready(function() {
     const map = L.map('map').setView([55.2, 23.9], 6);
     let geoLayer;
     function normalizeCode(feature){
-        if(feature.properties.region_code){
-            return feature.properties.region_code;
-        }
         if (feature.properties.NUTS_ID) {
             const match = feature.properties.NUTS_ID.match(/^([A-Z]{2})(\d{2})/);
             return match ? match[1] + match[2] : feature.properties.NUTS_ID;
@@ -57,7 +54,7 @@ $(document).ready(function() {
     function updateField(){
         $('#regionai').val(Array.from(selected).join(';'));
     }
-        fetch('/static/simplified_regions.geojson')
+        fetch('/static/nuts_regions.geojson')
             .then(r => r.json())
             .then(data => {
                 geoLayer = L.geoJSON(data, {
