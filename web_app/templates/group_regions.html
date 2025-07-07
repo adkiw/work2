@@ -18,7 +18,7 @@
         </tr>
     </thead>
 </table>
-<div id="map" style="height:1200px; width:1200px; margin-top:10px;"></div>
+<div id="map" style="height:1200px; width:1600px; margin-top:10px;"></div>
 <form id="add-form" style="margin-top:10px;">
     <input type="hidden" name="grupe_id" id="grupe-id-input">
     <label>Nauji regionai (pvz. FR10;DE20)</label>
@@ -73,7 +73,7 @@ $(document).ready(function() {
                     });
                     layer.bindTooltip(norm, {permanent: true, direction:'center', className:'region-label'});
                 },
-                style:{color:'#3388ff',weight:1,fillOpacity:0}
+                style:{color:'red',weight:3,fillOpacity:0}
             }).addTo(map);
                 loadGroupRegions();
         });
