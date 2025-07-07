@@ -48,7 +48,7 @@ $(document).ready(function() {
     function updateField(){
         $('#regionai').val(Array.from(selected).join(';'));
     }
-        fetch('/static/nuts_regions.geojson')
+        fetch('/static/LAU_RG_01M_2023_4326.geojson')
             .then(r => r.json())
             .then(data => {
                 geoLayer = L.geoJSON(data, {
