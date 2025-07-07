@@ -36,10 +36,12 @@ $(document).ready(function() {
     const selected = new Set();
     const map = L.map('map').setView([55.2, 23.9], 6);
     let geoLayer;
-    function normalizeCode(code){
-        const m = code && code.match(/^([A-Z]{2})[^0-9]*([0-9]{2})/);
-        if(m) return m[1] + m[2];
-        return code.slice(0,4);
+    function normalizeCode(feature){
+        const country = feature.properties.COUNTRY || feature.properties.CNTR_CODE || '';
+        const label = feature.properties.LAU_LABEL || '';
+        const match = label.match(/(\d{2})/);
+        const digits = match ? match[1] : label.slice(0,2);
+        return country + digits;
     }
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 10,
@@ -48,16 +50,12 @@ $(document).ready(function() {
     function updateField(){
         $('#regionai').val(Array.from(selected).join(';'));
     }
-        fetch('/static/LAU_RG_01M_2023_4326.geojson')
+        fetch('/static/lau_regions.geojson')
             .then(r => r.json())
             .then(data => {
                 geoLayer = L.geoJSON(data, {
                     onEachFeature: function(feature, layer){
-                        const code = feature.properties.NUTS_ID ||
-                                     feature.properties.PCODE ||
-                                     feature.properties.id;
-                        if(!code) return;
-                        const norm = normalizeCode(code);
+                        const norm = normalizeCode(feature);
                         layer.code = norm;
                     layer.on('click', function(){
                         if(selected.has(norm)){
@@ -101,7 +99,7 @@ function initTable(){
         if(!gid) return;
         const resp = await fetch('/api/group-regions?gid='+gid);
         const data = await resp.json();
-        data.data.forEach(r => selected.add(normalizeCode(r.regiono_kodas)));
+        data.data.forEach(r => selected.add(r.regiono_kodas));
         geoLayer.eachLayer(function(layer){
             const code = layer.code;
             if(!code) return;

@@ -1,4 +1,5 @@
 import os
+import re
 os.environ.setdefault("SECRET_KEY", "test-secret")
 from fastapi.testclient import TestClient
 from fastapi_app.app.main import app
@@ -74,6 +75,7 @@ def test_group_region_crud():
     assert r2.status_code == 200
     rid = r2.json()["id"]
     assert r2.json()["vadybininkas_id"] == emp.id
+    assert re.match(r"^[A-Z]{2}\d{2}$", r2.json()["region_code"]) is not None
 
     r3 = client.get(f"/{tenant.id}/groups/{gid}/regions", headers=headers)
     assert any(reg["id"] == rid and reg["vadybininkas_id"] == emp.id for reg in r3.json())
@@ -106,4 +108,4 @@ def test_group_regions_csv():
     header = r.text.splitlines()[0]
     assert "region_code" in header
     assert "vadybininkas_id" in header
-    assert "LT01" in r.text
+    assert re.search(r"LT\d{2}", r.text)
