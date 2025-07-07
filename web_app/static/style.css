@@ -5,6 +5,8 @@ nav a { margin-right: 6px; }
 .region-label {
     background: transparent;
     border: none;
+    padding: 0;
+    box-shadow: none;
     font-size: 10px;
     font-weight: bold;
 }
