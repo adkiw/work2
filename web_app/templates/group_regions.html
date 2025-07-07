@@ -64,16 +64,18 @@ $(document).ready(function() {
                     layer.on('click', function(){
                         if(selected.has(norm)){
                             selected.delete(norm);
-                            layer.setStyle({fillColor: '#3388ff', fillOpacity:0});
+                            layer.setStyle({fillColor: '#3388ff', fillOpacity:0,
+                                            color:'transparent', weight:0});
                         } else {
                             selected.add(norm);
-                            layer.setStyle({fillColor: '#00ff00', fillOpacity:0.5});
+                            layer.setStyle({fillColor: '#00ff00', fillOpacity:0.5,
+                                            color:'transparent', weight:0});
                         }
                         updateField();
                     });
                     layer.bindTooltip(norm, {permanent: true, direction:'center', className:'region-label'});
                 },
-                style:{color:'#3388ff',weight:1,fillOpacity:0}
+                style:{color:'transparent',weight:0,fillOpacity:0}
             }).addTo(map);
                 loadGroupRegions();
         });
@@ -108,9 +110,11 @@ function initTable(){
             const code = layer.code;
             if(!code) return;
             if(selected.has(code)){
-                layer.setStyle({fillColor:'#00ff00', fillOpacity:0.5});
+                layer.setStyle({fillColor:'#00ff00', fillOpacity:0.5,
+                                color:'transparent', weight:0});
             } else {
-                layer.setStyle({fillColor:'#3388ff', fillOpacity:0});
+                layer.setStyle({fillColor:'#3388ff', fillOpacity:0,
+                                color:'transparent', weight:0});
             }
         });
         updateField();
