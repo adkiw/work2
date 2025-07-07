@@ -36,6 +36,10 @@ $(document).ready(function() {
     const selected = new Set();
     const map = L.map('map').setView([55.2, 23.9], 6);
     let geoLayer;
+    function normalizeCode(code){
+        const m = code && code.match(/^([A-Z]{2})(\d{2})/);
+        return m ? m[1] + m[2] : code;
+    }
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 10,
         attribution: '© OpenStreetMap'
@@ -52,18 +56,19 @@ $(document).ready(function() {
                                      feature.properties.PCODE ||
                                      feature.properties.id;
                         if(!code) return;
-                        layer.code = code;
+                        const norm = normalizeCode(code);
+                        layer.code = norm;
                     layer.on('click', function(){
-                        if(selected.has(code)){
-                            selected.delete(code);
+                        if(selected.has(norm)){
+                            selected.delete(norm);
                             layer.setStyle({fillColor: '#3388ff'});
                         } else {
-                            selected.add(code);
+                            selected.add(norm);
                             layer.setStyle({fillColor: '#00ff00'});
                         }
                         updateField();
                     });
-                    layer.bindTooltip(code, {permanent: true, direction:'center', className:'region-label'});
+                    layer.bindTooltip(norm, {permanent: true, direction:'center', className:'region-label'});
                 },
                 style:{color:'#3388ff',weight:1,fillOpacity:0.4}
             }).addTo(map);
@@ -95,7 +100,7 @@ function initTable(){
         if(!gid) return;
         const resp = await fetch('/api/group-regions?gid='+gid);
         const data = await resp.json();
-        data.data.forEach(r => selected.add(r.regiono_kodas));
+        data.data.forEach(r => selected.add(normalizeCode(r.regiono_kodas)));
         geoLayer.eachLayer(function(layer){
             const code = layer.code;
             if(!code) return;
