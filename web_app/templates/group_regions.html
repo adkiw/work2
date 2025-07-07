@@ -34,7 +34,7 @@
 $(document).ready(function() {
     let table;
     const selected = new Set();
-    const map = L.map('map').setView([55.2, 23.9], 6);
+    const map = L.map('map').setView([54.5, 15.2], 4);
     let geoLayer;
     function normalizeCode(feature){
         if(feature.properties.region_code){
@@ -63,29 +63,42 @@ $(document).ready(function() {
 
 
         fetch('/static/simplified_lau_europe_limited_labeled.geojson')
-
-            .then(r => r.json())
-            .then(data => {
-                geoLayer = L.geoJSON(data, {
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('GeoJSON failas nepasiekiamas');
+                }
+                return response.json();
+            })
+            .then(geojson => {
+                if (!geojson || !geojson.features || geojson.features.length === 0) {
+                    console.error('Klaida įkeliant regionų failą: tuščias GeoJSON');
+                    return;
+                }
+                geoLayer = L.geoJSON(geojson, {
                     onEachFeature: function(feature, layer){
                         const norm = normalizeCode(feature);
                         layer.code = norm;
-                    layer.on('click', function(){
-                        if(selected.has(norm)){
-                            selected.delete(norm);
-                            layer.setStyle({fillColor: '#3388ff', fillOpacity:0});
-                        } else {
-                            selected.add(norm);
-                            layer.setStyle({fillColor: '#00ff00', fillOpacity:0.5});
-                        }
-                        updateField();
-                    });
-                    layer.bindTooltip(norm, {permanent: true, direction:'center', className:'region-label'});
-                },
-                style:{color:'red',weight:3,fillOpacity:0}
-            }).addTo(map);
+                        layer.on('click', function(){
+                            if(selected.has(norm)){
+                                selected.delete(norm);
+                                layer.setStyle({fillColor: '#3388ff', fillOpacity:0});
+                            } else {
+                                selected.add(norm);
+                                layer.setStyle({fillColor: '#00ff00', fillOpacity:0.5});
+                            }
+                            updateField();
+                        });
+                        const label = feature.properties.label || 'Nėra kodo';
+                        layer.bindTooltip(label, { permanent: false, direction: 'top' });
+                    },
+                    style:{ color:'#3388ff', weight:1, fillOpacity:0.2 }
+                }).addTo(map);
+                map.fitBounds(geoLayer.getBounds());
                 loadGroupRegions();
-        });
+            })
+            .catch(error => {
+                console.error('Klaida įkeliant regionų failą:', error);
+            });
 function initTable(){
     table = $('#region-table').DataTable({
             ajax: {
