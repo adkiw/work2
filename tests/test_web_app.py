@@ -773,6 +773,27 @@ def test_group_region_assign_vadybininkas(tmp_path):
     assert data["vadybininkas_id"] == emp_id
 
 
+def test_group_regions_invalid_codes(tmp_path):
+    client = create_client(tmp_path)
+    db_path = tmp_path / "app.db"
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO grupes (numeris, pavadinimas, imone) VALUES (?,?,?)",
+        ("TR1", "TR1", "A"),
+    )
+    gid = c.lastrowid
+    conn.commit()
+    conn.close()
+
+    form = {"grupe_id": str(gid), "regionai": "FR10;bad;XX1;LT01"}
+    resp = client.post("/group-regions/add", data=form, allow_redirects=False)
+    assert resp.status_code == 303
+    resp = client.get(f"/api/group-regions?gid={gid}")
+    codes = [r["regiono_kodas"] for r in resp.json()["data"]]
+    assert set(codes) == {"FR10", "LT01"}
+
+
 def test_trailer_swap(tmp_path):
     client = create_client(tmp_path)
     trailer1 = {

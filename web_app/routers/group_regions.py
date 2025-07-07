@@ -46,7 +46,9 @@ def group_regions_add(
     else:
         region_str = regionai
     sep_codes = re.split(r"[;,\s]+", region_str)
-    codes = [r.strip().upper() for r in sep_codes if r.strip()]
+    raw_codes = [r.strip().upper() for r in sep_codes if r.strip()]
+    valid_re = re.compile(r"^[A-Z]{2}\d{2}$")
+    codes = [c for c in raw_codes if valid_re.match(c)]
     vid = int(vadybininkas_id) if str(vadybininkas_id).strip() else None
     for code in codes:
         cursor.execute(
