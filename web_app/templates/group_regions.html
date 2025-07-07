@@ -35,6 +35,7 @@ $(document).ready(function() {
     let table;
     const selected = new Set();
     const map = L.map('map').setView([55.2, 23.9], 6);
+    let geoLayer;
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 10,
         attribution: '© OpenStreetMap'
@@ -45,12 +46,13 @@ $(document).ready(function() {
         fetch('/static/nuts_regions.geojson')
             .then(r => r.json())
             .then(data => {
-                L.geoJSON(data, {
+                geoLayer = L.geoJSON(data, {
                     onEachFeature: function(feature, layer){
                         const code = feature.properties.NUTS_ID ||
                                      feature.properties.PCODE ||
                                      feature.properties.id;
                         if(!code) return;
+                        layer.code = code;
                     layer.on('click', function(){
                         if(selected.has(code)){
                             selected.delete(code);
@@ -65,9 +67,10 @@ $(document).ready(function() {
                 },
                 style:{color:'#3388ff',weight:1,fillOpacity:0.4}
             }).addTo(map);
+                loadGroupRegions();
         });
-    function initTable(){
-        table = $('#region-table').DataTable({
+function initTable(){
+    table = $('#region-table').DataTable({
             ajax: {
                 url: '/api/group-regions',
                 data: function(d){ d.gid = $('#grupe-select').val(); }
@@ -82,7 +85,27 @@ $(document).ready(function() {
                     return `<a href="/group-regions/${row.id}/delete?gid=${gid}">Šalinti</a>`;
                 }}
             ]
+    });
+}
+
+    async function loadGroupRegions(){
+        if(!geoLayer) return;
+        selected.clear();
+        const gid = $('#grupe-select').val();
+        if(!gid) return;
+        const resp = await fetch('/api/group-regions?gid='+gid);
+        const data = await resp.json();
+        data.data.forEach(r => selected.add(r.regiono_kodas));
+        geoLayer.eachLayer(function(layer){
+            const code = layer.code;
+            if(!code) return;
+            if(selected.has(code)){
+                layer.setStyle({fillColor:'#00ff00'});
+            } else {
+                layer.setStyle({fillColor:'#3388ff'});
+            }
         });
+        updateField();
     }
     async function loadGroups(){
         const resp = await fetch('/api/grupes');
@@ -96,10 +119,12 @@ $(document).ready(function() {
         } else {
             table.ajax.reload();
         }
+        loadGroupRegions();
     }
     $('#grupe-select').on('change', function(){
         $('#grupe-id-input').val($(this).val());
         table.ajax.reload();
+        loadGroupRegions();
     });
     $('#add-form').on('submit', async function(e){
         e.preventDefault();
@@ -112,6 +137,7 @@ $(document).ready(function() {
         if(resp.redirected){
             table.ajax.reload();
             $('#regionai').val('');
+            loadGroupRegions();
         }
     });
     loadGroups();
