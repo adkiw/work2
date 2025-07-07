@@ -127,7 +127,7 @@ DEFAULT_EXP_GROUPS: dict[str, list[str]] = {
         *_range_codes("CZ", 10, 99),
         *_range_codes("PL", 1, 99),
         *_range_codes("HU", 1, 99),
-        *_range_codes("SO", 1, 99),
+        *_range_codes("SI", 1, 99),  # Slovenia
         *_range_codes("SL", 1, 99),
         *_range_codes("DK", 1, 99),
         *(f"SK{i}" for i in range(1, 11)),
