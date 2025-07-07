@@ -111,3 +111,22 @@ paleidus:
 python seed_demo_data.py --clear
 ```
 
+## Tests
+
+Install the dependencies from both requirement files before running the test
+suite:
+
+```bash
+pip install -r requirements.txt
+pip install -r fastapi_app/requirements.txt
+```
+
+Run the tests with `pytest`:
+
+```bash
+pytest
+```
+
+You can also run `make test` to perform the installation and execute the tests
+in one step.
+
