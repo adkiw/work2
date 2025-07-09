@@ -1,0 +1,62 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "LAU_LABEL": "0101 Vilnius",
+        "COUNTRY": "LT"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [22.0, 55.0],
+            [23.0, 55.0],
+            [23.0, 56.0],
+            [22.0, 56.0],
+            [22.0, 55.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "LAU_LABEL": "0202 Kaunas",
+        "COUNTRY": "LT"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [23.0, 55.0],
+            [24.0, 55.0],
+            [24.0, 56.0],
+            [23.0, 56.0],
+            [23.0, 55.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "LAU_LABEL": "0303 Klaipeda",
+        "COUNTRY": "LT"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [24.0, 55.0],
+            [25.0, 55.0],
+            [25.0, 56.0],
+            [24.0, 56.0],
+            [24.0, 55.0]
+          ]
+        ]
+      }
+    }
+  ]
+}
