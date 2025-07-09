@@ -74,7 +74,11 @@ $(document).ready(function() {
                     console.error('Klaida įkeliant regionų failą: tuščias GeoJSON');
                     return;
                 }
-                geoLayer = L.geoJSON(geojson, {
+                const nuts2 = {
+                    ...geojson,
+                    features: geojson.features.filter(f => f.properties.LEVL_CODE === 2)
+                };
+                geoLayer = L.geoJSON(nuts2, {
                     onEachFeature: function(feature, layer){
                         const norm = normalizeCode(feature);
                         layer.code = norm;
