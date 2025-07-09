@@ -92,7 +92,11 @@ $(document).ready(function() {
                             }
                             updateField();
                         });
-                        const label = feature.properties.label || 'Nėra kodo';
+                        const label =
+                            feature.properties.NUTS_ID ||
+                            feature.properties.NUTS_NAME ||
+                            feature.properties.label ||
+                            'Nėra kodo';
                         layer.bindTooltip(label, { permanent: false, direction: 'top', className: 'region-label' });
                     },
                     style:{ color:'#3388ff', weight:1, fillOpacity:0.2 }
