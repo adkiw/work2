@@ -62,8 +62,7 @@ $(document).ready(function() {
     }
 
 
-        let nutsLayer;
-        fetch('/static/simplified_lau_europe_limited_labeled.geojson')
+        fetch('/static/NUTSi_RG_60M_2024_4326.geojson')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('GeoJSON failas nepasiekiamas');
@@ -94,19 +93,6 @@ $(document).ready(function() {
                     },
                     style:{ color:'#3388ff', weight:1, fillOpacity:0.2 }
                 }).addTo(map);
-                fetch('/static/nuts_regions.geojson')
-                    .then(r => r.json())
-                    .then(nuts => {
-                        nutsLayer = L.geoJSON(nuts, {
-                            onEachFeature: function(feature, layer){
-                                const code = feature.properties.NUTS_ID;
-                                if(code){
-                                    layer.bindTooltip(code, { permanent: true, direction: 'center', className: 'region-label' });
-                                }
-                            },
-                            style:{ color:'red', weight:3, fillOpacity:0 }
-                        }).addTo(map);
-                    });
                 map.fitBounds(geoLayer.getBounds());
                 loadGroupRegions();
             })
