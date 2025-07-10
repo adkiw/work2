@@ -1,8 +1,6 @@
 import geopandas as gpd
 
-# The LAU dataset is stored in EPSG:3035 to match the original
-# distribution from the European Commission GISCO service.
-INPUT_PATH = "web_app/static/LAU_RG_01M_2023_3035.geojson"
+INPUT_PATH = "web_app/static/LAU_RG_01M_2023_4326.geojson"
 OUTPUT_PATH = "web_app/static/simplified_regions.geojson"
 
 
