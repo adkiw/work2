@@ -106,20 +106,6 @@ wget https://gisco-services.ec.europa.eu/distribution/v2/lau/geojson/LAU_RG_01M_
 
 After downloading run `python scripts/simplify_lau.py` to create `web_app/static/simplified_regions.geojson`.
 
-## NUTS dataset
-
-The template `web_app/templates/group_regions.html` shows an interactive map of
-NUTS level 2 regions. It fetches the file
-`web_app/static/NUTS_RG_03M_2024_4326.geojson`, which is not stored in the
-repository because of its size. You can download it from the European
-Commission GISCO service:
-
-```bash
-wget https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_03M_2024_4326.geojson \
-     -O web_app/static/NUTS_RG_03M_2024_4326.geojson
-```
-
-Place the file in the `web_app/static` directory so the template can load it.
 
 ## Demo duomenys
 
