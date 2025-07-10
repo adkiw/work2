@@ -96,12 +96,12 @@ alembic -c fastapi_app/alembic.ini revision --autogenerate -m "message"
 ```
 ## LAU dataset
 
-The `scripts/simplify_lau.py` script uses the file `web_app/static/LAU_RG_01M_2023_3035.geojson` as input.
+The `scripts/simplify_lau.py` script uses the file `web_app/static/LAU_RG_01M_2023_4326.geojson` as input.
 This GeoJSON is not included in the repository due to its size.
 You can download it from the European Commission GISCO service:
 
 ```bash
-wget https://gisco-services.ec.europa.eu/distribution/v2/lau/geojson/LAU_RG_01M_2023_3035.geojson -O web_app/static/LAU_RG_01M_2023_3035.geojson
+wget https://gisco-services.ec.europa.eu/distribution/v2/lau/geojson/LAU_RG_01M_2023_4326.geojson -O web_app/static/LAU_RG_01M_2023_4326.geojson
 ```
 
 After downloading run `python scripts/simplify_lau.py` to create `web_app/static/simplified_regions.geojson`.
